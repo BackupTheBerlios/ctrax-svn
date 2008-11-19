@@ -120,7 +120,7 @@ class TrackingSettings:
         self.zoomout_id = xrc.XRCID('zoomout')
         self.info_id = xrc.XRCID('moreinfo')
         self.toolbar.AddSeparator()
-        self.info_text = wx.TextCtrl(self.toolbar, -1, 'Observation Info', size=(300,20),style=wx.TE_READONLY|wx.TE_CENTRE)
+        self.info_text = wx.TextCtrl(self.toolbar, -1, 'Observation Info', pos=(80,0), size=(300,20),style=wx.TE_READONLY|wx.TE_CENTRE)
         self.info_text.SetValue('Observation Info')
         #self.info_text.SetEditable(False)
         self.toolbar.AddControl(self.info_text)
