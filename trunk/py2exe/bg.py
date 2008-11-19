@@ -752,12 +752,18 @@ class BackgroundCalculator:
     def GetThresholdScrollbar(self):
         if not hasattr(self,'scrollbar2thresh'):
             self.SetThreshBounds()
-        return(params.n_bg_std_thresh/self.scrollbar2thresh)
+        if self.scrollbar2thresh == 0:
+            return 0
+        else:
+            return(params.n_bg_std_thresh/self.scrollbar2thresh)
 
     def GetThresholdLowScrollbar(self):
         if not hasattr(self,'scrollbar2thresh'):
             self.SetThreshBounds()
-        return(params.n_bg_std_thresh_low/self.scrollbar2thresh)
+        if self.scrollbar2thresh == 0:
+            return 0
+        else:
+            return(params.n_bg_std_thresh_low/self.scrollbar2thresh)
 
     def ReadScrollbar(self):
         return (self.thresh_slider.GetThumbPosition()*self.scrollbar2thresh)
