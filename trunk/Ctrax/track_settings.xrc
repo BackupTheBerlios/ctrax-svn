@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resource>
+  <object class="wxFrame" name="frame_Ctrax_track_settings">
+    <title>Advanced Tracking Settings</title>
+    <object class="wxBoxSizer">
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="stext_max_jump">
+              <label>MAX_JUMP
+maximum distance a fly
+should be able to walk
+between frames (in pixels)</label>
+              <style>wxALIGN_CENTRE</style>
+            </object>
+            <flag>wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+          <object class="spacer">
+            <size>10,-1</size>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="text_max_jump">
+              <size>50,-1</size>
+            </object>
+            <flag>wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+        </object>
+        <flag>wxALIGN_CENTRE_HORIZONTAL</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticLine" name=""/>
+        <flag>wxEXPAND</flag>
+      </object>
+      <orient>wxVERTICAL</orient>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="stext_max_n_obj">
+              <label>MAX_N_OBJ
+the maximum number of
+dead+alive objects to maintain
+before aborting tracking
+(500 -&gt; 10 flies could get lost
+50 times before aborting)</label>
+              <style>wxALIGN_CENTRE</style>
+            </object>
+            <flag>wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+          <object class="spacer">
+            <size>10,-1</size>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="text_max_n_obj">
+              <size>50,-1</size>
+            </object>
+            <flag>wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+        </object>
+        <flag>wxALIGN_CENTRE_HORIZONTAL</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticLine" name=""/>
+        <flag>wxEXPAND</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="stext_dampen">
+              <label>DAMPEN
+the amount by which the difference
+between previous frames' data
+should be weighted in predicting
+target positions in the current frame</label>
+              <style>wxALIGN_CENTRE</style>
+            </object>
+            <flag>wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+          <object class="spacer">
+            <size>10,-1</size>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="text_dampen">
+              <size>50,-1</size>
+            </object>
+            <flag>wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+        </object>
+        <flag>wxALIGN_CENTRE_HORIZONTAL</flag>
+      </object>
+    </object>
+    <style></style>
+  </object>
+</resource>

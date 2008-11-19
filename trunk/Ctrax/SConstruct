@@ -1,0 +1,3 @@
+# emacs, this is -*-Python-*- mode
+
+SharedLibrary(source=['houghcircles_C.c'])
