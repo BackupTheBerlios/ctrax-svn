@@ -1,0 +1,516 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resource>
+  <object class="wxFrame" name="frame_Ctrax_bg">
+    <title>Background/Threshold</title>
+    <object class="wxMenuBar" name="menu">
+      <object class="wxMenu" name="menu_window">
+        <label>Window</label>
+        <object class="wxMenuItem" name="menu_window_close">
+          <label>Close</label>
+          <accel>Ctrl+Q</accel>
+        </object>
+      </object>
+    </object>
+    <object class="wxBoxSizer">
+      <orient>wxHORIZONTAL</orient>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxVERTICAL</orient>
+          <object class="sizeritem">
+            <object class="wxScrollBar" name="slider_thresh">
+              <style>wxSB_VERTICAL</style>
+              <tooltip>Connected component must contain at least one pixel above the high threshold.</tooltip>
+            </object>
+            <flag>wxALIGN_CENTRE</flag>
+            <minsize>-1,700</minsize>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="text_thresh">
+              <label>High
+Thresh</label>
+              <style>wxALIGN_CENTRE</style>
+              <font>
+                <size>10</size>
+                <family>swiss</family>
+                <style>normal</style>
+                <weight>bold</weight>
+                <underlined>0</underlined>
+                <face>Sans</face>
+              </font>
+              <tooltip>Connected component must contain at least one pixel above the high threshold.</tooltip>
+            </object>
+            <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="threshold_text_input">
+              <value>0</value>
+              <size>50,20</size>
+              <style>wxTE_PROCESS_ENTER|wxTE_CENTRE</style>
+              <tooltip>Connected component must contain at least one pixel above the high threshold.</tooltip>
+            </object>
+            <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+          <object class="spacer">
+            <size>0,20</size>
+          </object>
+          <object class="sizeritem">
+            <object class="wxButton" name="done_button">
+              <label>Done</label>
+              <font>
+                <size>10</size>
+                <family>swiss</family>
+                <style>normal</style>
+                <weight>bold</weight>
+                <underlined>0</underlined>
+                <face>Sans</face>
+              </font>
+            </object>
+            <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+        </object>
+        <flag>wxALIGN_CENTER</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxVERTICAL</orient>
+          <object class="sizeritem">
+            <object class="wxScrollBar" name="slider_low_thresh">
+              <style>wxSB_VERTICAL</style>
+              <tooltip>If a pixel is above the low threshold and near a pixel above the high threshold, it is foreground.</tooltip>
+            </object>
+            <flag>wxALIGN_CENTRE</flag>
+            <minsize>-1,700</minsize>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="text_low_thresh">
+              <label>Low
+Thresh</label>
+              <style>wxALIGN_CENTRE</style>
+              <font>
+                <size>10</size>
+                <family>swiss</family>
+                <style>normal</style>
+                <weight>bold</weight>
+                <underlined>0</underlined>
+                <face>Sans</face>
+              </font>
+            </object>
+            <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="low_threshold_text_input">
+              <value>0</value>
+              <size>50,20</size>
+              <style>wxTE_PROCESS_ENTER|wxTE_CENTRE</style>
+            </object>
+            <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+          <object class="spacer">
+            <size>0,50</size>
+          </object>
+        </object>
+        <flag>wxALIGN_CENTER</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxVERTICAL</orient>
+          <object class="sizeritem">
+            <object class="wxPanel" name="panel_img"/>
+            <option>1</option>
+            <flag>wxSHAPED</flag>
+            <minsize>641,513</minsize>
+            <ratio>640,512</ratio>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="text_frame">
+              <label>Frame</label>
+              <font>
+                <size>10</size>
+                <family>swiss</family>
+                <style>normal</style>
+                <weight>bold</weight>
+                <underlined>0</underlined>
+                <face>Sans</face>
+              </font>
+            </object>
+            <flag>wxALIGN_CENTER</flag>
+          </object>
+          <object class="sizeritem">
+            <object class="wxScrollBar" name="slider_frame">
+              <size>641,-1</size>
+              <style>wxSB_HORIZONTAL</style>
+              <value>0</value>
+              <thumbsize>1</thumbsize>
+              <pagesize>30</pagesize>
+            </object>
+            <flag>wxALIGN_CENTRE</flag>
+          </object>
+          <object class="sizeritem">
+            <object class="wxChoice" name="view_type_input">
+              <content>
+                <item>Background Image</item>
+                <item>Distance from Background</item>
+                <item>Foreground/Background Classification</item>
+                <item>Background-Only Areas</item>
+                <item>Normalization Image</item>
+                <item>Connected Components</item>
+                <item>Ellipse Fits</item>
+              </content>
+              <selection>0</selection>
+            </object>
+            <flag>wxALIGN_CENTRE</flag>
+          </object>
+        </object>
+        <option>1</option>
+        <flag>wxEXPAND</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxVERTICAL</orient>
+          <object class="sizeritem">
+            <object class="wxBoxSizer">
+              <orient>wxHORIZONTAL</orient>
+              <object class="sizeritem">
+                <object class="wxStaticText" name="bg_type_text">
+                  <label>Background Type:</label>
+                  <size>140,18</size>
+                  <font>
+                    <size>10</size>
+                    <family>swiss</family>
+                    <style>normal</style>
+                    <weight>bold</weight>
+                    <underlined>0</underlined>
+                    <face>Sans</face>
+                  </font>
+                </object>
+              </object>
+              <object class="sizeritem">
+                <object class="wxChoice" name="bg_type_input">
+                  <content>
+                    <item>Light flies on dark background</item>
+                    <item>Dark flies on light background</item>
+                    <item>Other</item>
+                  </content>
+                  <selection>0</selection>
+                </object>
+              </object>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="bg_type_fulltext">
+              <label>To improve performance, specify that flies are always lighter than the background (Light flies on dark background) or that flies are always darker than the foreground (Dark flies on light background). If neither of these cases applies, specify &quot;Other&quot;.</label>
+              <size>400,60</size>
+              <font>
+                <size>9</size>
+                <family>swiss</family>
+                <style>normal</style>
+                <weight>normal</weight>
+                <underlined>0</underlined>
+                <face>Sans</face>
+              </font>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticLine">
+              <size>400,10</size>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxBoxSizer">
+              <orient>wxHORIZONTAL</orient>
+              <object class="sizeritem">
+                <object class="wxStaticText" name="bg_min_std_text">
+                  <label>Std Range:</label>
+                  <size>140,18</size>
+                  <font>
+                    <size>10</size>
+                    <family>swiss</family>
+                    <style>normal</style>
+                    <weight>bold</weight>
+                    <underlined>0</underlined>
+                    <face>Sans</face>
+                  </font>
+                </object>
+              </object>
+              <object class="sizeritem">
+                <object class="wxTextCtrl" name="bg_min_std_input">
+                  <value>1</value>
+                </object>
+              </object>
+              <object class="sizeritem">
+                <object class="wxTextCtrl" name="bg_max_std_input">
+                  <value>10</value>
+                </object>
+              </object>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="bg_min_std_fulltext">
+              <label>Range of values in pixels of the standard deviation for any background pixel location. Values should be between 0 and 255. </label>
+              <size>400,50</size>
+              <font>
+                <size>9</size>
+                <family>swiss</family>
+                <style>normal</style>
+                <weight>normal</weight>
+                <underlined>0</underlined>
+                <face>Sans</face>
+              </font>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticLine">
+              <size>400,10</size>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxBoxSizer">
+              <orient>wxHORIZONTAL</orient>
+              <object class="sizeritem">
+                <object class="wxStaticText" name="bg_normalization_text">
+                  <label>Normalize by:</label>
+                  <size>140,18</size>
+                  <font>
+                    <size>10</size>
+                    <family>swiss</family>
+                    <style>normal</style>
+                    <weight>bold</weight>
+                    <underlined>0</underlined>
+                    <face>Sans</face>
+                  </font>
+                </object>
+              </object>
+              <object class="sizeritem">
+                <object class="wxChoice" name="bg_normalization_input">
+                  <content>
+                    <item>Standard Deviation</item>
+                    <item>Background Brightness</item>
+                    <item>Homomorphic Filtering</item>
+                  </content>
+                </object>
+              </object>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="bg_normalization_fulltext">
+              <label>We classify into foreground/background using a single threshold. We normalize distance, by default, by the standard deviation of the background pixel value at a given location over time. If the standard deviation is difficult to estimate, it may be better to normalize by background intensity, as noise increases with brightness. Or, perform homomorphic filtering. </label>
+              <size>400,100</size>
+              <font>
+                <size>9</size>
+                <family>swiss</family>
+                <style>normal</style>
+                <weight>normal</weight>
+                <underlined>0</underlined>
+                <face>Sans</face>
+              </font>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxButton" name="homomorphic_settings">
+              <label>Homomorphic Filter Settings ...</label>
+              <enabled>0</enabled>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticLine">
+              <size>400,10</size>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxBoxSizer">
+              <orient>wxHORIZONTAL</orient>
+              <object class="sizeritem">
+                <object class="wxStaticText" name="min_nonfore_intensity_text">
+                  <label>Minimum Non-Foreground Intensity:</label>
+                  <size>280,18</size>
+                  <font>
+                    <size>10</size>
+                    <family>swiss</family>
+                    <style>normal</style>
+                    <weight>bold</weight>
+                    <underlined>0</underlined>
+                    <face>Sans</face>
+                  </font>
+                </object>
+              </object>
+              <object class="sizeritem">
+                <object class="wxTextCtrl" name="min_nonfore_intensity_input">
+                  <value>256</value>
+                </object>
+              </object>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="min_nonfore_intensity_fulltext">
+              <label>Are there parts of the image where flies cannot go? Set some parts of the image as always non-foreground based on intensity. If the intensity of the background image is greater than the above threshold, those locations will never be classified as foreground. Can help with reflections. Be sure that no useful part of the image is white in the &quot;Background-Only Areas&quot; image to the left. </label>
+              <size>400,80</size>
+              <font>
+                <size>8</size>
+                <family>swiss</family>
+                <style>normal</style>
+                <weight>normal</weight>
+                <underlined>0</underlined>
+                <face>Sans</face>
+              </font>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticLine">
+              <size>400,10</size>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxBoxSizer">
+              <orient>wxHORIZONTAL</orient>
+              <object class="sizeritem">
+                <object class="wxStaticText" name="max_nonfore_intensity_text">
+                  <label>Maximum Non-Foreground Intensity:</label>
+                  <size>280,18</size>
+                  <font>
+                    <size>10</size>
+                    <family>swiss</family>
+                    <style>normal</style>
+                    <weight>bold</weight>
+                    <underlined>0</underlined>
+                    <face>Sans</face>
+                  </font>
+                </object>
+              </object>
+              <object class="sizeritem">
+                <object class="wxTextCtrl" name="max_nonfore_intensity_input">
+                  <value>-1</value>
+                </object>
+              </object>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="max_nonfore_intensity_fulltext">
+              <label>If the intensity of the background image is more than the above threshold, those locations will never be classified as foreground. </label>
+              <size>400,40</size>
+              <font>
+                <size>8</size>
+                <family>swiss</family>
+                <style>normal</style>
+                <weight>normal</weight>
+                <underlined>0</underlined>
+                <face>Sans</face>
+              </font>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticLine">
+              <size>400,10</size>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxCheckBox" name="detect_arena_checkbox">
+              <label>Set Circular Arena Region of Interest</label>
+              <checked>1</checked>
+              <font>
+                <size>10</size>
+                <family>swiss</family>
+                <style>normal</style>
+                <weight>bold</weight>
+                <underlined>0</underlined>
+                <face>Sans</face>
+              </font>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="">
+              <label>Are the flies restricted to being in a circular arena? If &quot;Set Circular Arena Region of Interest&quot; is checked, all locations outside of the set arena will never be classified as foreground. Arena location can be set by clicking &quot;Detect Circular Arena&quot; button. </label>
+              <size>400,60</size>
+              <font>
+                <size>8</size>
+                <family>swiss</family>
+                <style>normal</style>
+                <weight>normal</weight>
+                <underlined>0</underlined>
+                <face>Sans</face>
+              </font>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticLine">
+              <size>400,10</size>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxCheckBox" name="use_morphology_checkbox">
+              <label>Use Morphological Filtering</label>
+              <checked>0</checked>
+              <font>
+                <size>10</size>
+                <family>swiss</family>
+                <style>normal</style>
+                <weight>bold</weight>
+                <underlined>0</underlined>
+                <face>Sans</face>
+              </font>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="">
+              <label>Morphological filtering can be used to flip the fore/background classification of pixels to agree with neighboring pixels. We allow a close operation, followed by an open operation. A close flips background pixels to foreground if they are surrounded by foreground pixels, and can close holes or gaps between foreground components. An open flips foreground pixels to background if they are surrounded by background pixels, and will remove small connected components.</label>
+              <size>400,110</size>
+              <font>
+                <size>8</size>
+                <family>swiss</family>
+                <style>normal</style>
+                <weight>normal</weight>
+                <underlined>0</underlined>
+                <face>Sans</face>
+              </font>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxBoxSizer">
+              <orient>wxHORIZONTAL</orient>
+              <object class="sizeritem">
+                <object class="wxStaticText" name="">
+                  <label>Close radius:</label>
+                  <size>100,18</size>
+                  <font>
+                    <size>10</size>
+                    <family>swiss</family>
+                    <style>normal</style>
+                    <weight>bold</weight>
+                    <underlined>0</underlined>
+                    <face>Sans</face>
+                  </font>
+                </object>
+              </object>
+              <object class="sizeritem">
+                <object class="wxTextCtrl" name="close_radius_input">
+                  <value>0</value>
+                </object>
+              </object>
+              <object class="spacer">
+                <size>20,0</size>
+              </object>
+              <object class="sizeritem">
+                <object class="wxStaticText" name="">
+                  <label>Open radius:</label>
+                  <size>100,18</size>
+                  <font>
+                    <size>10</size>
+                    <family>swiss</family>
+                    <style>normal</style>
+                    <weight>bold</weight>
+                    <underlined>0</underlined>
+                    <face>Sans</face>
+                  </font>
+                </object>
+              </object>
+              <object class="sizeritem">
+                <object class="wxTextCtrl" name="open_radius_input">
+                  <value>0</value>
+                </object>
+              </object>
+            </object>
+          </object>
+        </object>
+      </object>
+    </object>
+  </object>
+</resource>

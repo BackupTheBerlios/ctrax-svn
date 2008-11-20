@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resource>
+  <object class="wxFrame" name="frame_ellipses">
+    <title>Ellipses</title>
+    <object class="wxBoxSizer">
+      <orient>wxVERTICAL</orient>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxSpinCtrl" name="spin_n_ellipses">
+              <min>1</min>
+              <max>5</max>
+              <size>40,-1</size>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="stext_n_ellipses">
+              <label># flies</label>
+            </object>
+            <flag>wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+        </object>
+        <flag>wxALIGN_CENTRE_HORIZONTAL</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxPanel" name="panel_show"/>
+            <option>1</option>
+            <flag>wxEXPAND</flag>
+            <minsize>120,160</minsize>
+          </object>
+        </object>
+        <option>1</option>
+        <flag>wxEXPAND</flag>
+      </object>
+    </object>
+  </object>
+</resource>

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resource>
+  <object class="wxFrame" name="frame_Ctrax_batch">
+    <title>Batch Processing</title>
+    <object class="wxBoxSizer">
+      <orient>wxVERTICAL</orient>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxListBox" name="text_list">
+              <size>350,-1</size>
+              <style>wxLB_EXTENDED|wxLB_HSCROLL|wxLB_NEEDED_SB</style>
+              <content/>
+            </object>
+            <option>1</option>
+            <flag>wxEXPAND</flag>
+          </object>
+          <object class="sizeritem">
+            <object class="wxBoxSizer">
+              <orient>wxVERTICAL</orient>
+              <object class="sizeritem">
+                <object class="wxButton" name="button_add">
+                  <label>Add</label>
+                </object>
+              </object>
+              <object class="sizeritem">
+                <object class="wxButton" name="button_remove">
+                  <label>Remove</label>
+                </object>
+              </object>
+              <object class="sizeritem">
+                <object class="wxButton" name="button_execute">
+                  <label>Execute</label>
+                </object>
+              </object>
+              <object class="sizeritem">
+                <object class="wxButton" name="button_close">
+                  <label>Close</label>
+                </object>
+              </object>
+            </object>
+          </object>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticLine"/>
+        <flag>wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+        <minsize>400,10</minsize>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <label>Circular Arena:  </label>
+              <size>150,20</size>
+            </object>
+            <flag>wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+          </object>
+          <object class="sizeritem">
+            <object class="wxChoice" name="arena_choice">
+              <content>
+                <item>Auto-detect in each movie</item>
+                <item>Use settings from first movie</item>
+              </content>
+              <selection>0</selection>
+            </object>
+            <flag>wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+          </object>
+        </object>
+        <flag>wxALIGN_LEFT</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <label>Shape: </label>
+              <size>150,20</size>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxChoice" name="shape_choice">
+              <content>
+                <item>Auto-detect in each movie</item>
+                <item>Use settings from first movie</item>
+              </content>
+              <selection>0</selection>
+            </object>
+            <flag>wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+          </object>
+        </object>
+        <flag>wxALIGN_LEFT</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <label>Background Model: </label>
+              <size>150,20</size>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxChoice" name="bg_model_choice">
+              <content>
+                <item>Auto-detect in each movie</item>
+                <item>Use settings from first movie</item>
+              </content>
+              <selection>0</selection>
+            </object>
+            <flag>wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+          </object>
+        </object>
+        <flag>wxALIGN_LEFT</flag>
+      </object>
+    </object>
+  </object>
+</resource>
