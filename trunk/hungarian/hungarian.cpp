@@ -15,7 +15,7 @@ hungarian(PyObject *self, PyObject *args)
 {
   //PyObject *ocosts;
   PyArrayObject *costs;
-  int n;
+  npy_intp n;
   long *rowsol;
   long *colsol;
   cost *buf,**ccosts;
