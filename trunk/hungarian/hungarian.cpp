@@ -19,10 +19,10 @@ hungarian(PyObject *self, PyObject *args)
   long *rowsol;
   long *colsol;
   cost *buf,**ccosts;
-  
+
   if (!PyArg_ParseTuple(args, "O!", &PyArray_Type,&costs))
     return NULL;
-  
+
   if (costs->nd!=2)
     {
       PyErr_SetString(PyExc_ValueError,"hungarian() requires a 2-D matrix");
@@ -34,12 +34,12 @@ hungarian(PyObject *self, PyObject *args)
       PyErr_SetString(PyExc_ValueError,"hungarian() requires a square matrix");
       goto error;
     }
-  
-  
+
+
   //get inputted matrix as a 1-D C array:
   buf = (cost*)costs->data;
   //buf = (cost *)NA_OFFSETDATA(costs);
-  
+
   //copy inputted matrix into a 2-dimensional C array:
   ccosts = (cost **)malloc(sizeof(cost *)*n);
   if(!ccosts)
@@ -49,7 +49,7 @@ hungarian(PyObject *self, PyObject *args)
     }
   for(int i=0;i<n;i++)
     ccosts[i] = &buf[i*n];
-  
+
   rowsol = (long *)malloc(sizeof(long)*n);
   colsol = (long *)malloc(sizeof(long)*n);
   if(!(rowsol&&colsol))
@@ -57,15 +57,15 @@ hungarian(PyObject *self, PyObject *args)
       PyErr_NoMemory();
       goto error;
     }
-  
+
   //run hungarian!:
   asp(n,ccosts,rowsol,colsol);
-  
+
   //NA_InputArray() incremented costs, but now we're done with it, so let it get GC'ed:
   //Py_XDECREF(costs);
-  
+
   return Py_BuildValue("(OO)",PyArray_SimpleNewFromData(1,&n,PyArray_LONG,(char*)rowsol),PyArray_SimpleNewFromData(1,&n,PyArray_LONG,(char*)colsol));
-  
+
  error:
   //Py_XDECREF(costs);
   return NULL;
@@ -95,6 +95,6 @@ main(int argc, char *argv[])
 
     /* Add a static module */
     inithungarian();
-	
+
 	return 0;
 }
