@@ -17,7 +17,7 @@ static PyObject* houghcircles_C(PyObject *self,PyObject *args){
   PyArrayObject * xarray, *yarray, *warray, *binedgesaarray,
     *bincentersbarray, *bincentersrarray, *accarray;
   double * x, *y, *w, *binedgesa, *bincentersb, *bincentersr, *acc;
-  int dims[3];
+  npy_intp dims[3];
   
   if (!PyArg_ParseTuple(args, "O!O!O!O!O!O!", 
 			&PyArray_Type,&xarray,
@@ -34,7 +34,7 @@ static PyObject* houghcircles_C(PyObject *self,PyObject *args){
   nr = bincentersrarray->dimensions[0];
 
   dims[0] = nr; dims[1] = nb; dims[2] = na;
-  accarray = (PyArrayObject *) PyArray_SimpleNew(3,dims,NPY_DOUBLE);
+  accarray = (PyArrayObject *) PyArray_SimpleNew(3,&dims[0],NPY_DOUBLE);
   //accarray=(PyArrayObject *) PyArray_FromDims(3,dims,NPY_DOUBLE);
 
   /* get inputs as 1-D C arrays*/ 
@@ -44,7 +44,7 @@ static PyObject* houghcircles_C(PyObject *self,PyObject *args){
   binedgesa = (double*)binedgesaarray->data;
   bincentersb = (double*)bincentersbarray->data;
   bincentersr = (double*)bincentersrarray->data;
-  acc = (double*)accarray->data;
+  acc = (double*)PyArray_DATA(accarray);
 
   houghcircles_main(acc,x,y,w,binedgesa,bincentersb,bincentersr,
 		    npts,na,nb,nr);

@@ -586,7 +586,7 @@ def trysplit(ellipses,i,isdone,L,dfore):
             [D,V] = num.linalg.eig(S[:,:,j])
             if num.any(D<.01):
                 D[D<.01] = .01
-                S[:,:,j] = num.dot(V, dot(diag(D), V.T ))
+                S[:,:,j] = num.dot(V, num.dot(num.diag(D), V.T ))
 
             priors[j] = rj.size
             if DEBUG: print 'component %d: mu = '%j + str(mu[j,:]) + ', S = ' + str(S[:,:,j]) + ', prior = ' + str(priors[j])
