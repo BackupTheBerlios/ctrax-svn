@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resource>
+  <object class="wxFrame" name="frame_Ctrax">
+    <object class="wxStatusBar" name="bar_status">
+      <fields>2</fields>
+    </object>
+    <object class="wxMenuBar" name="menu">
+      <object class="wxMenu" name="menu_file">
+        <label>File</label>
+        <object class="wxMenuItem" name="menu_file_open">
+          <label>Open</label>
+          <accel>Ctrl+O</accel>
+          <help>Open FlyMovieFormat (fmf) file</help>
+        </object>
+        <object class="wxMenuItem" name="menu_file_batch">
+          <label>Batch Processing</label>
+          <help>Process several movies at once</help>
+        </object>
+        <object class="wxMenuItem" name="menu_load_settings">
+          <label>Load Settings From File ...</label>
+          <enabled>0</enabled>
+        </object>
+        <object class="separator"/>
+        <object class="wxMenuItem" name="menu_file_export">
+          <label>Export as MAT-file</label>
+          <accel>Ctrl+S</accel>
+          <enabled>0</enabled>
+        </object>
+        <object class="wxMenuItem" name="menu_file_write_timestamps">
+          <label>Write Timestamps to MAT-file</label>
+          <enabled>0</enabled>
+        </object>
+        <object class="wxMenuItem" name="menu_file_save_avi">
+          <label>Export as AVI-file</label>
+          <enabled>0</enabled>
+        </object>
+        <object class="separator"/>
+        <object class="wxMenuItem" name="menu_file_quit">
+          <label>Quit</label>
+          <accel>Ctrl+Q</accel>
+          <help>Exit</help>
+        </object>
+      </object>
+      <object class="wxMenu" name="menu_track">
+        <label>Track</label>
+        <object class="wxMenuItem" name="menu_track_start">
+          <label>Start Tracking</label>
+          <help>Control tracking process</help>
+          <enabled>0</enabled>
+        </object>
+        <object class="wxMenuItem" name="menu_track_resume">
+          <label>Resume Tracking</label>
+          <help>Continue tracking from last tracked position</help>
+          <enabled>0</enabled>
+        </object>
+        <object class="wxMenuItem" name="menu_track_resume_here">
+          <label>Resume Tracking from Current Frame</label>
+          <help>Continue tracking from current position</help>
+          <enabled>0</enabled>
+        </object>
+        <object class="wxMenuItem" name="menu_choose_orientations">
+          <label>Choose Orientations ...</label>
+          <help>Orientation computed sequentially is only known modulo PI. Choose orientations modulo 2 PI in already tracked positions. </help>
+          <enabled>0</enabled>
+        </object>
+        <object class="wxMenuItem" name="menu_track_writesbfmf">
+          <label>Write compressed sbfmf while tracking...</label>
+          <checkable>1</checkable>
+          <enabled>0</enabled>
+          <checked>0</checked>
+        </object>
+        <object class="separator"/>
+        <object class="wxMenuItem" name="menu_compute_background">
+          <label>Compute Background</label>
+          <enabled>0</enabled>
+        </object>
+        <object class="wxMenuItem" name="menu_compute_shape">
+          <label>Compute Target Shape</label>
+          <enabled>0</enabled>
+        </object>
+      </object>
+      <object class="wxMenu" name="menu_settings">
+        <label>Settings</label>
+        <object class="wxMenuItem" name="menu_settings_bg_model">
+          <label>Background Model...</label>
+          <enabled>0</enabled>
+        </object>
+        <object class="wxMenuItem" name="menu_settings_bg">
+          <label>Background Subtraction...</label>
+          <help>Set background threshold</help>
+          <enabled>0</enabled>
+        </object>
+        <object class="wxMenuItem" name="menu_settings_tracking">
+          <label>Tracking Settings...</label>
+          <enabled>0</enabled>
+        </object>
+        <object class="wxMenu" name="menu_settings_playback">
+          <label>Playback Options</label>
+          <object class="wxMenuItem" name="menu_playback_show_ann">
+            <label>Show Old Annotation</label>
+            <help>Display saved annotation</help>
+            <checkable>1</checkable>
+            <enabled>0</enabled>
+            <checked>0</checked>
+          </object>
+          <object class="wxMenuItem" name="menu_playback_tails">
+            <label>Tail Length</label>
+            <help>Set length of fly &quot;tails&quot; on playback</help>
+          </object>
+          <object class="wxMenuItem" name="menu_do_refresh">
+            <label>Automatically Refresh</label>
+            <help>Automatically refresh display while tracking?</help>
+            <checkable>1</checkable>
+            <enabled>1</enabled>
+            <checked>1</checked>
+          </object>
+          <object class="wxMenuItem" name="menu_playback_dim">
+            <label>Dim Original</label>
+            <help>Dim movie image</help>
+            <checkable>1</checkable>
+            <checked>0</checked>
+          </object>
+        </object>
+        <object class="wxMenuItem" name="menu_settings_zoom">
+          <label>Show Zoom Window</label>
+          <checkable>1</checkable>
+          <checked>0</checked>
+        </object>
+      </object>
+      
+      <object class="wxMenu" name="menu_help">
+        <label>Help</label>
+        <object class="wxMenuItem" name="menu_help_help">
+          <label>Help</label>
+          <accel>F1</accel>
+          <help>User's manual</help>
+        </object>
+        <object class="wxMenuItem" name="menu_help_about">
+          <label>About</label>
+          <help>About Ctrax</help>
+        </object>
+      </object>
+    </object>
+    <object class="wxBoxSizer">
+      <orient>wxVERTICAL</orient>
+      <object class="sizeritem">
+        <object class="wxPanel" name="panel_img"/>
+        <option>1</option>
+        <flag>wxEXPAND|wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+        <minsize>440,352</minsize>
+        <ratio>440,353</ratio>
+      </object>
+      <object class="sizeritem">
+        <object class="wxScrollBar" name="slider_frame">
+          <size>470,-1</size>
+          <style>wxSB_HORIZONTAL</style>
+          <value/>
+          <pagesize>100</pagesize>
+        </object>
+        <flag>wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxToolBar" name="toolbar">
+          <object class="tool" name="zoom">
+            <bitmap>zoom-in.bmp</bitmap>
+            <toggle>1</toggle>
+            <tooltip>Zoom in on target</tooltip>
+          </object>
+          <object class="tool" name="play">
+            <bitmap>play.bmp</bitmap>
+            <tooltip>Start Video Playback</tooltip>
+          </object>
+          <object class="tool" name="stop">
+            <bitmap>stop.bmp</bitmap>
+            <tooltip>Stop Video Playback</tooltip>
+          </object>
+          <object class="tool" name="speed_up">
+            <bitmap>fastforward.bmp</bitmap>
+            <tooltip>Speed Up Playback</tooltip>
+          </object>
+          <object class="tool" name="slow_down">
+            <bitmap>rewind.bmp</bitmap>
+            <tooltip>Slow Down Playback</tooltip>
+          </object>
+          <object class="tool" name="refresh">
+            <bitmap>refresh.bmp</bitmap>
+            <tooltip>Refresh Display</tooltip>
+          </object>
+          <object class="wxTextCtrl" name="">
+            <value>Frame: </value>
+            <size>45,20</size>
+            <style>wxTE_READONLY|wxNO_BORDER</style>
+            <bg>#E6E6FA</bg>
+          </object>
+          <object class="wxTextCtrl" name="text_framenumber">
+            <value>00001</value>
+            <size>45,20</size>
+            <style>wxNO_BORDER</style>
+            <bg>#E6E6FA</bg>
+          </object>
+          <object class="wxTextCtrl" name="text_num_flies">
+            <value>N. Flies: 13</value>
+            <size>75,20</size>
+            <style>wxTE_READONLY|wxNO_BORDER</style>
+            <bg>#E6FAE6</bg>
+          </object>
+          <object class="wxTextCtrl" name="text_refresh_rate">
+            <value>Refresh Period: 01 fr</value>
+            <size>140,20</size>
+            <style>wxTE_READONLY|wxNO_BORDER</style>
+            <bg>#FAFAE6</bg>
+          </object>
+          <dontattachtoframe>1</dontattachtoframe>
+          <size>500,40</size>
+          <style>wxTB_HORIZONTAL</style>
+        </object>
+        <flag>wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+      </object>
+    </object>
+    <size>200,100</size>
+    <title>Ctrax: The Caltech Multiple Fly Tracker</title>
+    <bg>#808080</bg>
+  </object>
+</resource>

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Ctrax
+MimeType=video/fmf
+Exec=/usr/bin/Ctrax %f
+Type=Application
+Categories=GNOME;GTK;Application;AudioVideo;
+Comment=Caltech multiple walking fly tracker
+Icon=gnobots2.xpm
