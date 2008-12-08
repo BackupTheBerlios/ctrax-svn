@@ -45,8 +45,11 @@ annname = [annpath,annname];
 
 [readframe,nframes,fid] = get_readframe_fcn(moviename);
 
-save('-append',savedsettingsfile,'moviename','moviepath');
-
+if exist('savedsettingsfile','file'),
+  save('-append',savedsettingsfile,'moviename','moviepath');
+else
+  save(savedsettingsfile,'moviename','moviepath');
+end
 %% see if we should restart
 
 tag = moviename(length(moviepath)+1:end-length(movieexts{filterindex})+1);
