@@ -148,4 +148,10 @@ for fly1 = 1:nflies,
   trx(fly1).absanglefrom2to1_ell2nose = absanglefrom2to1(sub2ind(size(absanglefrom2to1),trx(fly1).closestfly_ell2nose(idx),idx));
   trx(fly1).absanglefrom2to1_anglesub = absanglefrom2to1(sub2ind(size(absanglefrom2to1),trx(fly1).closestfly_anglesub(idx),idx));
 
+  % change in various parameters
+  trx(fly1).ddcenter = diff(trx(fly1).dcenter);
+  trx(fly1).ddnose2ell = diff(trx(fly1).dnose2ell);
+  trx(fly1).ddell2nose = diff(trx(fly1).dell2nose);
+  trx(fly1).danglesub = diff(trx(fly1).anglesub);
+  
 end

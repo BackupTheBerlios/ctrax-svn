@@ -6,4 +6,6 @@ for i = 1:nflies,
   angle2wall = atan2(data(i).y-data(i).arena.y,data(i).x-data(i).arena.x);
   % orientation relative to angle to wall
   data(i).theta2wall = modrange(data(i).theta-angle2wall,-pi,pi);
+  data(i).ddist2wall = diff(data(i).dist2wall);
+  data(i).absdangle2wall = abs(modrange(diff(data(i).theta2wall),-pi,pi));
 end

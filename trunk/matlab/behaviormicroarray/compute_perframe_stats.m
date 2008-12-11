@@ -20,7 +20,7 @@ if exist(savedsettingsfile,'file')
   load(savedsettingsfile);
 end
 
-%% choose some mat files to analyze
+%% choose a mat file to analyze
 fprintf('Choose mat file to analyze.\n');
 matname = [matpath,matname];
 [matname,matpath] = uigetfile('*.mat','Choose mat file to analyze',matname);
@@ -37,7 +37,7 @@ end
 
 %% Get name of file to save to 
 
-fprintf('Results filename\n');
+fprintf('Enter results filename\n');
 savename = [matpath,'perframestats_',matname];
 [savename, savepath] = uiputfile('*.mat', 'Save results mat name', savename);
 
@@ -179,4 +179,69 @@ save('-append',savedsettingsfile,'docomputeclosest');
 
 %% convert to real-world units
 
-inpix = {'x','y','a','b','du_ctr','dv_ctr'};
+inpx = {'x','y','a','b','du_ctr','dv_ctr','du_cor','dv_cor',...
+  'velmag_ctr','velmag','accmag','absdv_cor','flipdv_cor',...
+  'du_tail','dv_tail','absdu_tail','absdv_tail','dist2wall',...
+  'dcenter','dnose2ell','dell2nose','magveldiff_anglesub',...
+  'magveldiff_center','magveldiff_ell2nose','magveldiff_nose2ell',...
+  'veltoward_anglesub','veltoward_center','veltoward_ell2nose',...
+  'veltoward_nose2ell','ddist2wall','ddcenter','ddnose2ell','ddell2nose'};
+inrad = {'theta','dtheta','absdtheta','d2theta','absd2theta',...
+  'smooththeta','smoothdtheta','abssmoothdtheta','smoothd2theta',...
+  'abssmoothd2theta','phi','yaw','absyaw','dtheta_tail','absdtheta_tail',...
+  'phisideways','absphisideways','theta2wall','anglesub',...
+  'absthetadiff_anglesub','absthetadiff_center','absthetadiff_ell2nose',...
+  'absthetadiff_nose2ell','apsphidiff_anglesub','apsphidiff_center',...
+  'apsphidiff_ell2nose','apsphidiff_nose2ell',...
+  'absanglefrom2to1_anglesub','absanglefrom2to1_center',...
+  'absanglefrom2to1_ell2nose','absanglefrom2to1_nose2ell','dtheta2wall',...
+  'danglesub'};
+ininvfr = {'dtheta','du_ctr','dv_ctr','du_cor','dv_cor','velmag_ctr',...
+  'velmag','absdv_cor','flipdv_cor','absdtheta','smoothdtheta','abssmoothdtheta',...
+  'du_tail','dv_tail','absdu_tail','absdv_tail','dtheta_tail','absdtheta_tail',...
+  'magveldiff_anglesub','magveldiff_center','magveldiff_ell2nose',...
+  'magveldiff_nose2ell','veltoward_anglesub','veltoward_center',...
+  'veltoward_ell2nose','veltoward_nose2ell','ddist2wall','dtheta2wall','ddcenter',...
+  'ddnose2ell','ddell2nose','danglesub'};
+ininvfrsq = {'accmag','d2theta','absd2theta','smoothd2theta','abssmoothd2theta'};
+
+fns = fieldnames(trx);
+nflies = length(trx);
+units = struct;
+for i = 1:length(fns),
+  fn = fns{i};
+  if ismember(fn,inpx),
+    for j = 1:nflies,
+      trx(j).(fn) = trx(j).(fn)/ppm;
+    end
+    units.(fn) = 'mm';
+  end
+  if ismember(fn,inrad),
+    for j = 1:nflies,
+      trx(j).(fn) = trx(j).(fn)*180/pi;
+    end
+    units.(fn) = 'deg';
+  end
+  if ismember(fn,ininvfr),
+    for j = 1:nflies,
+      trx(j).(fn) = trx(j).(fn)*fps;
+    end
+    if isfield(units,fn),
+      units.(fn) = [units.(fn),'/s'];
+    else
+      units.(fn) = '/s';
+    end
+  end
+  if ismember(fn,ininvfrsq),
+    for j = 1:nflies,
+      trx(j).(fn) = trx(j).(fn)*fps^2;
+    end
+    if isfield(units,fn),
+      units.(fn) = [units.(fn),'/s^2'];
+    else
+      units.(fn) = '/s^2';
+    end
+  end
+end
+
+save(savename,'trx','ppm','fps','units');
