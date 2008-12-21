@@ -130,3 +130,10 @@ trk.absthetadiff = abs(trk.thetadiff);
 trk.absphidiff = abs(trk.phidiff);
 trk.absanglefrom2to1 = abs(trk.anglefrom2to1);
 
+trk.dcenter = trk.dcenter / trk.pxpermm;
+trk.dnose2ell = trk.dnose2ell / trk.pxpermm;
+trk.dell2nose = trk.dell2nose / trk.pxpermm;
+trk.magveldiff = trk.magveldiff / trk.pxpermm * trk.fps;
+trk.veltoward = trk.veltoward / trk.pxpermm * trk.fps;
+trk.minvelmag = trk.minvelmag / trk.pxpermm * trk.fps;
+trk.maxvelmag = trk.maxvelmag / trk.pxpermm * trk.fps;

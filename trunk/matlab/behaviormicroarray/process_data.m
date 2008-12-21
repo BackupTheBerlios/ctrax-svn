@@ -45,16 +45,16 @@ thetafil = [1     4     6     4     1]/16;
 for fly = 1:nflies,
   
   % change in body orientation
-  data(fly).dtheta = modrange(diff(data(fly).theta),-pi,pi);
+  data(fly).dtheta = modrange(diff(data(fly).theta),-pi,pi)*data(fly).fps;
   
   % change in center position
-  dx = diff(data(fly).x);
-  dy = diff(data(fly).y);
+  dx = diff(data(fly).x_mm);
+  dy = diff(data(fly).y_mm);
   
   % forward motion of body center
-  data(fly).du_ctr = dx.*cos(data(fly).theta(1:end-1)) + dy.*sin(data(fly).theta(1:end-1));
+  data(fly).du_ctr = dx.*cos(data(fly).theta(1:end-1)) + dy.*sin(data(fly).theta(1:end-1))*data(fly).fps;
   % sideways motion of body center
-  data(fly).dv_ctr = dx.*cos(data(fly).theta(1:end-1)+pi/2) + dy.*sin(data(fly).theta(1:end-1)+pi/2);
+  data(fly).dv_ctr = dx.*cos(data(fly).theta(1:end-1)+pi/2) + dy.*sin(data(fly).theta(1:end-1)+pi/2)*data(fly).fps;
   
   % find the center of rotation
   [data(fly).corfrac,data(fly).corisonfly] = center_of_rotation2(data(fly),false);
@@ -65,16 +65,16 @@ for fly = 1:nflies,
   dy_cor = y_cor_next - y_cor_curr;
   
   % forward motion of center of rotation
-  data(fly).du_cor = dx_cor.*cos(data(fly).theta(1:end-1)) + dy_cor.*sin(data(fly).theta(1:end-1));
+  data(fly).du_cor = dx_cor.*cos(data(fly).theta(1:end-1)) + dy_cor.*sin(data(fly).theta(1:end-1))*data(fly).fps;
   % sideways motion of body center
-  data(fly).dv_cor = dx_cor.*cos(data(fly).theta(1:end-1)+pi/2) + dy_cor.*sin(data(fly).theta(1:end-1)+pi/2);
+  data(fly).dv_cor = dx_cor.*cos(data(fly).theta(1:end-1)+pi/2) + dy_cor.*sin(data(fly).theta(1:end-1)+pi/2)*data(fly).fps;
   
   % magnitude of velocity
-  data(fly).velmag_ctr = sqrt(dx.^2 + dy.^2);
-  data(fly).velmag = sqrt(dx_cor.^2 + dy_cor.^2);
+  data(fly).velmag_ctr = sqrt(dx.^2 + dy.^2)*data(fly).fps;
+  data(fly).velmag = sqrt(dx_cor.^2 + dy_cor.^2)*data(fly).fps;
   
   % acceleration magnitude
-  tmp = sqrt(diff(dx).^2 + diff(dy).^2);
+  tmp = sqrt(diff(dx).^2 + diff(dy).^2)*data(fly).fps^2;
   data(fly).accmag = [0,tmp];
   
   % flipped sign dv, dtheta
@@ -83,15 +83,15 @@ for fly = 1:nflies,
   data(fly).flipdv_cor = data(fly).dv_cor.*data(fly).signdtheta;
   %data(fly).realabsdv_cor = abs(data(fly).dv_cor);
   data(fly).absdtheta = abs(data(fly).dtheta);
-  data(fly).d2theta = [0,modrange(diff(data(fly).dtheta),-pi,pi)];
+  data(fly).d2theta = [0,modrange(diff(data(fly).dtheta),-pi,pi)]*data(fly).fps;
   data(fly).absd2theta = abs(data(fly).d2theta);
   
   % smoothed orientation
   data(fly).smooththeta = imfilter(unwrap(data(fly).theta),thetafil);
-  data(fly).smoothdtheta = diff(data(fly).smooththeta);
+  data(fly).smoothdtheta = diff(data(fly).smooththeta)*data(fly).fps;
   data(fly).smooththeta = modrange(data(fly).smooththeta,-pi,pi);
   data(fly).abssmoothdtheta = abs(data(fly).smoothdtheta);
-  data(fly).smoothd2theta = [0,modrange(diff(data(fly).smoothdtheta),-pi,pi)];
+  data(fly).smoothd2theta = [0,modrange(diff(data(fly).smoothdtheta),-pi,pi)]*data(fly).fps;
   data(fly).abssmoothd2theta = abs(data(fly).smoothd2theta);
 
   data(fly).f2i = @(f) f - data(fly).firstframe + 1;

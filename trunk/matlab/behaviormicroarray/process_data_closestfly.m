@@ -7,8 +7,8 @@ for fly1 = 1:nflies,
   fprintf('Computing closest fly statistics for fly %d\n',fly1);
 
   % position of nose
-  xnose = trx(fly1).x + 2*trx(fly1).a.*cos(trx(fly1).theta);
-  ynose = trx(fly1).y + 2*trx(fly1).a.*sin(trx(fly1).theta);
+  xnose = trx(fly1).x_mm + 2*trx(fly1).a_mm.*cos(trx(fly1).theta);
+  ynose = trx(fly1).y_mm + 2*trx(fly1).a_mm.*sin(trx(fly1).theta);
  
   % initialize
   dcenter = nan(nflies,trx(fly1).nframes);
@@ -43,8 +43,8 @@ for fly1 = 1:nflies,
     j1 = t1 - offj;
 
     % centroid distance
-    dx = trx(fly2).x(j0:j1)-trx(fly1).x(i0:i1);
-    dy = trx(fly2).y(j0:j1)-trx(fly1).y(i0:i1);
+    dx = trx(fly2).x_mm(j0:j1)-trx(fly1).x_mm(i0:i1);
+    dy = trx(fly2).y_mm(j0:j1)-trx(fly1).y_mm(i0:i1);
     z = sqrt(dx.^2 + dy.^2);
     dcenter(fly2,i0:i1) = z;
     % direction to other fly
@@ -55,8 +55,8 @@ for fly1 = 1:nflies,
     for t = t0:t1,
       i = t - offi;
       j = t - offj;
-      dnose2ell(fly2,i) = ellipsedist_hack(trx(fly2).x(j),trx(fly2).y(j),...
-        trx(fly2).a(j),trx(fly2).b(j),trx(fly2).theta(j),...
+      dnose2ell(fly2,i) = ellipsedist_hack(trx(fly2).x_mm(j),trx(fly2).y_mm(j),...
+        trx(fly2).a_mm(j),trx(fly2).b_mm(j),trx(fly2).theta(j),...
         xnose(i),ynose(i));
     end
     
@@ -64,10 +64,10 @@ for fly1 = 1:nflies,
     for t = t0:t1,
       i = t - offi;
       j = t - offj;    
-      xnose2 = trx(fly2).x(j) + 2*trx(fly2).a(j).*cos(trx(fly2).theta(j));
-      ynose2 = trx(fly2).y(j) + 2*trx(fly2).a(j).*sin(trx(fly2).theta(j));
-      dell2nose(fly2,i) = ellipsedist_hack(trx(fly1).x(i),trx(fly1).y(i),...
-        trx(fly1).a(i),trx(fly1).b(i),trx(fly1).theta(i),...
+      xnose2 = trx(fly2).x_mm(j) + 2*trx(fly2).a_mm(j).*cos(trx(fly2).theta(j));
+      ynose2 = trx(fly2).y_mm(j) + 2*trx(fly2).a_mm(j).*sin(trx(fly2).theta(j));
+      dell2nose(fly2,i) = ellipsedist_hack(trx(fly1).x_mm(i),trx(fly1).y_mm(i),...
+        trx(fly1).a_mm(i),trx(fly1).b_mm(i),trx(fly1).theta(i),...
         xnose2,ynose2);
     end
     
@@ -76,19 +76,19 @@ for fly1 = 1:nflies,
       i = t - offi;
       j = t - offj;
       anglesub(fly2,i) = anglesubtended(...
-        trx(fly1).x(i),trx(fly1).y(i),trx(fly1).a(i),trx(fly1).b(i),trx(fly1).theta(i),...
-        trx(fly2).x(j),trx(fly2).y(j),trx(fly2).a(j),trx(fly2).b(j),trx(fly2).theta(j),...
+        trx(fly1).x_mm(i),trx(fly1).y_mm(i),trx(fly1).a_mm(i),trx(fly1).b_mm(i),trx(fly1).theta(i),...
+        trx(fly2).x_mm(j),trx(fly2).y_mm(j),trx(fly2).a_mm(j),trx(fly2).b_mm(j),trx(fly2).theta(j),...
         fov);
     end
     
     % velocity difference
     magveldiff(fly2,i0:i1-1) = ...
-      sqrt( (diff(trx(fly1).x(i0:i1))-diff(trx(fly2).x(j0:j1))).^2 + ...
-      (diff(trx(fly1).y(i0:i1))-diff(trx(fly2).y(j0:j1))).^2 );
+      sqrt( (diff(trx(fly1).x_mm(i0:i1))-diff(trx(fly2).x_mm(j0:j1))).^2 + ...
+      (diff(trx(fly1).y_mm(i0:i1))-diff(trx(fly2).y_mm(j0:j1))).^2 )*trx(fly1).fps;
     
     % velocity in direction of other fly
-    veltoward(fly2,i0:i1-1) = dx(1:end-1).*diff(trx(fly1).x(i0:i1)) + ...
-      dy(1:end-1).*diff(trx(fly2).y(j0:j1));
+    veltoward(fly2,i0:i1-1) = dx(1:end-1).*diff(trx(fly1).x_mm(i0:i1)) + ...
+      dy(1:end-1).*diff(trx(fly2).y_mm(j0:j1))*trx(fly1).fps;
     
     % orientation of fly2 relative to orientation of fly1
     absthetadiff(fly2,i0:i1) = abs(modrange(trx(fly2).theta(j0:j1) - trx(fly1).theta(i0:i1),-pi,pi));
@@ -149,9 +149,9 @@ for fly1 = 1:nflies,
   trx(fly1).absanglefrom2to1_anglesub = absanglefrom2to1(sub2ind(size(absanglefrom2to1),trx(fly1).closestfly_anglesub(idx),idx));
 
   % change in various parameters
-  trx(fly1).ddcenter = diff(trx(fly1).dcenter);
-  trx(fly1).ddnose2ell = diff(trx(fly1).dnose2ell);
-  trx(fly1).ddell2nose = diff(trx(fly1).dell2nose);
-  trx(fly1).danglesub = diff(trx(fly1).anglesub);
+  trx(fly1).ddcenter = diff(trx(fly1).dcenter)*trx(fly1).fps;
+  trx(fly1).ddnose2ell = diff(trx(fly1).dnose2ell)*trx(fly1).fps;
+  trx(fly1).ddell2nose = diff(trx(fly1).dell2nose)*trx(fly1).fps;
+  trx(fly1).danglesub = diff(trx(fly1).anglesub)*trx(fly1).fps;
   
 end

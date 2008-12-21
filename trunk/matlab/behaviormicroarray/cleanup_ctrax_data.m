@@ -9,6 +9,8 @@ idscurr = unique(in.identity);
 in.x_pos = in.x_pos + 1;
 in.y_pos = in.y_pos + 1;
 
+isconverted = isfield(in,'pxpermm') && isfield(in,'fps');
+
 % frame number
 framenumber = zeros(size(in.x_pos));
 j = 0;
@@ -34,6 +36,14 @@ for id = idscurr,
   datacurr.f2i = @(f) f - datacurr.firstframe + 1;
   datacurr.nframes = length(datacurr.x);
   datacurr.endframe = datacurr.nframes + datacurr.firstframe - 1;
+  if isconverted,
+    datacurr.pxpermm = in.pxpermm;
+    datacurr.fps = in.fps;
+    datacurr.x_mm = in.x_pos_mm(idx);
+    datacurr.y_mm = in.y_pos_mm(idx);
+    datacurr.a_mm = in.maj_ax_mm(idx);
+    datacurr.b_mm = in.min_ax_mm(idx);
+  end
   if ~exist('trx','var'),
     trx = datacurr;
   else

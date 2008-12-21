@@ -3,7 +3,6 @@ setuppath;
 
 %% set all defaults
 
-px2mm = 4;
 labelmatname = '';
 labelmatpath = '';
 paramsmatpath = '';

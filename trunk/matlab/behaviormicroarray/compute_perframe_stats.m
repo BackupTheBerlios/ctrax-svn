@@ -3,8 +3,6 @@ setuppath;
 
 %% set all defaults
 
-ppm = 4;
-fps = 20;
 matname = '';
 matpath = '';
 docomputearena = false;
@@ -45,6 +43,18 @@ matnameonly = matname;
 matname = [matpath,matname];
 savename = [savepath,savename];
 
+%% get conversion to mm, seconds
+
+ISAUTOMATIC = true;
+ISMATNAME = true;
+ISMOVIENAME = false;
+savedsettingsfile0 = savedsettingsfile;
+convert_units;
+if ~alreadyconverted
+  matname = savename;
+end
+savedsettingsfile = savedsettingsfile0;
+
 %% load in the data
 
 tmp = load(matname);
@@ -63,37 +73,6 @@ if ~isfield(tmp,'trx'),
 else
   trx = tmp.trx;
 end
-
-%% get relationship between pixels, frames and the world
-
-% compute the mean major axis length
-meanmaj = mean([trx.a])*4;
-calibration = {num2str(ppm),num2str(fps)};
-prompts = cell(1,2);
-prompts{1} = sprintf('Pixels per mm [mean fly length = %.1f px]',meanmaj);
-prompts{2} = 'Frames per second';
-
-while true,
-  tmp = inputdlg(prompts,'Calibration',1,calibration);
-  if isempty(tmp),
-    return;
-  end
-  ppmtmp = str2double(tmp{1});
-  fpstmp = str2double(tmp{2});
-  if isnan(ppmtmp) || ppmtmp <= 0,
-    fprintf('Illegal value for pixels per mm -- must be a positive number.\n');
-    continue;
-  end
-  if isnan(fpstmp) || fpstmp <= 0,
-    fprintf('Illegal value for frames per second -- must be a positive number.\n');
-    continue;
-  end
-  ppm = ppmtmp;
-  fps = fpstmp;
-  break;
-end
-
-save('-append',savedsettingsfile,'ppm','fps');
 
 %% compute per-frame stats
 
@@ -177,71 +156,6 @@ end
 
 save('-append',savedsettingsfile,'docomputeclosest');
 
-%% convert to real-world units
+%% save results
 
-inpx = {'x','y','a','b','du_ctr','dv_ctr','du_cor','dv_cor',...
-  'velmag_ctr','velmag','accmag','absdv_cor','flipdv_cor',...
-  'du_tail','dv_tail','absdu_tail','absdv_tail','dist2wall',...
-  'dcenter','dnose2ell','dell2nose','magveldiff_anglesub',...
-  'magveldiff_center','magveldiff_ell2nose','magveldiff_nose2ell',...
-  'veltoward_anglesub','veltoward_center','veltoward_ell2nose',...
-  'veltoward_nose2ell','ddist2wall','ddcenter','ddnose2ell','ddell2nose'};
-inrad = {'theta','dtheta','absdtheta','d2theta','absd2theta',...
-  'smooththeta','smoothdtheta','abssmoothdtheta','smoothd2theta',...
-  'abssmoothd2theta','phi','yaw','absyaw','dtheta_tail','absdtheta_tail',...
-  'phisideways','absphisideways','theta2wall','anglesub',...
-  'absthetadiff_anglesub','absthetadiff_center','absthetadiff_ell2nose',...
-  'absthetadiff_nose2ell','apsphidiff_anglesub','apsphidiff_center',...
-  'apsphidiff_ell2nose','apsphidiff_nose2ell',...
-  'absanglefrom2to1_anglesub','absanglefrom2to1_center',...
-  'absanglefrom2to1_ell2nose','absanglefrom2to1_nose2ell','dtheta2wall',...
-  'danglesub'};
-ininvfr = {'dtheta','du_ctr','dv_ctr','du_cor','dv_cor','velmag_ctr',...
-  'velmag','absdv_cor','flipdv_cor','absdtheta','smoothdtheta','abssmoothdtheta',...
-  'du_tail','dv_tail','absdu_tail','absdv_tail','dtheta_tail','absdtheta_tail',...
-  'magveldiff_anglesub','magveldiff_center','magveldiff_ell2nose',...
-  'magveldiff_nose2ell','veltoward_anglesub','veltoward_center',...
-  'veltoward_ell2nose','veltoward_nose2ell','ddist2wall','dtheta2wall','ddcenter',...
-  'ddnose2ell','ddell2nose','danglesub'};
-ininvfrsq = {'accmag','d2theta','absd2theta','smoothd2theta','abssmoothd2theta'};
-
-fns = fieldnames(trx);
-nflies = length(trx);
-units = struct;
-for i = 1:length(fns),
-  fn = fns{i};
-  if ismember(fn,inpx),
-    for j = 1:nflies,
-      trx(j).(fn) = trx(j).(fn)/ppm;
-    end
-    units.(fn) = 'mm';
-  end
-  if ismember(fn,inrad),
-    for j = 1:nflies,
-      trx(j).(fn) = trx(j).(fn)*180/pi;
-    end
-    units.(fn) = 'deg';
-  end
-  if ismember(fn,ininvfr),
-    for j = 1:nflies,
-      trx(j).(fn) = trx(j).(fn)*fps;
-    end
-    if isfield(units,fn),
-      units.(fn) = [units.(fn),'/s'];
-    else
-      units.(fn) = '/s';
-    end
-  end
-  if ismember(fn,ininvfrsq),
-    for j = 1:nflies,
-      trx(j).(fn) = trx(j).(fn)*fps^2;
-    end
-    if isfield(units,fn),
-      units.(fn) = [units.(fn),'/s^2'];
-    else
-      units.(fn) = '/s^2';
-    end
-  end
-end
-
-save(savename,'trx','ppm','fps','units');
+save(savename,'trx','ppm','fps');

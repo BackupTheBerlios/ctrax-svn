@@ -95,6 +95,21 @@ for i = 1:nmovies,
       end
     end
   end
+  
+  % convert units if necessary
+  if ~isfield(datacurr.trx,'fps') || ~isfield(datacurr.trx,'pxpermm'),
+    savedsettingsfile0 = savedsettingsfile;
+    ISAUTOMATIC = true;
+    ISMATNAME = true;
+    matname = matnames{i};
+    ISMOVIENAME = true;
+    moviename = movienames{i};
+    convert_units;
+    matnames{i} = savename;
+    savedsettingsfile = savedsettingsfile0;
+    datacurr = load(matnames{i});
+  end
+  
   nflies1 = length(datacurr.trx);
   nframesperfly1 = getstructarrayfield(datacurr.trx,'nframes');
   if isfield(datacurr.trx,'sex'),
