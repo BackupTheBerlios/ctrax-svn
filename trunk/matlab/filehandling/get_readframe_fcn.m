@@ -11,6 +11,11 @@ elseif strcmpi(ext,'.sbfmf'),
   [nr,nc,nframes,bgcenter,bgstd,frame2file] = sbfmf_read_header(filename);
   fid = fopen(filename);
   readframe = @(f) sbfmfreadframe(f,fid,frame2file,bgcenter);
+elseif strcmpi(ext,'avi'),
+  fid = -1;
+  readerobj = mmreader(filename);
+  nframes = get(readerobj,'NumberOfFrames');
+  readframe = @(f) read(readerobj,f);
 else
   error(['Unrecognized file extension ',ext]);
 end
