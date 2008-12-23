@@ -1,4 +1,4 @@
-function [data,histstuff] = extractdata(trx,props,nbins,lb,ub,isseg,averaging,doinvert)
+function [data,histstuff] = extractdata(trx,props,nbins,lb,ub,transforms,isseg,averaging,doinvert)
 
 nflies = length(trx);
 nprops = length(props);
@@ -13,9 +13,20 @@ end
 if isseg && doinvert,
   for i = 1:length(trx),
     trx(i).seg = invertseg(trx(i).seg);
-    trx(i).duration = (trx(i).seg.t2 - trx(i).seg.t1 + 1)/trx(i).fps;
+    trx(i).duration = (trx(i).seg.t2 - trx(i).seg.t1)/trx(i).fps;
   end
 end
+
+for j = 1:nprops,
+  for i = 1:nflies,
+    if strcmpi(transforms{j},'absolute value'),
+      trx(i).(props{j}) = abs(trx(i).(props{j}));
+    elseif strcmpi(transforms{j},'log absolute value'),
+      trx(i).(props{j}) = log(abs(trx(i).(props{j})));
+    end
+  end
+end
+  
 
 % data
 data = cell(1,nflies);
@@ -26,7 +37,7 @@ for i = 1:nflies,
   % extract out segments, if necessary
   if isseg,
     if strcmpi(averaging,'none (per-frame)'),
-      bw = set_interval_ends(trx(i).seg.t1,trx(i).seg.t2,n);
+      bw = set_interval_ends(trx(i).seg.t1,trx(i).seg.t2-1,n);
       data{i} = zeros(nnz(bw),nprops);
       for j = 1:nprops,
         if strcmpi(props{j},'duration'),
@@ -54,16 +65,20 @@ for i = 1:nflies,
                   datacurr = trx(i).(props{j})/trx(i).fps;
                 elseif isaccelname(props{j}),
                   datacurr = trx(i).(props{j})/trx(i).fps^2;
+                else
+                  datacurr = trx(i).(props{j});
                 end
-                data{i}(:,j) = interval_mean_angle(datacurr',trx(i).seg.t1,trx(i).seg.t2);
+                data{i}(:,j) = interval_mean_angle(datacurr',trx(i).seg.t1,trx(i).seg.t2-1);
                 % convert back to per-second
                 if isvelocityname(props{j}),
                   data{i}(:,j) = data{i}(:,j)*trx(i).fps;
                 elseif isaccelname(props{j}),
                   data{i}(:,j) = data{i}(:,j)*trx(i).fps^2;
+                else
+                  datacurr = trx(i).(props{j});
                 end
               else
-                data{i}(:,j) = interval_mean(trx(i).(props{j})',trx(i).seg.t1,trx(i).seg.t2);
+                data{i}(:,j) = interval_mean(trx(i).(props{j})',trx(i).seg.t1,trx(i).seg.t2-1);
               end
             case 'interval median',
               if isanglename(props{j}),
@@ -73,7 +88,7 @@ for i = 1:nflies,
                 elseif isaccelname(props{j}),
                   datacurr = trx(i).(props{j})/trx(i).fps^2;
                 end
-                data{i}(:,j) = interval_median_angle(datacurr',trx(i).seg.t1,trx(i).seg.t2);
+                data{i}(:,j) = interval_median_angle(datacurr',trx(i).seg.t1,trx(i).seg.t2-1);
                 % convert back to per-second
                 if isvelocityname(props{j}),
                   data{i}(:,j) = data{i}(:,j)*trx(i).fps;
@@ -81,20 +96,20 @@ for i = 1:nflies,
                   data{i}(:,j) = data{i}(:,j)*trx(i).fps^2;
                 end
               else
-                data{i}(:,j) = interval_median(trx(i).(props{j})',trx(i).seg.t1,trx(i).seg.t2);
+                data{i}(:,j) = interval_median(trx(i).(props{j})',trx(i).seg.t1,trx(i).seg.t2-1);
               end
             case 'interval start',
-              data{i}(:,j) = trx(i).(props{j})(trx(i).seg.t1,j);
+              data{i}(:,j) = trx(i).(props{j})(trx(i).seg.t1);
             case 'interval end',
-              data{i}(:,j) = trx(i).(props{j})(trx(i).seg.t2,j);
+              data{i}(:,j) = trx(i).(props{j})(trx(i).seg.t2);
           end
         end
       end
     end
   else
-    data(i) = zeros(n,nprops);
+    data{i} = zeros(n,nprops);
     for j = 1:nprops,
-      data{i}(:,j) = trx(i).(props{j});
+      data{i}(:,j) = trx(i).(props{j})(1:n);
     end
   end
 
@@ -154,6 +169,12 @@ else
 end
 
 for i = 1:nprops,
+  if strcmpi(transforms{i},'absolute value'),
+    props{i} = ['absolute value of ',lower(props{i})];
+  elseif strcmpi(transforms{i},'log absolute value'),
+    props{i} = ['log absolute value of ',lower(props{i})];
+  end
+
   if isseg,
     if strcmpi(props{i},'duration'),
       histstuff.propnames{i} = 'Duration';

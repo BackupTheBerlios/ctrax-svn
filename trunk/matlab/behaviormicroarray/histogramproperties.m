@@ -22,7 +22,7 @@ function varargout = histogramproperties(varargin)
 
 % Edit the above text to modify the response to help histogramproperties
 
-% Last Modified by GUIDE v2.5 19-Dec-2008 08:51:13
+% Last Modified by GUIDE v2.5 22-Dec-2008 09:10:09
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -83,9 +83,9 @@ ignorefns = {'x','y','a','b','id','moviename','matname','annname','firstframe',.
 handles.allpropnames = setdiff(handles.allpropnames,ignorefns);
 handles.allpropnames{end+1} = 'duration';
 
-handles.paramsvars = {'nprops','isbehavior','prop1idx',...
-  'prop2idx','nbins1','nbins2','lb1','ub1','lb2','ub2','segfile',...
-  'averagingidx','doinvert'};
+handles.paramsvars = {'nprops','isbehavior','nbins1','nbins2','lb1','ub1',...
+                    'lb2','ub2','segfile','averagingidx','doinvert','prop1name','prop2name',...
+                    'transform1','transform2','rangeunits1','rangeunits2'};
 
 handles.defaultsfile = which('histogramproperties');
 handles.defaultsfile = strrep(handles.defaultsfile,'histogramproperties.m','.histogrampropertiesrc.mat');
@@ -104,14 +104,41 @@ handles.ub2 = struct;
 handles.segfile = '';
 handles.averagingidx = 1;
 handles.doinvert = false;
+handles.transform1 = 'None (Identity)';
+handles.transform2 = 'None (Identity)';
+handles.rangeunits1 = struct;
+handles.rangeunits2 = struct;
 
 % read last-used values
 if exist(handles.defaultsfile,'file'),
   tmp = load(handles.defaultsfile);
   fns = fieldnames(tmp);
+  nosecondprop = false;
   for i = 1:length(fns),
     fn = fns{i};
-    handles.(fn) = tmp.(fn);
+    if strcmpi(fn,'prop1name'),
+      handles.prop1idx = find(strcmpi(tmp.prop1name,handles.allpropnames),1);
+      if isempty(handles.prop1idx), 
+        handles.prop1idx = 1;
+      end
+    elseif strcmpi(fn,'prop2name'),
+      handles.prop2idx = find(strcmpi(tmp.prop2name,handles.allpropnames),1);
+      if isempty(handles.prop2idx), 
+        handles.prop2idx = 1;
+        nosecondprop = true;
+      end
+    elseif strcmpi(fn,'prop1idx'),
+      continue;
+    elseif strcmpi(fn,'prop2idx'),
+      continue;
+    else
+      handles.(fn) = tmp.(fn);
+    end
+  end
+  
+  % reset nprops to 1 if couldn't figure out the second property
+  if nosecondprop,
+    handles.nprops = 1;
   end
 end
 
@@ -125,7 +152,9 @@ end
 
 % set isbehavior to false if we don't have a file yet
 if ~exist(handles.segfile,'file'),
-  fprintf('Default seg file %s does not exist\n',handles.segfile);
+  if ~isempty(handles.segfile),
+    fprintf('Default seg file >%s< does not exist\n',handles.segfile);
+  end
   handles.isbehavior = false;
 end
 
@@ -170,6 +199,20 @@ set(handles.prop2menu,'value',handles.prop2idx);
 set(handles.nbins1edit,'string',num2str(handles.nbins1));
 set(handles.nbins2edit,'string',num2str(handles.nbins2));
 
+% transform to data
+contents = get(handles.prop1transformmenu,'string');
+i = find(strcmpi(handles.transform1,contents),1);
+if isempty(i),
+  i = 1;
+end
+set(handles.prop1transformmenu,'value',i);
+contents = get(handles.prop2transformmenu,'string');
+i = find(strcmpi(handles.transform2,contents),1);
+if isempty(i),
+  i = 1;
+end
+set(handles.prop2transformmenu,'value',i);
+
 % initialize range
 handles = setrange(handles);
 
@@ -196,42 +239,65 @@ handles.histstuff = struct;
 function handles = setrange(handles)
 
 fn = handles.allpropnames{handles.prop1idx};
-if ~isfield(handles.lb1,fn),
-  tmp = [handles.trx.(fn)];
-  handles.lb1.(fn) = prctile(double(tmp(:)),1);
-  handles.ub1.(fn) = prctile(double(tmp(:)),99);
+fn1 = getboundname1(handles);
+
+if ~isfield(handles.lb1,fn1),
+  handles.lb1.(fn1) = 1;
+  handles.ub1.(fn1) = 99;
+  handles.rangeunits1.(fn1) = 'Percent';
 end
 
-if isanglename(fn),
-  lb = handles.lb1.(fn)*180/pi;
-  ub = handles.ub1.(fn)*180/pi;
+if isanglename(fn) && strcmpi(handles.rangeunits1.(fn1),'units'),
+  if strcmpi(handles.transform1,'log absolute value'),
+    lb = handles.lb1.(fn1) + log(180/pi);
+    ub = handles.ub1.(fn1) + log(180/pi);
+  else
+    lb = handles.lb1.(fn1)*180/pi;
+    ub = handles.ub1.(fn1)*180/pi;
+  end
 else
-  lb = handles.lb1.(fn);
-  ub = handles.ub1.(fn);
+  lb = handles.lb1.(fn1);
+  ub = handles.ub1.(fn1);
 end
 set(handles.lb1edit,'string',num2str(lb));
 set(handles.ub1edit,'string',num2str(ub));
+contents = get(handles.rangeunits1menu,'string');
+i = find(strcmpi(contents,handles.rangeunits1.(fn1)),1);
+if isempty(i), i = 1; end
+set(handles.rangeunits1menu,'value',i);
 
 fn = handles.allpropnames{handles.prop2idx};
+fn1 = getboundname2(handles);
 
-if ~isfield(handles.lb2,fn),
-  tmp = [handles.trx.(fn)];
-  handles.lb2.(fn) = prctile(tmp(:),1);
-  handles.ub2.(fn) = prctile(tmp(:),99);
+if ~isfield(handles.lb2,fn1),  
+  handles.lb2.(fn1) = 1;
+  handles.ub2.(fn1) = 99;
+  handles.rangeunits2.(fn1) = 'Percent';
 end
 
-if isanglename(fn),
-  lb = handles.lb2.(fn)*180/pi;
-  ub = handles.ub2.(fn)*180/pi;
+if isanglename(fn) && strcmpi(handles.rangeunits2.(fn1),'units'),
+   if strcmpi(handles.transform2,'log absolute value'),
+    lb = handles.lb2.(fn1) + log(180/pi);
+    ub = handles.ub2.(fn1) + log(180/pi);
+   else
+    lb = handles.lb2.(fn1)*180/pi;
+    ub = handles.ub2.(fn1)*180/pi;
+   end
 else
-  lb = handles.lb2.(fn);
-  ub = handles.ub2.(fn);
+  lb = handles.lb2.(fn1);
+  ub = handles.ub2.(fn1);
 end
 set(handles.lb2edit,'string',num2str(lb));
 set(handles.ub2edit,'string',num2str(ub));
+contents = get(handles.rangeunits2menu,'string');
+i = find(strcmpi(contents,handles.rangeunits2.(fn1)),1);
+if isempty(i), i = 1; end
+set(handles.rangeunits2menu,'value',i);
 
 function savedefaults(handles)
 
+handles.prop2name = handles.allpropnames{handles.prop2idx};
+handles.prop1name = handles.allpropnames{handles.prop1idx};
 save(handles.defaultsfile,'-struct','handles',handles.paramsvars{:});
 
 % --- Outputs from this function are returned to the command line.
@@ -316,17 +382,26 @@ function lb1edit_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of lb1edit as text
 %        str2double(get(hObject,'String')) returns contents of lb1edit as a double
 tmp = str2double(get(hObject,'String'));
-fn = handles.allpropnames{handles.prop1idx};
+fn = getboundname1(handles);
+fntrx = handles.allpropnames{handles.prop1idx};
+
 if isnan(tmp),
   set(hObject,'string',num2str(handles.lb1.(fn)));
 else
   % convert back to radians
-  if isanglename(fn),
-    tmp = tmp *pi/180;
+  if isanglename(fntrx) && strcmpi(handles.rangeunits1.(fn),'units'),
+    if strcmpi(handles.transform1,'log absolute value'),
+      tmp = tmp + log(pi/180);
+    else
+      tmp = tmp * pi/180;
+    end
   end
   if tmp > handles.ub1.(fn),
     tmp = handles.ub1.(fn);
     set(hObject,'string',num2str(tmp));
+  end
+  if strcmpi(handles.rangeunits1.(fn),'percent'),
+    tmp = max(min(tmp,100),0);
   end
   handles.lb1.(fn) = tmp;
 end
@@ -355,17 +430,26 @@ function ub1edit_Callback(hObject, eventdata, handles)
 %        str2double(get(hObject,'String')) returns contents of ub1edit as a double
 
 tmp = str2double(get(hObject,'String'));
-fn = handles.allpropnames{handles.prop1idx};
+fn = getboundname1(handles);
+fntrx = handles.allpropnames{handles.prop1idx};
 if isnan(tmp),
   set(hObject,'string',num2str(handles.ub1.(fn)));
 else
   % convert back to radians
-  if isanglename(fn),
-    tmp = tmp *pi/180;
+  
+  if isanglename(fntrx) && strcmpi(handles.rangeunits1.(fn),'units'),
+    if strcmpi(handles.transform1,'log absolute value'),
+      tmp = tmp + log(pi/180);
+    else
+      tmp = tmp * pi/180;
+    end
   end
   if tmp < handles.lb1.(fn),
     tmp = handles.lb1.(fn);
     set(hObject,'string',num2str(tmp));
+  end
+  if strcmpi(handles.rangeunits1.(fn),'percent'),
+    tmp = max(min(tmp,100),0);
   end
   handles.ub1.(fn) = tmp;
 end
@@ -563,17 +647,25 @@ function lb2edit_Callback(hObject, eventdata, handles)
 %        str2double(get(hObject,'String')) returns contents of lb2edit as a double
 
 tmp = str2double(get(hObject,'String'));
-fn = handles.allpropnames{handles.prop2idx};
+fn = getboundname2(handles);
+fntrx = handles.allpropnames{handles.prop1idx};
 if isnan(tmp),
   set(hObject,'string',num2str(handles.lb2.(fn)));
 else
   % convert back to radians
-  if isanglename(fn),
-    tmp = tmp *pi/180;
+  if isanglename(fntrx) && strcmpi(handles.rangeunits2.(fn),'units'),
+    if strcmpi(handles.transform2,'log absolute value'),
+      tmp = tmp + log(pi/180);
+    else
+      tmp = tmp * pi/180;
+    end
   end
   if tmp > handles.ub2.(fn),
     tmp = handles.ub2.(fn);
     set(hObject,'string',num2str(tmp));
+  end
+  if strcmpi(handles.rangeunits2.(fn),'percent'),
+    tmp = max(min(tmp,100),0);
   end
   handles.lb2.(fn) = tmp;
 end
@@ -602,17 +694,25 @@ function ub2edit_Callback(hObject, eventdata, handles)
 %        str2double(get(hObject,'String')) returns contents of ub2edit as a double
 
 tmp = str2double(get(hObject,'String'));
-fn = handles.allpropnames{handles.prop2idx};
+fn = getboundname2(handles);
+fntrx = handles.allpropnames{handles.prop1idx};
 if isnan(tmp),
   set(hObject,'string',num2str(handles.ub2.(fn)));
 else
   % convert back to radians
-  if isanglename(fn),
-    tmp = tmp *pi/180;
+  if isanglename(fntrx) && strcmpi(handles.rangeunits2.(fn),'units'),
+    if strcmpi(handles.transform2,'log absolute value'),
+      tmp = tmp + log(pi/180);
+    else
+      tmp = tmp * pi/180;
+    end
   end
   if tmp < handles.lb2.(fn),
     tmp = handles.lb2.(fn);
     set(hObject,'string',num2str(tmp));
+  end
+  if strcmpi(handles.rangeunits2.(fn),'percent'),
+    tmp = max(min(tmp,100),0);
   end
   handles.ub2.(fn) = tmp;
 end
@@ -656,11 +756,44 @@ end
 % lower and upper bounds
 lb = zeros(1,handles.nprops);
 ub = zeros(1,handles.nprops);
-lb(1) = handles.lb1.(handles.allpropnames{handles.prop1idx});
-ub(1) = handles.ub1.(handles.allpropnames{handles.prop1idx});
+fn = getboundname1(handles);
+fntrx = handles.allpropnames{handles.prop1idx};
+if strcmpi(handles.rangeunits1.(fn),'percent'),
+  tmp = [handles.trx.(fntrx)];
+  switch lower(handles.transform1),
+   case 'absolute value',
+    tmp = abs(tmp);
+   case 'log absolute value',
+    tmp = log(abs(tmp));
+  end
+  lb(1) = myprctile(tmp(:),handles.lb1.(fn));
+  ub(1) = myprctile(tmp(:),handles.ub1.(fn));
+else
+  lb(1) = handles.lb1.(fn);
+  ub(1) = handles.ub1.(fn);
+end
 if handles.nprops == 2,
-  lb(2) = handles.lb2.(handles.allpropnames{handles.prop2idx});
-  ub(2) = handles.ub2.(handles.allpropnames{handles.prop2idx});
+  fn = getboundname2(handles);
+  fntrx = handles.allpropnames{handles.prop2idx};
+  if strcmpi(handles.rangeunits2.(fn),'percent'),
+    tmp = [handles.trx.(fntrx)];
+    switch lower(handles.transform2),
+     case 'absolute value',
+      tmp = abs(tmp);
+     case 'log absolute value',
+      tmp = log(abs(tmp));
+    end
+    lb(2) = myprctile(tmp(:),handles.lb2.(fn));
+    ub(2) = myprctile(tmp(:),handles.ub2.(fn));
+  else
+    lb(2) = handles.lb2.(fn);
+    ub(2) = handles.ub2.(fn);
+  end
+end
+transforms = cell(1,handles.nprops);
+transforms{1} = handles.transform1;
+if handles.nprops == 2,
+  transforms{2} = handles.transform2;
 end
 
 avprops = get(handles.averaging1menu,'string');
@@ -669,7 +802,7 @@ if handles.isbehavior,
 else
   averaging = '';
 end
-[handles.data,handles.histstuff] = extractdata(handles.trx,props,nbins,lb,ub,handles.isbehavior,averaging,handles.doinvert);
+[handles.data,handles.histstuff] = extractdata(handles.trx,props,nbins,lb,ub,transforms,handles.isbehavior,averaging,handles.doinvert);
 
 if ~isfield(handles,'plotstuff'),
   handles.plotstuff.fig = figure;
@@ -680,9 +813,10 @@ plotmode = contents{get(handles.plotstatisticmenu,'value')};
 plotindivs = get(handles.plotindivsbox,'value') == 1;
 contents = get(handles.plotstdmenu,'string');
 plotstd = contents{get(handles.plotstdmenu,'value')};
+logplot = get(handles.doplotlogbox,'value') == 1;
 
 handles.plotstuff = plothistogram(handles.histstuff,'fighandles',handles.plotstuff,...
-  'plotmode',plotmode,'plotindivs',plotindivs,'plotstd',plotstd);
+  'plotmode',plotmode,'plotindivs',plotindivs,'plotstd',plotstd,'logplot',logplot);
 
 guidata(hObject,handles);
 
@@ -813,3 +947,236 @@ function figure1_CloseRequestFcn(hObject, eventdata, handles)
 savedefaults(handles);
 
 delete(hObject);
+
+
+% --- Executes on button press in doplotlogbox.
+function doplotlogbox_Callback(hObject, eventdata, handles)
+% hObject    handle to doplotlogbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of doplotlogbox
+
+
+% --- Executes on selection change in prop2transformmenu.
+function prop2transformmenu_Callback(hObject, eventdata, handles)
+% hObject    handle to prop2transformmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = get(hObject,'String') returns prop2transformmenu contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from prop2transformmenu
+
+contents = get(hObject,'string');
+handles.transform2 = contents{get(hObject,'value')};
+handles = setrange(handles);
+guidata(hObject,handles);
+
+
+% --- Executes during object creation, after setting all properties.
+function prop2transformmenu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to prop2transformmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in prop1transformmenu.
+function prop1transformmenu_Callback(hObject, eventdata, handles)
+% hObject    handle to prop1transformmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = get(hObject,'String') returns prop1transformmenu contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from prop1transformmenu
+contents = get(hObject,'string');
+handles.transform1 = contents{get(hObject,'value')};
+handles = setrange(handles);
+guidata(hObject,handles);
+
+
+% --- Executes during object creation, after setting all properties.
+function prop1transformmenu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to prop1transformmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+function fn = getboundname1(handles)
+
+fn = handles.allpropnames{handles.prop1idx};
+if strcmpi(handles.transform1,'absolute value')
+  fn = ['ABSVAL_',fn];
+elseif strcmpi(handles.transform1,'log absolute value'),
+  fn = ['LOGABSVAL',fn];
+end
+
+function fn = getboundname2(handles)
+
+fn = handles.allpropnames{handles.prop2idx};
+if strcmpi(handles.transform2,'absolute value')
+  fn = ['ABSVAL_',fn];
+elseif strcmpi(handles.transform2,'log absolute value'),
+  fn = ['LOGABSVAL',fn];
+end
+
+function y = myprctile(x,p)
+% only for 1D data
+% fixes errors when we are averaging -infs, infs
+
+y = prctile(x,p);
+
+if ~isnan(y),
+  return;
+end
+
+n = length(x);
+q = min(max(1,round(n*p)),n);
+y = x(q);
+
+
+% --- Executes on selection change in rangeunits1menu.
+function rangeunits1menu_Callback(hObject, eventdata, handles)
+% hObject    handle to rangeunits1menu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = get(hObject,'String') returns rangeunits1menu contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from rangeunits1menu
+
+fn = handles.allpropnames{handles.prop1idx};
+fn1 = getboundname1(handles);
+
+contents = get(hObject,'String');
+newunits = contents{get(hObject,'Value')};
+if strcmpi(newunits,handles.rangeunits1.(fn1)),
+  return;
+end
+
+% get current property data 
+tmp = [handles.trx.(fn)];
+tmp = tmp(:);
+switch lower(handles.transform1),
+ case 'absolute value',
+  tmp = abs(tmp);
+ case 'log absolute value',
+  tmp = log(abs(tmp));
+end
+if strcmpi(newunits,'percent'),
+  lb = (nnz(tmp<handles.lb1.(fn1))+nnz(tmp==handles.lb1.(fn1))/2)/length(tmp)*100;
+  ub = 100-(nnz(tmp>handles.ub1.(fn1))+nnz(tmp==handles.ub1.(fn1))/2)/length(tmp)*100;
+else
+  % units
+  lb = myprctile(tmp,handles.lb1.(fn1));
+  ub = myprctile(tmp,handles.ub1.(fn1));
+end
+handles.lb1.(fn1) = lb;
+handles.ub1.(fn1) = ub;
+handles.rangeunits1.(fn1) = newunits;
+if isanglename(fn) && strcmpi(handles.rangeunits1.(fn1),'units'),
+  if strcmpi(handles.transform2,'log absolute value'),
+    lb = lb + log(180/pi);
+    ub = ub + log(180/pi);
+  else
+    lb = lb*180/pi;
+    ub = ub*180/pi;
+  end
+else
+  lb = lb;
+end
+set(handles.lb1edit,'string',num2str(lb));
+set(handles.ub1edit,'string',num2str(ub));
+guidata(hObject,handles);
+
+% --- Executes during object creation, after setting all properties.
+function rangeunits1menu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to rangeunits1menu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in rangeunits2menu.
+function rangeunits2menu_Callback(hObject, eventdata, handles)
+% hObject    handle to rangeunits2menu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = get(hObject,'String') returns rangeunits2menu contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from rangeunits2menu
+
+fn = handles.allpropnames{handles.prop2idx};
+fn1 = getboundname2(handles);
+
+contents = get(hObject,'String');
+newunits = contents{get(hObject,'Value')};
+if strcmpi(newunits,handles.rangeunits2.(fn1)),
+  return;
+end
+
+% get current property data 
+tmp = [handles.trx.(fn)];
+tmp = tmp(:);
+switch lower(handles.transform2),
+ case 'absolute value',
+  tmp = abs(tmp);
+ case 'log absolute value',
+  tmp = log(abs(tmp));
+end
+if strcmpi(newunits,'percent'),
+  lb = (nnz(tmp<handles.lb2.(fn1))+nnz(tmp==handles.lb2.(fn1))/2)/length(tmp)*100;
+  ub = 100-(nnz(tmp>handles.ub2.(fn1))+nnz(tmp==handles.ub2.(fn1))/2)/length(tmp)*100;
+else
+  % units
+  lb = myprctile(tmp,handles.lb2.(fn1));
+  ub = myprctile(tmp,handles.ub2.(fn1));
+end
+handles.lb2.(fn1) = lb;
+handles.ub2.(fn1) = ub;
+handles.rangeunits2.(fn1) = newunits;
+
+% for display, need to convert to degrees
+if isanglename(fn) && strcmpi(handles.rangeunits2.(fn1),'units'),
+  if strcmpi(handles.transform2,'log absolute value'),
+    lb = lb + log(180/pi);
+    ub = ub + log(180/pi);
+  else
+    lb = lb*180/pi;
+    ub = ub*180/pi;
+  end
+else
+  lb = lb;
+end
+set(handles.lb2edit,'string',num2str(lb));
+set(handles.ub2edit,'string',num2str(ub));
+guidata(hObject,handles);
+
+% --- Executes during object creation, after setting all properties.
+function rangeunits2menu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to rangeunits2menu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+

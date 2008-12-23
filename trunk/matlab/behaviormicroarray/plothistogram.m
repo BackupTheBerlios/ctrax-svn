@@ -5,9 +5,9 @@ function plotstuff = plothistogram(histstuff,varargin)
 %plotstd in {'off','standard deviation','standard error'}
 %flycolors
 
-[plotmode,plotstuff,plotindivs,plotstd] = ...
+[plotmode,plotstuff,plotindivs,plotstd,logplot] = ...
   myparse(varargin,'plotmode','Mean Fraction per Fly','fighandles',struct,...
-  'plotindivs',false,'plotstd','standard deviation');
+  'plotindivs',false,'plotstd','standard deviation','logplot',false);
 
 % total count has no single-fly stuff
 if strcmpi(plotmode,'total count'),
@@ -54,6 +54,34 @@ elseif strcmpi(plotstd,'standard deviation')
   above = meandata + stddata;
   below = meandata - stddata;
 end
+if logplot,
+  epsilon = min(meandata(meandata > 0));
+  if ~strcmpi(plotstd,'off'),
+    epsilon = min(epsilon,min([below(below>0);above(above>0)]));
+  end
+  if plotindivs,
+    epsilon = min(epsilon,min(perflydata(perflydata>0)));
+  end
+  if isempty(epsilon),
+    meandata(:) = 1;
+    if ~strcmpi(plotstd,'off'),
+      below(:) = 1;
+      above(:) = 1;
+    end
+    if plotindivs,
+      perflydata(:) = 1;
+    end
+  else
+    meandata = max(meandata,epsilon);
+    if ~strcmpi(plotstd,'off'),
+      below = max(below,epsilon);
+      above = max(above,epsilon);
+    end
+    if plotindivs,
+      perflydata = max(perflydata,epsilon);
+    end
+  end
+end
 
 % plot one property histogram
 if nprops == 1,
@@ -88,7 +116,13 @@ if nprops == 1,
   % plot mean
   plotstuff.hmu = plot(histstuff.centers{1},meandata,'ko-','linewidth',2,'markerfacecolor','k','markersize',6);
   axisalmosttight;
-   
+
+  if logplot,
+    set(plotstuff.haxes,'yscale','log');
+  else
+    set(plotstuff.haxes,'yscale','linear');
+  end
+  
   xlabel(histstuff.propnames{1});
   ylabel(plotmode);
 
@@ -132,6 +166,18 @@ else
     end
   end
   
+  % plot log of counts/frac
+  if logplot,
+    meandata = log(meandata);
+    if ~strcmpi(plotstd,'off'),
+      below = log(below);
+      above = log(above);
+    end
+    if plotindivs,
+      perflydata = log(perflydata);
+    end
+  end
+  
   % plot the mean
   axes(plotstuff.haxes.mean);
   x = [histstuff.centers{2}(1),histstuff.centers{2}(end)];
@@ -141,7 +187,11 @@ else
   plotstuff.him.mean = imagesc(x,y,meandata,[minv,maxv]);
   xlabel(histstuff.propnames{2});
   colormap jet;
-  title(plotmode);
+  if logplot,
+    title(sprintf('Log(%s)',plotmode));
+  else
+    title(plotmode);
+  end
   if ~strcmpi(plotstd,'off'),
     minv = min(minv,min(below(:)));
     maxv = max(maxv,max(above(:)));
@@ -149,11 +199,19 @@ else
     plotstuff.him.minus = imagesc(x,y,below,[minv,maxv]);
     plotstuff.hcolorbar = colorbar('east');
     ylabel(histstuff.propnames{1});
-    title(['-1 ',plotstd]);
+    if logplot,
+      title(sprintf('Log(-1 %s)',plotstd));
+    else
+      title(['-1 ',plotstd]);
+    end
     axes(plotstuff.haxes.plus);
     plotstuff.him.plus = imagesc(x,y,above,[minv,maxv]);
     set(plotstuff.haxes.mean,'clim',[minv,maxv]);
-    title(['+1 ',plotstd]);
+    if logplot,
+      title(sprintf('Log(-1 %s)',plotstd));
+    else
+      title(['+1 ',plotstd]);
+    end
   else
     ylabel(histstuff.propnames{1});
     plotstuff.hcolorbar = colorbar;
