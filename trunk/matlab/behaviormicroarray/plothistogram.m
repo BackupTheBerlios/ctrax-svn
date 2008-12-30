@@ -18,11 +18,24 @@ end
 nprops = length(histstuff.centers);
 if nprops == 1,
   nflies = size(histstuff.countsperfly,1);
+  ndata = size(histstuff.countsperfly,3);
 else
   nflies = size(histstuff.countsperfly,3);
+  ndata = size(histstuff.countsperfly,4);
 end
-if ~isfield(plotstuff,'fig'),
+if ~isfield(plotstuff,'fig') || ~ishandle(plotstuff.fig),
   plotstuff.fig = figure;
+  tmp = get(plotstuff.fig,'position');
+  desiredwidth = 800;
+  if tmp(3) < desiredwidth,
+    tmp(1) = tmp(1) - (desiredwidth-tmp(3))/2;
+    tmp(3) = desiredwidth;
+  end
+  if tmp(4) < desiredwidth,
+    tmp(2) = tmp(2) - (desiredwidth-tmp(4))/2;
+    tmp(4) = desiredwidth;
+  end
+  set(plotstuff.fig,'position',tmp);
 else
   figure(plotstuff.fig);
   clf;
@@ -57,7 +70,7 @@ end
 if logplot,
   epsilon = min(meandata(meandata > 0));
   if ~strcmpi(plotstd,'off'),
-    epsilon = min(epsilon,min([below(below>0);above(above>0)]));
+    epsilon = min(epsilon,min(min([below(below>0);above(above>0)])));
   end
   if plotindivs,
     epsilon = min(epsilon,min(perflydata(perflydata>0)));
@@ -86,46 +99,103 @@ end
 % plot one property histogram
 if nprops == 1,
   
-  plotstuff.haxes = gca;
+  maincolors = zeros(ndata,3);
+  if ndata > 1,
+    maincolors(2:end,:) = lines(ndata-1);
+    % take gray and make it black
+    maincolors(all(maincolors==.25,2),:) = 0;
+  end
+  sigcolors = (4+maincolors)/5;
 
+  plotstuff.haxes = axes;
   hold on;
+  %plotstuff.haxes = zeros(ndata,1);
+  %for datai = 1:ndata,
+  %  plotstuff.haxes(datai) = subplot(ndata,1,datai);
+  %  hold on;
+  %end
+
   % plot standard deviation/standard error
   if ~strcmpi(plotstd,'off'),
+    plotstuff.hsig = nan(1,ndata);
     px = [histstuff.centers{1},fliplr(histstuff.centers{1})];
-    py = [above,fliplr(below)];
-    plotstuff.hsig = patch(px,py,[.8,.8,.8],'linestyle','none');
+    axes(plotstuff.haxes);
+    for datai = 1:ndata,
+      py = [above(:,:,datai),fliplr(below(:,:,datai))];
+      plotstuff.hsig(datai) = patch(px,py,sigcolors(datai,:),'linestyle','none');
+    end
   end
   
   % plot individual flies
   if plotindivs,
-    if ~isfield(plotstuff,'flycolors') || isempty(plotstuff.flycolors),
-      % find projection on principal component
-      coeff = princomp(perflydata');
-      coeff = coeff(:,1);
-      [tmp,order] = sort(coeff);
-      [tmp,order] = sort(order);
+    
+    % choose colors for flies
+    % find projection on principal component
+    %tmp = reshape(perflydata,[size(perflydata,1),size(perflydata,2)*size(perflydata,3)]);
+    %coeff = princomp(tmp');
+    %coeff = coeff(:,1);
+    % sort flies by this coefficient
+    %[tmp,order] = sort(coeff);
+    %[tmp,order] = sort(order);
+    if ndata == 1,
+      % use different colors for each fly if there is only one curve
       plotstuff.flycolors = (3+jet(nflies))/4*.7;
-      plotstuff.flycolors = plotstuff.flycolors(order,:);
+    else
+      plotstuff.flycolors = zeros([nflies,3,ndata]);
+      for datai = 1:ndata,
+        nfliescurr = nnz(histstuff.istype(datai,:));
+        if all(maincolors(datai,:)==0),
+          % if black, then make gray
+          plotstuff.flycolors(histstuff.istype(datai,:),:,datai) = ...
+              repmat(linspace(.25,.75,nfliescurr)',[1,3]);
+        else
+          % mess with the saturation
+          tmp = rgb2hsv(maincolors(datai,:));
+          news = linspace(.25,.75,nfliescurr)';
+          plotstuff.flycolors(histstuff.istype(datai,:),:,datai) = ...
+              hsv2rgb([repmat(tmp(:,1),[nfliescurr,1]),news,repmat(tmp(:,3),[nfliescurr,1])]);
+        end
+      end
     end
-    plotstuff.hindiv = zeros(1,nflies);
-    for fly = 1:nflies,
-      plotstuff.hindiv(fly) = plot(histstuff.centers{1},perflydata(fly,:),'-','color',plotstuff.flycolors(fly,:));
+    % sort
+    %plotstuff.flycolors = plotstuff.flycolors(order,:,:);
+    plotstuff.hindiv = zeros(ndata,nflies);
+    for datai = 1:ndata,
+      %axes(plotstuff.haxes(datai));
+      for fly = 1:nflies,
+        if ~histstuff.istype(datai,fly),
+          continue;
+        end
+        plotstuff.hindiv(datai,fly) = ...
+            plot(histstuff.centers{1},perflydata(fly,:,datai),'-','color',...
+                 plotstuff.flycolors(fly,:,datai));
+      end
     end
   end
-
+  
   % plot mean
-  plotstuff.hmu = plot(histstuff.centers{1},meandata,'ko-','linewidth',2,'markerfacecolor','k','markersize',6);
+  plotstuff.hmu = zeros(1,ndata);
+  for datai = 1:ndata,
+    %axes(plotstuff.haxes(datai));
+    plotstuff.hmu(datai) = plot(histstuff.centers{1},meandata(:,:,datai),'o-',...
+                                'linewidth',2,'markerfacecolor',maincolors(datai,:),'markersize',6,...
+                                'color',maincolors(datai,:));
+  end
   axisalmosttight;
-
+  
   if logplot,
+    ylim = get(plotstuff.haxes,'ylim');
+    ylim(1) = max(ylim(1),epsilon);
+    set(plotstuff.haxes,'ylim',ylim);
     set(plotstuff.haxes,'yscale','log');
   else
     set(plotstuff.haxes,'yscale','linear');
   end
   
-  xlabel(histstuff.propnames{1});
-  ylabel(plotmode);
-
+  xlabel(strrep(histstuff.propnames{1},'_','\_'));
+  ylabel(strrep(plotmode,'_','\_'));
+  legend(plotstuff.hmu,histstuff.dataname{:});
+  
 else
   % two properties
   
@@ -134,35 +204,59 @@ else
   % if we're plotting individuals, compute a good number of rows, columns
   plotstuff.haxes = struct;
   if plotindivs,
+    nindivrow = zeros(1,ndata);
+    nindivcol = zeros(1,ndata);
     pos = get(plotstuff.fig,'position');
     w = pos(3); h = pos(4);
-    nindivcol = max(1,round(sqrt(2*nflies*w/h)));
-    nindivrow = ceil(nflies/nindivcol);
+    for datai = 1:ndata,
+      nfliescurr = nnz(histstuff.istype(datai,:));
+      nindivcol(datai) = max(1,round(sqrt(2*nfliescurr*w/h)));
+      nindivrow(datai) = ceil(nfliescurr/nindivcol);
+    end
   end
   if strcmpi(plotstd,'off') && ~plotindivs,
-    % mean only  
-    plotstuff.haxes.mean = axes;
+    % mean only
+    plotstuff.haxes.mean = zeros(ndata,1);
+    for datai = 1:ndata,
+      plotstuff.haxes.mean(datai) = subplot(ndata,1,datai);
+    end
   elseif ~strcmpi(plotstd,'off') && ~plotindivs,
     % mean, plus and minus std
-    plotstuff.haxes.minus = subplot(1,3,1);
-    plotstuff.haxes.mean = subplot(1,3,2);
-    plotstuff.haxes.plus = subplot(1,3,3);
+    plotstuff.haxes.minus = zeros(ndata,1);
+    plotstuff.haxes.mean = zeros(ndata,1);
+    plotstuff.haxes.plus = zeros(ndata,1);
+    for datai = 1:ndata,
+      plotstuff.haxes.minus(datai) = subplot(ndata,3,sub2ind([3,ndata],1,datai));
+      plotstuff.haxes.mean(datai) = subplot(ndata,3,sub2ind([3,ndata],2,datai));
+      plotstuff.haxes.plus(datai) = subplot(ndata,3,sub2ind([3,ndata],3,datai));
+    end
   elseif strcmpi(plotstd,'off') && plotindivs,
     % mean, indivs
-    plotstuff.haxes.mean = subplot(2,1,1);
-    plotstuff.haxes.indiv = zeros(1,nflies);
-    for i = 1:nflies,
-      plotstuff.haxes.indiv(i) = subplot(nindivrow*2,nindivcol,nindivrow*nindivcol+i);
+    plotstuff.haxes.mean = zeros(ndata,1);
+    plotstuff.haxes.indiv = zeros(ndata,nflies);
+    for datai = 1:ndata,
+      plotstuff.haxes.mean(datai) = subplot(2*(datai-1)+1,1,1);
+      for i = 1:nflies,
+        plotstuff.haxes.indiv(i) = subplot(nindivrow(datai)*2*ndata,...
+                                           nindivcol(datai),...
+                                           nindivrow(datai)*nindivcol(datai)*(2*datai-1)+i);
+      end
     end
   elseif ~strcmpi(plotstd,'off') && plotindivs,
     % mean, plus and minus std, indivs
-    plotstuff.haxes.minus = subplot(2,3,1);
-    plotstuff.haxes.mean = subplot(2,3,2);
-    plotstuff.haxes.plus = subplot(2,3,3);
-    plotstuff.haxes.indiv = zeros(1,nflies);
-    plotstuff.haxes.indiv = zeros(1,nflies);
-    for i = 1:nflies,
-      plotstuff.haxes.indiv(i) = subplot(nindivrow*2,nindivcol,nindivrow*nindivcol+i);
+    plotstuff.haxes.minus = zeros(ndata,1);
+    plotstuff.haxes.mean = zeros(ndata,1);
+    plotstuff.haxes.plus = zeros(ndata,1);
+    plotstuff.haxes.indiv = zeros(ndata,nflies);
+    for datai = 1:ndata,
+      plotstuff.haxes.minus(datai) = subplot(2*ndata,3,2*3*(datai-1)+1);
+      plotstuff.haxes.mean(datai) = subplot(2*ndata,3,2*3*(datai-1)+2);
+      plotstuff.haxes.plus(datai) = subplot(2*ndata,3,2*3*(datai-1)+3);
+      for i = 1:nflies,
+        plotstuff.haxes.indiv(datai,i) = subplot(nindivrow(datai)*2*ndata,...
+                                                 nindivcol(datai),...
+                                                 nindivrow(datai)*nindivcol(datai)*(2*datai-1)+i);
+      end
     end
   end
   
@@ -179,60 +273,85 @@ else
   end
   
   % plot the mean
-  axes(plotstuff.haxes.mean);
   x = [histstuff.centers{2}(1),histstuff.centers{2}(end)];
   y = [histstuff.centers{1}(1),histstuff.centers{1}(end)];
   maxv = max(meandata(:));
   minv = min(meandata(:));
-  plotstuff.him.mean = imagesc(x,y,meandata,[minv,maxv]);
-  xlabel(histstuff.propnames{2});
-  colormap jet;
-  if logplot,
-    title(sprintf('Log(%s)',plotmode));
-  else
-    title(plotmode);
+  for datai = 1:ndata,
+    axes(plotstuff.haxes.mean(datai));
+    plotstuff.him.mean = imagesc(x,y,meandata(:,:,:,datai),[minv,maxv]);
+    if datai == ndata,
+      xlabel(strrep(histstuff.propnames{2},'_','\_'));
+    end
+    colormap jet;
+    if logplot,
+      if ndata > 1,
+        title(strrep(sprintf('Log(%s), %s',plotmode,histstuff.dataname{datai}),'_','\_'));
+      else
+        title(strrep(sprintf('Log(%s), %s',plotmode,histstuff.dataname{datai}),'_','\_'));
+      end
+    else
+      if ndata > 1,
+        title(strrep(sprintf('%s, %s',plotmode,histstuff.dataname{datai}),'_','\_'));
+      else
+        title(strrep(plotmode,'_','\_'));
+      end
+    end
   end
   if ~strcmpi(plotstd,'off'),
     minv = min(minv,min(below(:)));
     maxv = max(maxv,max(above(:)));
-    axes(plotstuff.haxes.minus);
-    plotstuff.him.minus = imagesc(x,y,below,[minv,maxv]);
-    plotstuff.hcolorbar = colorbar('east');
-    ylabel(histstuff.propnames{1});
-    if logplot,
-      title(sprintf('Log(-1 %s)',plotstd));
-    else
-      title(['-1 ',plotstd]);
-    end
-    axes(plotstuff.haxes.plus);
-    plotstuff.him.plus = imagesc(x,y,above,[minv,maxv]);
-    set(plotstuff.haxes.mean,'clim',[minv,maxv]);
-    if logplot,
-      title(sprintf('Log(-1 %s)',plotstd));
-    else
-      title(['+1 ',plotstd]);
+    for datai = 1:ndata,
+      axes(plotstuff.haxes.minus(datai));
+      plotstuff.him.minus(datai) = imagesc(x,y,below(:,:,:,datai),[minv,maxv]);
+      if datai == 1,
+        plotstuff.hcolorbar = colorbar('east');
+      end
+      if datai == ndata,
+        ylabel(strrep(histstuff.propnames{1},'_','\_'));
+      end
+      if datai == 1,
+        if logplot,
+          title(strrep(sprintf('Log(-1 %s)',plotstd),'_','\_'));
+        else
+          title(strrep(['-1 ',plotstd],'_','\_'));
+        end
+      end
+      axes(plotstuff.haxes.plus(datai));
+      plotstuff.him.plus = imagesc(x,y,above(:,:,datai),[minv,maxv]);
+      set(plotstuff.haxes.mean(datai),'clim',[minv,maxv]);
+      if datai == 1,
+        if logplot,
+          title(strrep(sprintf('Log(-1 %s)',plotstd),'_','\_'));
+        else
+          title(strrep(['+1 ',plotstd],'_','\_'));
+        end
+      end
     end
   else
-    ylabel(histstuff.propnames{1});
+    ylabel(strrep(histstuff.propnames{1},'_','\_'));
     plotstuff.hcolorbar = colorbar;
   end
   set(plotstuff.hcolorbar,'edgecolor','w');
   if plotindivs,
-    for i = 1:nflies,
-      axes(plotstuff.haxes.indiv(i));
-      imagesc(x,y,perflydata(:,:,i),[minv,maxv]);
-      title(sprintf('Fly %d',i));
-      axis off;
+    for datai = 1:ndata,
+      for i = 1:nflies,
+        axes(plotstuff.haxes.indiv(datai,i));
+        imagesc(x,y,perflydata(:,:,i),[minv,maxv]);
+        title(sprintf('Fly %d',i));
+        axis off;
+      end
     end
   end
   % link the color maps of all the axes
   allaxes = struct2cell(plotstuff.haxes);
   allaxes = [allaxes{:}];
-  plotstuff.hlink = linkprop(allaxes,'clim');
+  plotstuff.hlink = linkprop(allaxes(:)','clim');
   
   % add a button for changing colormap
+  tmp = get(plotstuff.fig,'position');
   plotstuff.hcolormapbutton = uicontrol('style','pushbutton','string',...
-    'Edit Colormap...','position',[785     7   107    26],...
+    'Edit Colormap...','position',[tmp(3)-128     7   107    26],...
     'callback',@(hObject, eventdata, handles) colormapeditor);
   
 end

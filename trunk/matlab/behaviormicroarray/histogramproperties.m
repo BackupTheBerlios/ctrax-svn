@@ -22,7 +22,7 @@ function varargout = histogramproperties(varargin)
 
 % Edit the above text to modify the response to help histogramproperties
 
-% Last Modified by GUIDE v2.5 22-Dec-2008 09:10:09
+% Last Modified by GUIDE v2.5 22-Dec-2008 22:25:04
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -78,14 +78,25 @@ guidata(hObject, handles);
 function handles = initializeparams(handles,params)
 
 handles.allpropnames = fieldnames(handles.trx);
-ignorefns = {'x','y','a','b','id','moviename','matname','annname','firstframe',...
-  'arena','f2i','nframes','endframe','dx','dy','v','fps','pxpermm'};
+ignoreidx = [];
+for i = 1:length(handles.allpropnames),
+  for j = 1:length(handles.trx),
+    expectedlength = handles.trx(j).nframes-1;
+    if prod(size(handles.trx(j).(handles.allpropnames{i}))) < expectedlength,
+      ignoreidx(end+1) = i;
+      break;
+    end
+  end
+end
+handles.allpropnames(ignoreidx) = [];
+ignorefns = {'x','y','a','b'};
 handles.allpropnames = setdiff(handles.allpropnames,ignorefns);
 handles.allpropnames{end+1} = 'duration';
 
 handles.paramsvars = {'nprops','isbehavior','nbins1','nbins2','lb1','ub1',...
                     'lb2','ub2','segfile','averagingidx','doinvert','prop1name','prop2name',...
-                    'transform1','transform2','rangeunits1','rangeunits2'};
+                    'transform1','transform2','rangeunits1','rangeunits2','flytype',...
+                    'dataname','savename'};
 
 handles.defaultsfile = which('histogramproperties');
 handles.defaultsfile = strrep(handles.defaultsfile,'histogramproperties.m','.histogrampropertiesrc.mat');
@@ -101,13 +112,36 @@ handles.lb1 = struct;
 handles.ub1 = struct;
 handles.lb2 = struct;
 handles.ub2 = struct;
-handles.segfile = '';
+handles.segfile = {''};
 handles.averagingidx = 1;
 handles.doinvert = false;
 handles.transform1 = 'None (Identity)';
 handles.transform2 = 'None (Identity)';
 handles.rangeunits1 = struct;
 handles.rangeunits2 = struct;
+handles.savename = '';
+
+% get names of fly types
+if isfield(handles.trx,'type') && isfield(handles.trx,'sex'),
+  for i = 1:length(handles.trx),
+    handles.trx(i).type = sprintf('%s, %s',handles.trx(i).type,handles.trx(i).sex);
+  end
+elseif isfield(handles.trx,'sex') && ~isfield(handles.trx,'type'),
+  for i = 1:length(handles.trx),
+    handles.trx(i).type = handles.trx(i).sex;
+  end
+end
+if isfield(handles.trx,'type'),
+  handles.alltypes = unique({handles.trx.type});
+else
+  handles.alltypes = {};
+end
+handles.alltypes = [{'All'},handles.alltypes];
+
+% initialize fly type to be all
+handles.flytype = {{'All'}};
+handles.dataname = {'Data 1'};
+handles.datashow = 1;
 
 % read last-used values
 if exist(handles.defaultsfile,'file'),
@@ -150,28 +184,83 @@ for i = 1:length(handles.paramsvars),
   end
 end
 
-% set isbehavior to false if we don't have a file yet
-if ~exist(handles.segfile,'file'),
-  if ~isempty(handles.segfile),
-    fprintf('Default seg file >%s< does not exist\n',handles.segfile);
+% check fly type to make sure it is allowed
+for i = 1:length(handles.flytype),
+  badidx = [];
+  badidx = ~ismember(handles.flytype{i},handles.alltypes);
+  handles.flytype{i}(badidx) = [];
+  if isempty(handles.flytype{i}) || ismember('All',handles.flytype{i}),
+    handles.flytype{i} = {'All'};
   end
-  handles.isbehavior = false;
 end
 
-% load in the behavior file
-if handles.isbehavior,
-   segcurr = load(handles.segfile);
-   % check seg variable
-  if ~isfield(segcurr,'seg') || length(handles.trx) ~= length(segcurr.seg),
-    fprintf('Could not parse default seg file %s\n',handles.segfile);
-    handles.isbehavior = false;
-  else
-    % store seg & compute duration
-    for i = 1:length(handles.trx),
-      handles.trx(i).seg = segcurr.seg(i);
-      handles.trx(i).duration = (segcurr.seg(i).t2 - segcurr.seg(i).t1 + 1)/handles.trx(i).fps;
+% set isbehavior to false if we don't have a file yet
+for i = 1:length(handles.segfile),
+  if ~exist(handles.segfile{i},'file'),
+    if ~isempty(handles.segfile{i}),
+      fprintf('Default seg file >%s< does not exist\n',handles.segfile{i});
+    end
+    handles.isbehavior(i) = false;
+  end
+end
+
+% check for and remove duplicate data types
+remove = [];
+for i = 1:length(handles.segfile),
+  for j = i+1:length(handles.segfile),
+    if (handles.isbehavior(i) == handles.isbehavior(j)) && ...
+       (~handles.isbehavior(i) || strcmpi(handles.segfile{i},handles.segfile{j})) && ...
+       (handles.averagingidx(i) == handles.averagingidx(j)) && ...
+       (handles.doinvert(i) == handles.doinvert(j)),
+      % check flytype
+      tmp1 = handles.flytype{i};
+      tmp2 = handles.flytype{j};
+      if ismember('All',tmp1),
+        tmp1 = union(tmp1,setdiff(handles.alltypes,{'All'}));
+      end
+      if ismember('All',tmp2),
+        tmp2 = union(tmp2,setdiff(handles.alltypes,{'All'}));
+      end
+      issame = isempty(setxor(tmp1,tmp2));
+      if issame, 
+        remove(end+1) = j;
+        fprintf('Fly types for %s = ',handles.dataname{i});
+        fprintf('%s ',handles.flytype{i}{:});
+        fprintf('\nFly types for %s = ',handles.dataname{j});
+        fprintf('%s ',handles.flytype{j}{:});
+        fprintf('Duplicate, removing %s\n',handles.dataname{j});
+      end
     end
   end
+end
+
+handles.segfile(remove) = [];
+handles.isbehavior(remove) = [];
+handles.averagingidx(remove) = [];
+handles.doinvert(remove) = [];
+handles.flytype(remove) = [];
+handles.dataname(remove) = [];
+
+handles.ndata = length(handles.dataname);
+
+% load in the behavior file
+for d = 1:handles.ndata,
+
+  if handles.isbehavior(d),
+    segcurr = load(handles.segfile{d});
+    % check seg variable
+    if ~isfield(segcurr,'seg') || length(handles.trx) ~= length(segcurr.seg),
+      fprintf('Could not parse default seg file %s for %s\n',handles.segfile{d},handles.dataname{d});
+      handles.isbehavior(d) = false;
+    else
+      % store seg & compute duration
+      for i = 1:length(handles.trx),
+        handles.trx(i).seg{d} = segcurr.seg(i);
+        handles.trx(i).duration{d} = (segcurr.seg(i).t2 - segcurr.seg(i).t1 + 1)/handles.trx(i).fps;
+      end
+    end
+  end
+  
 end
 
 function handles = initializegui(handles)
@@ -216,25 +305,54 @@ set(handles.prop2transformmenu,'value',i);
 % initialize range
 handles = setrange(handles);
 
+% data box
+set(handles.flytypebox,'string',handles.alltypes);
+set(handles.datamenu,'string',[handles.dataname,{'Add new data'}]);
+handles = initializedatabox(handles);
+
+% data output
+handles.histstuff = struct;
+
+function handles = initializedatabox(handles)
+
 % whether we only want to count during a behavior
-set(handles.behavior1box,'value',handles.isbehavior);
-if handles.isbehavior,
+set(handles.behavior1box,'value',handles.isbehavior(handles.datashow));
+if handles.isbehavior(handles.datashow),
   set(handles.behavior1panel,'visible','on');
 else
   set(handles.behavior1panel,'visible','off');
 end
 
 % seg name
-set(handles.segfile1edit,'string',handles.segfile);
+set(handles.segfile1edit,'string',handles.segfile{handles.datashow});
 
 % type of averaging
-set(handles.averaging1menu,'value',handles.averagingidx);
+set(handles.averaging1menu,'value',handles.averagingidx(handles.datashow));
 
 % invert segmentation
-set(handles.invertbehavior1,'value',handles.doinvert);
+set(handles.invertbehavior1,'value',handles.doinvert(handles.datashow));
 
-% data output
-handles.histstuff = struct;
+% fly type
+v = [];
+for i = 1:length(handles.flytype{handles.datashow}),
+  j = find(strcmpi(handles.flytype{handles.datashow}{i},handles.alltypes));
+  v = [v,j];
+end
+if isempty(v),
+  v = 1;
+end
+set(handles.flytypebox,'value',v);
+
+% data names
+set(handles.datamenu,'value',handles.datashow);
+set(handles.datanameedit,'string',handles.dataname{handles.datashow});
+
+% can't delete only data line
+if handles.ndata == 1,
+  set(handles.deletebutton,'enable','off');
+else
+  set(handles.deletebutton,'enable','on');
+end
 
 function handles = setrange(handles)
 
@@ -321,9 +439,9 @@ function prop1menu_Callback(hObject, eventdata, handles)
 %        contents{get(hObject,'Value')} returns selected item from
 %        prop1menu
 tmp = get(hObject,'Value');
-if strcmpi(handles.allpropnames{tmp},'duration') && ~handles.isbehavior,
+if strcmpi(handles.allpropnames{tmp},'duration') && ~all(handles.isbehavior),
   set(hObject,'value',handles.prop1idx);
-  msgbox('Duration can only be selected if "During Behavior" is selected');
+  msgbox('Duration can only be selected if "During Behavior" is selected for all data');
 else
   handles.prop1idx = tmp;
 end
@@ -479,18 +597,16 @@ function behavior1box_Callback(hObject, eventdata, handles)
 v = get(hObject,'Value');
 if v,
   % get seg file
-  if ~exist(handles.segfile,'file'),
-    [handles,v] = getsegfile(handles);
-  end
+  [handles,v] = getsegfile(handles);
   if v,
     set(handles.behavior1panel,'visible','on');
-    handles.isbehavior = true;
+    handles.isbehavior(handles.datashow) = true;
   else
     set(hObject,'value',0);
   end
 else
   set(handles.behavior1panel,'visible','off');
-  handles.isbehavior = false;
+  handles.isbehavior(handles.datashow) = false;
 end
 guidata(hObject,handles);
 
@@ -498,11 +614,15 @@ function [handles,issegfile] = getsegfile(handles)
 
 issegfile = false;
 while true,
-  [matname,matpath] = uigetfile('.mat','Choose segmentation file',handles.segfile);
-  if isnumeric(matname) && matname == 0,
-    return;
+  if exist(handles.segfile{handles.datashow},'file'),
+    matname = handles.segfile{handles.datashow};
+  else
+    [matname,matpath] = uigetfile('.mat','Choose segmentation file',handles.segfile{handles.datashow});
+    if isnumeric(matname) && matname == 0,
+      return;
+    end
+    matname = [matpath,matname];
   end
-  matname = [matpath,matname];
   if ~exist(matname,'file'),
     msgbox(sprintf('File %s does not exist',matname));
     continue;
@@ -517,15 +637,16 @@ while true,
       length(handles.trx),length(segcurr.seg)));
     continue;
   end
-  handles.segfile = matname;
+  handles.segfile{handles.datashow} = matname;
   break;
 end
 issegfile = true;
 for i = 1:length(handles.trx),
-  handles.trx(i).seg = segcurr.seg(i);
-  handles.trx(i).duration = (segcurr.seg(i).t2 - segcurr.seg(i).t1 + 1)/handles.trx(i).fps;
+  handles.trx(i).seg{handles.datashow} = segcurr.seg(i);
+  handles.trx(i).duration{handles.datashow} = ...
+      (segcurr.seg(i).t2 - segcurr.seg(i).t1 + 1)/handles.trx(i).fps;
 end
-set(handles.segfile1edit,'string',handles.segfile);  
+set(handles.segfile1edit,'string',handles.segfile{handles.datashow});  
 
 function segfile1edit_Callback(hObject, eventdata, handles)
 % hObject    handle to segfile1edit (see GCBO)
@@ -535,7 +656,7 @@ function segfile1edit_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of segfile1edit as text
 %        str2double(get(hObject,'String')) returns contents of segfile1edit as a double
 [handles,issegfile] = getsegfile(handles);
-set(handles.segfile1edit,'string',handles.segfile);
+set(handles.segfile1edit,'string',handles.segfile{handles.datashow});
 guidata(hObject,handles);
 
 % --- Executes during object creation, after setting all properties.
@@ -559,7 +680,7 @@ function averaging1menu_Callback(hObject, eventdata, handles)
 
 % Hints: contents = get(hObject,'String') returns averaging1menu contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from averaging1menu
-handles.averagingidx = get(hObject,'Value');
+handles.averagingidx(handles.datashow) = get(hObject,'Value');
 guidata(hObject,handles);
 
 % --- Executes during object creation, after setting all properties.
@@ -738,9 +859,6 @@ function updatebutton_Callback(hObject, eventdata, handles)
 
 % compute behavior interval averages if necessary
 
-nflies = length(handles.trx);
-handles.x = cell(1,nflies);
-
 % properties we're histogramming
 props = cell(1,handles.nprops);
 props{1} = handles.allpropnames{handles.prop1idx};
@@ -797,15 +915,24 @@ if handles.nprops == 2,
 end
 
 avprops = get(handles.averaging1menu,'string');
-if handles.isbehavior,
-  averaging = avprops{handles.averagingidx};
-else
-  averaging = '';
+averaging = cell(1,handles.ndata);
+for i = 1:handles.ndata,
+  if handles.isbehavior(i),
+    averaging{i} = avprops{handles.averagingidx(i)};
+  else
+    averaging{i} = '';
+  end
 end
-[handles.data,handles.histstuff] = extractdata(handles.trx,props,nbins,lb,ub,transforms,handles.isbehavior,averaging,handles.doinvert);
+flytype = handles.flytype;
+for i = 1:handles.ndata,
+  if ismember('All',handles.flytype{i}),
+    flytype{i} = setdiff(handles.alltypes,{'All'});
+  end
+end
+[handles.data,handles.histstuff] = extractdata(handles.trx,props,nbins,lb,ub,transforms,handles.isbehavior,averaging,handles.doinvert,flytype,handles.dataname);
 
 if ~isfield(handles,'plotstuff'),
-  handles.plotstuff.fig = figure;
+  handles.plotstuff = struct;
 end
 % get plot mode
 contents = get(handles.plotstatisticmenu,'string');
@@ -826,6 +953,19 @@ function exportbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+fprintf('Enter name of mat file to save histogrammed data to.\n');
+[savename,savepath] = uiputfile('*.mat','Save histogrammed results',handles.savename);
+handles.savename = [savepath,savename];
+if ~isfield(handles,'histstuff') || isempty(fieldnames(handles.histstuff)),
+  guidata(hObject,handles);
+  updatebutton_Callback(hObject, eventdata, handles);
+  handles = guidata(hObject);
+end
+tmp = handles.histstuff;
+save(handles.savename,'-struct','tmp');
+handles.prop2name = handles.allpropnames{handles.prop2idx};
+handles.prop1name = handles.allpropnames{handles.prop1idx};
+save(handles.savename,'-append','-struct','handles',handles.paramsvars{:});
 
 % --- Executes on button press in onepropbutton.
 function onepropbutton_Callback(hObject, eventdata, handles)
@@ -877,7 +1017,7 @@ function invertbehavior1_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of invertbehavior1
 
-handles.doinvert = get(hObject,'Value');
+handles.doinvert(handles.datashow) = get(hObject,'Value');
 guidata(hObject,handles);
 
 % --- Executes on selection change in plotstatisticmenu.
@@ -1174,6 +1314,133 @@ function rangeunits2menu_CreateFcn(hObject, eventdata, handles)
 % handles    empty - handles not created until after all CreateFcns called
 
 % Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in datamenu.
+function datamenu_Callback(hObject, eventdata, handles)
+% hObject    handle to datamenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = get(hObject,'String') returns datamenu contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from datamenu
+
+olddatashow = handles.datashow;
+handles.datashow = get(hObject,'Value');
+if handles.datashow > handles.ndata,
+  newdata = sprintf('Data %d',handles.datashow);
+  handles.dataname = [handles.dataname,{newdata}];
+  set(handles.datamenu,'string',[handles.dataname,{'Add new data'}]);
+  handles.ndata = handles.ndata + 1;
+  handles.isbehavior(handles.ndata) = false;
+  handles.doinvert(handles.ndata) = false;
+  handles.averagingidx(handles.ndata) = handles.averagingidx(olddatashow);
+  handles.segfile{handles.ndata} = handles.segfile{olddatashow};
+  handles.flytype{handles.ndata} = {'All'};
+end
+
+handles = initializedatabox(handles);
+
+guidata(hObject,handles);
+
+% --- Executes during object creation, after setting all properties.
+function datamenu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to datamenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in flytypebox.
+function flytypebox_Callback(hObject, eventdata, handles)
+% hObject    handle to flytypebox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = get(hObject,'String') returns flytypebox contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from flytypebox
+v = get(hObject,'value');
+newtypes = cell(1,length(v));
+for i = 1:length(v),
+  newtypes{i} = handles.alltypes{v(i)};
+end
+handles.flytype{handles.datashow} = newtypes;
+guidata(hObject,handles);
+
+% --- Executes during object creation, after setting all properties.
+function flytypebox_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to flytypebox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: listbox controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in deletebutton.
+function deletebutton_Callback(hObject, eventdata, handles)
+% hObject    handle to deletebutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if handles.ndata == 1,
+  return;
+end
+
+handles.dataname(handles.datashow) = [];  
+set(handles.datamenu,'string',[handles.dataname,{'Add new data'}]);
+handles.isbehavior(handles.datashow) = [];
+handles.doinvert(handles.datashow) = [];
+handles.averagingidx(handles.datashow) = [];
+handles.segfile(handles.datashow) = [];
+handles.flytype(handles.ndata) = [];
+handles.ndata = handles.ndata - 1;
+if handles.datashow > 1,
+  handles.datashow = handles.datashow - 1;
+end
+handles = initializedatabox(handles);
+guidata(hObject,handles);
+
+
+function datanameedit_Callback(hObject, eventdata, handles)
+% hObject    handle to datanameedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of datanameedit as text
+%        str2double(get(hObject,'String')) returns contents of datanameedit as a double
+newname = get(hObject,'String');
+if strcmpi(newname,handles.dataname{handles.datashow}),
+  return;
+end
+if ismember(newname,handles.dataname),
+  msgbox(sprintf('Data name %s already chosen, please choose a unique name',newname));
+  set(hObject,'string',handles.dataname{handles.datashow});
+  return;
+end
+handles.dataname{handles.datashow} = newname;
+set(handles.datamenu,'string',[handles.dataname,{'Add new data'}]);
+guidata(hObject,handles);
+
+% --- Executes during object creation, after setting all properties.
+function datanameedit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to datanameedit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
