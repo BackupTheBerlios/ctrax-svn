@@ -4,6 +4,8 @@ if ~exist('debug','var')
 end
 N = 100;
 
+% note that if dtheta = 0, this will produce 0
+
 cost = cos(trk.theta);
 sint = sin(trk.theta);
 dacost = 2*diff(trk.a.*cost);
@@ -20,6 +22,8 @@ Minv = reshape(Minv,[4,trk.nframes-1]);
 x = [ diff(trk.x) ; diff(trk.y) ];
 rfrac = -[Minv(1,:) .* x(1,:) + Minv(3,:) .* x(2,:);...
   Minv(2,:) .* x(1,:) + Minv(4,:) .* x(2,:)];
+% when no rotation, set center of rotation to middle of fly by default
+rfrac(isnan(rfrac)) = 0;
 rfrac0 = rfrac;
 isoutofbounds = sum(rfrac.^2,1) > 1;
 psi = linspace(0,2*pi,N)';

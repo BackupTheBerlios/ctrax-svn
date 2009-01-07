@@ -31,7 +31,7 @@ while true,
   movienames{end+1} = lastmoviename;
   moviepaths{end+1} = lastmoviepath;
   lastmatname = [lastmoviepath,strrep(lastmoviename,movieexts{filterindex}(2:end),'.mat')];
-  [lastmatname,lastmatpath] = uigetfile('*.mat',sprintf('Choose mat file for movie %s',lastmoviename),lastmatname);
+  [lastmatname,lastmatpath] = uigetfile('*.mat',sprintf('Choose per-frame stats mat file for movie %s',lastmoviename),lastmatname);
   if isnumeric(lastmatname) && lastmatname == 0,
     break;
   end
@@ -77,31 +77,24 @@ for i = 1:nmovies,
   fprintf('Checking file %s\n',matnames{i});
   
   if ~isfield(datacurr,'trx'),
-    if isfield(datacurr,'ntargets'),
-      [datacurr.trx,matnames{i}] = cleanup_ctrax_data(matnames{i},movienames{i},datacurr,ds);
+    b = questdlg(sprintf('Could not load data from %s, no trx variable.',matnames{i}),'Data error','Skip','Abort','Skip');
+    if strcmpi(b,'abort'),
+      return;
     else
-      b = questdlg(sprintf('Could not load data from %s.',matnames{i}),'Data error','Skip','Abort','Skip');
-      if strcmpi(b,'abort'),
-        return;
-      else
-        skipped(end+1) = i;
-        continue;
-      end
+      skipped(end+1) = i;
+      continue;
     end
   end
   
   % convert units if necessary
   if ~isfield(datacurr.trx,'fps') || ~isfield(datacurr.trx,'pxpermm'),
-    savedsettingsfile0 = savedsettingsfile;
-    ISAUTOMATIC = true;
-    ISMATNAME = true;
-    matname = matnames{i};
-    ISMOVIENAME = true;
-    moviename = movienames{i};
-    convert_units;
-    matnames{i} = savename;
-    savedsettingsfile = savedsettingsfile0;
-    datacurr = load(matnames{i});
+    b = questdlg(sprintf('Could not load data from %s, no trx.fps or trx.pxpermm variables.',matnames{i}),'Data error','Skip','Abort','Skip');
+    if strcmpi(b,'abort'),
+      return;
+    else
+      skipped(end+1) = i;
+      continue;
+    end
   end
   
   nflies1 = length(datacurr.trx);
@@ -128,8 +121,6 @@ if ~isempty(skipped),
   movienames(skipped) = [];
   matnames(skipped) = [];
 end
-
-
 
 %% choose flies to label, number of frames to show
 
@@ -217,7 +208,8 @@ fprintf('and select as input %s.\n\n',labelmatname);
 clear labeledbehavior;
 for moviei = 1:nmovies,
   load(matnames{moviei});
-  trx = process_data(trx,matnames{moviei},movienames{moviei});
+  % assuming already processed now
+  %trx = process_data(trx,matnames{moviei},movienames{moviei});
   for flyi = 1:length(fliestolabel{moviei}),
     fly = fliestolabel{moviei}(flyi);
     t0 = t0tolabel{moviei}(flyi);

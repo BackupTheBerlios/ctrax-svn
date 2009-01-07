@@ -158,4 +158,5 @@ save('-append',savedsettingsfile,'docomputeclosest');
 
 %% save results
 
-save(savename,'trx','ppm','fps');
+fprintf('Saving results to file %s\n',savename);
+save(savename,'trx');

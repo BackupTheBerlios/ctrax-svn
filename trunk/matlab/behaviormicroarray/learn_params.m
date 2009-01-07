@@ -71,8 +71,14 @@ for i = 1:nmovies,
       labeledbehavior{i}(fly).starts(end) = [];
       labeledbehavior{i}(fly).ends(end) = [];
     end
-    trk = process_data(trx(fly),matnames{i},movienames{i});
-    trk = process_data_crabwalks(trk);
+    % assuming this is already done
+    trk = trx(fly);
+    trk.matname = matnames{i};
+    trk.moviename = movienames{i};
+    % sometimes weird things happen with this member function
+    trk.f2i = @(f) f - trk.firstframe + 1;
+    %trk = process_data(trx(fly),matnames{i},movienames{i});
+    %trk = process_data_crabwalks(trk);
     trk = GetPartOfTrack(trk,t0,t1);
     if ~exist('labeledtrx','var'),
       labeledtrx = trk;
@@ -115,6 +121,9 @@ end
 paramsmatname = sprintf('learnedparams_%s.mat',ds);
 paramsmatname = [labelmatpath,paramsmatname];
 [paramsmatname,paramsmatpath] = uiputfile('.mat','Choose file to save parameters to',paramsmatname);
+if isnumeric(paramsmatname) && paramsmatname == 0,
+  return;
+end
 
 %% choose parameters
 
@@ -126,13 +135,16 @@ fns = fieldnames(labeledtrx);
 if exist('params','var'),
   
   % convert radians to degrees
-  anglenames = {'angle','theta','phi','yaw'};
   for i = 2:2:length(params.options),
     for j = 1:2:length(params.options{i}),
-      for k = 1:length(anglenames),
-        if ~isempty(strfind(params.options{i}{j},anglenames{k})),
-          %fprintf('convert %s\n',params.options{i}{j});
-          params.options{i}{j+1} = params.options{i}{j+1}*180/pi;
+      if isfield(trx(1).units,params.options{i}{j}), 
+        n = nnz(strcmpi('rad',trx(1).units.(params.options{i}{j}).num));
+        if n > 1,
+          params.options{i}{j+1} = params.options{i}{j+1}*(180/pi)^n;
+        end
+        n = nnz(strcmpi('rad',trx(1).units.(params.options{i}{j}).den));
+        if n > 1,
+          params.options{i}{j+1} = params.options{i}{j+1}/(180/pi)^n;
         end
       end
     end
@@ -143,13 +155,16 @@ else
 end
 
 % convert degrees to radians
-anglenames = {'angle','theta','phi','yaw'};
 for i = 2:2:length(params.options),
   for j = 1:2:length(params.options{i}),
-    for k = 1:length(anglenames),
-      if ~isempty(strfind(params.options{i}{j},anglenames{k})),
-        %fprintf('convert %s\n',params.options{i}{j});
-        params.options{i}{j+1} = params.options{i}{j+1}*pi/180;
+    if isfield(trx(1).units,params.options{i}{j}), 
+      n = nnz(strcmpi('rad',trx(1).units.(params.options{i}{j}).num));
+      if n > 1,
+        params.options{i}{j+1} = params.options{i}{j+1}*(180/pi)^n;
+      end
+      n = nnz(strcmpi('rad',trx(1).units.(params.options{i}{j}).den));
+      if n > 1,
+        params.options{i}{j+1} = params.options{i}{j+1}/(180/pi)^n;
       end
     end
   end

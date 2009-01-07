@@ -21,16 +21,27 @@ nframes = max(0,t1 - t0 + 1);
 
 % allocate
 trk.dcenter = nan(nflies,nframes);
+trk.units.dcenter = parseunits('mm');
 trk.dnose2ell = nan(nflies,nframes);
+trk.units.dnose2ell = parseunits('mm');
 trk.dell2nose = nan(nflies,nframes);
+trk.units.dell2nose = parseunits('mm');
 trk.magveldiff = nan(nflies,nframes);
+trk.units.magveldiff = parseunits('mm/s');
 trk.veltoward = nan(nflies,nframes);
+trk.units.veltoward = parseunits('mm/s');
 trk.thetadiff = nan(nflies,nframes);
+trk.units.thetadiff = parseunits('rad');
 trk.phidiff = nan(nflies,nframes);
+trk.units.phidiff = parseunits('rad');
 trk.minvelmag = nan(nflies,nframes);
+trk.units.minvelmag = parseunits('mm/s');
 trk.maxvelmag = nan(nflies,nframes);
+trk.units.maxvelmag = parseunits('mm/s');
 trk.anglefrom2to1 = nan(nflies,nframes);
+trk.units.anglefrom2to1 = parseunits('rad');
 trk.anglesub = nan(nflies,nframes);
+trk.units.anglesub = parseunits('rad');
 
 % position of nose
 xnose = trx(fly1).x + 2*trx(fly1).a.*cos(trx(fly1).theta);
@@ -127,8 +138,11 @@ for fly2 = 1:nflies,
 end
 
 trk.absthetadiff = abs(trk.thetadiff);
+trk.units.absthetadiff = parseunits('rad');
 trk.absphidiff = abs(trk.phidiff);
+trk.units.absphidiff = parseunits('rad');
 trk.absanglefrom2to1 = abs(trk.anglefrom2to1);
+trk.units.absanglefrom2to1 = parseunits('rad');
 
 trk.dcenter = trk.dcenter / trk.pxpermm;
 trk.dnose2ell = trk.dnose2ell / trk.pxpermm;

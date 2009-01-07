@@ -31,7 +31,7 @@ while true,
   movienames{end+1} = lastmoviename;
   moviepaths{end+1} = lastmoviepath;
   lastmatname = [lastmoviepath,strrep(lastmoviename,movieexts{filterindex}(2:end),'.mat')];
-  [lastmatname,lastmatpath] = uigetfile('*.mat',sprintf('Choose mat file for movie %s',lastmoviename),lastmatname);
+  [lastmatname,lastmatpath] = uigetfile('*.mat',sprintf('Choose per-frame stats mat file for movie %s',lastmoviename),lastmatname);
   if isnumeric(lastmatname) && lastmatname == 0,
     break;
   end
@@ -253,7 +253,8 @@ fprintf('and select as input %s.\n\n',labelmatname);
 clear labeledbehavior;
 for moviei = 1:nmovies,
   load(matnames{moviei});
-  trx = process_data(trx,matnames{moviei},movienames{moviei});
+  % assuming already processed now
+  %trx = process_data(trx,matnames{moviei},movienames{moviei});
   trx = mindist2fly(trx);
   for flyi = 1:length(fliestolabel{moviei}),
     fly = fliestolabel{moviei}(flyi);

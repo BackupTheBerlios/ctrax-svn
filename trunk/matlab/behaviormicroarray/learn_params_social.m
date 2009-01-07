@@ -47,8 +47,9 @@ ends = {};
 load(labelmatname);
 for i = 1:nmovies,
   load(matnames{i});
-  trx = process_data(trx,matnames{i},movienames{i});
-  trx = process_data_crabwalks(trx);
+  % assume this has already been done
+  %trx = process_data(trx,matnames{i},movienames{i});
+  %trx = process_data_crabwalks(trx);
   nflies = length(trx);
   for j = 1:length(fliestolabel{i}),
     fly = fliestolabel{i}(j);
@@ -171,13 +172,16 @@ fns = fieldnames(labeledtrx);
 if exist('params','var'),
   
   % convert radians to degrees
-  anglenames = {'angle','theta','phi','yaw'};
   for i = 2:2:length(params.options),
     for j = 1:2:length(params.options{i}),
-      for k = 1:length(anglenames),
-        if ~isempty(strfind(params.options{i}{j},anglenames{k})),
-          %fprintf('convert %s\n',params.options{i}{j});
-          params.options{i}{j+1} = params.options{i}{j+1}*180/pi;
+      if isfield(trx(1).units,params.options{i}{j}), 
+        n = nnz(strcmpi('rad',trx(1).units.(params.options{i}{j}).num));
+        if n > 1,
+          params.options{i}{j+1} = params.options{i}{j+1}*(180/pi)^n;
+        end
+        n = nnz(strcmpi('rad',trx(1).units.(params.options{i}{j}).den));
+        if n > 1,
+          params.options{i}{j+1} = params.options{i}{j+1}/(180/pi)^n;
         end
       end
     end
@@ -188,13 +192,16 @@ else
 end
 
 % convert degrees to radians
-anglenames = {'angle','theta','phi','yaw'};
 for i = 2:2:length(params.options),
   for j = 1:2:length(params.options{i}),
-    for k = 1:length(anglenames),
-      if ~isempty(strfind(params.options{i}{j},anglenames{k})),
-        %fprintf('convert %s\n',params.options{i}{j});
-        params.options{i}{j+1} = params.options{i}{j+1}*pi/180;
+    if isfield(trx(1).units,params.options{i}{j}), 
+      n = nnz(strcmpi('rad',trx(1).units.(params.options{i}{j}).num));
+      if n > 1,
+        params.options{i}{j+1} = params.options{i}{j+1}*(180/pi)^n;
+      end
+      n = nnz(strcmpi('rad',trx(1).units.(params.options{i}{j}).den));
+      if n > 1,
+        params.options{i}{j+1} = params.options{i}{j+1}/(180/pi)^n;
       end
     end
   end

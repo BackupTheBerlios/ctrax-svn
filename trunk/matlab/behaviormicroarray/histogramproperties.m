@@ -365,7 +365,8 @@ if ~isfield(handles.lb1,fn1),
   handles.rangeunits1.(fn1) = 'Percent';
 end
 
-if isanglename(fn) && strcmpi(handles.rangeunits1.(fn1),'units'),
+if any(strcmpi(handles.trx(1).units.(fn).num,'rad')) && ...
+      strcmpi(handles.rangeunits1.(fn1),'units'),
   if strcmpi(handles.transform1,'log absolute value'),
     lb = handles.lb1.(fn1) + log(180/pi);
     ub = handles.ub1.(fn1) + log(180/pi);
@@ -393,7 +394,8 @@ if ~isfield(handles.lb2,fn1),
   handles.rangeunits2.(fn1) = 'Percent';
 end
 
-if isanglename(fn) && strcmpi(handles.rangeunits2.(fn1),'units'),
+if any(strcmpi(handles.trx(1).units.(fn).num,'rad')) && ... 
+      strcmpi(handles.rangeunits2.(fn1),'units'),
    if strcmpi(handles.transform2,'log absolute value'),
     lb = handles.lb2.(fn1) + log(180/pi);
     ub = handles.ub2.(fn1) + log(180/pi);
@@ -507,7 +509,8 @@ if isnan(tmp),
   set(hObject,'string',num2str(handles.lb1.(fn)));
 else
   % convert back to radians
-  if isanglename(fntrx) && strcmpi(handles.rangeunits1.(fn),'units'),
+  if any(strcmpi(handles.trx(1).units.(fntrx).num,'rad')) && ...
+        strcmpi(handles.rangeunits1.(fn),'units'),
     if strcmpi(handles.transform1,'log absolute value'),
       tmp = tmp + log(pi/180);
     else
@@ -555,7 +558,8 @@ if isnan(tmp),
 else
   % convert back to radians
   
-  if isanglename(fntrx) && strcmpi(handles.rangeunits1.(fn),'units'),
+  if any(strcmpi(handles.trx(1).units.(fntrx).num,'rad')) && ... 
+        strcmpi(handles.rangeunits1.(fn),'units'),
     if strcmpi(handles.transform1,'log absolute value'),
       tmp = tmp + log(pi/180);
     else
@@ -774,7 +778,8 @@ if isnan(tmp),
   set(hObject,'string',num2str(handles.lb2.(fn)));
 else
   % convert back to radians
-  if isanglename(fntrx) && strcmpi(handles.rangeunits2.(fn),'units'),
+  if any(strcmpi(handles.trx(1).units.(fntrx).num,'rad')) && ...
+        strcmpi(handles.rangeunits2.(fn),'units'),
     if strcmpi(handles.transform2,'log absolute value'),
       tmp = tmp + log(pi/180);
     else
@@ -821,7 +826,8 @@ if isnan(tmp),
   set(hObject,'string',num2str(handles.ub2.(fn)));
 else
   % convert back to radians
-  if isanglename(fntrx) && strcmpi(handles.rangeunits2.(fn),'units'),
+  if any(strcmpi(handles.trx(1).units.(fntrx).num,'rad')) && ...
+        strcmpi(handles.rangeunits2.(fn),'units'),
     if strcmpi(handles.transform2,'log absolute value'),
       tmp = tmp + log(pi/180);
     else
@@ -1224,7 +1230,8 @@ end
 handles.lb1.(fn1) = lb;
 handles.ub1.(fn1) = ub;
 handles.rangeunits1.(fn1) = newunits;
-if isanglename(fn) && strcmpi(handles.rangeunits1.(fn1),'units'),
+if any(strcmpi(handles.trx(1).units.(fn).num,'rad')) && ...
+      strcmpi(handles.rangeunits1.(fn1),'units'),
   if strcmpi(handles.transform2,'log absolute value'),
     lb = lb + log(180/pi);
     ub = ub + log(180/pi);
@@ -1292,7 +1299,8 @@ handles.ub2.(fn1) = ub;
 handles.rangeunits2.(fn1) = newunits;
 
 % for display, need to convert to degrees
-if isanglename(fn) && strcmpi(handles.rangeunits2.(fn1),'units'),
+if any(strcmpi(handles.trx(1).units.(fn).num,'rad')) && ...
+      strcmpi(handles.rangeunits2.(fn1),'units'),
   if strcmpi(handles.transform2,'log absolute value'),
     lb = lb + log(180/pi);
     ub = ub + log(180/pi);

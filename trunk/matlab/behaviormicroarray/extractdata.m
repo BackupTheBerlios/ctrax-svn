@@ -82,53 +82,35 @@ for datai = 1:ndata,
           else
             switch lower(averaging{datai}),
              case 'interval mean',
-              if isanglename(props{j}),
+              if any(strcmpi(trx(1).units.(props{j}).num,'rad')),
                 % convert to per-frame
-                if isvelocityname(props{j}),
-                  datacurr = trx(i).(props{j})/trx(i).fps;
-                elseif isaccelname(props{j}),
-                  datacurr = trx(i).(props{j})/trx(i).fps^2;
-                else
-                  datacurr = trx(i).(props{j});
-                end
+                n = nnz(strcmpi(trx(1).units.(props{j}).den,'s'));
+                datacurr = trx(i).(props{j}) / trx(i).fps^n;
                 data{datai,i}(:,j) = interval_mean_angle(datacurr',trx(i).seg{datai}.t1,...
                                                          trx(i).seg{datai}.t2-1);
                 % convert back to per-second
-                if isvelocityname(props{j}),
-                  data{datai,i}(:,j) = data{datai,i}(:,j)*trx(i).fps;
-                elseif isaccelname(props{j}),
-                  data{datai,i}(:,j) = data{datai,i}(:,j)*trx(i).fps^2;
-                end
+                data{datai,i}(:,j) = data{datai,i}(:,j)*trx(i).fps^n;
               else
                 data{datai,i}(:,j) = interval_mean(trx(i).(props{j})',trx(i).seg{datai}.t1,...
                                                    trx(i).seg{datai}.t2-1);
               end
              case 'interval median',
-              if isanglename(props{j}),
+              if any(strcmpi(trx(1).units.(props{j}).num,'rad')),
                 % convert to per-frame
-                if isvelocityname(props{j}),
-                  datacurr = trx(i).(props{j})/trx(i).fps;
-                elseif isaccelname(props{j}),
-                  datacurr = trx(i).(props{j})/trx(i).fps^2;
-                else
-                  datacurr = trx(i).(props{j});
-                end
+                n = nnz(strcmpi(trx(1).units.(props{j}).den,'s'));
+                datacurr = trx(i).(props{j}) / trx(i).fps^n;
                 data{datai,i}(:,j) = interval_median_angle(datacurr',trx(i).seg{datai}.t1,...
                                                            trx(i).seg{datai}.t2-1);
                 % convert back to per-second
-                if isvelocityname(props{j}),
-                  data{datai,i}(:,j) = data{datai,i}(:,j)*trx(i).fps;
-                elseif isaccelname(props{j}),
-                  data{datai,i}(:,j) = data{datai,i}(:,j)*trx(i).fps^2;
-                end
+                data{datai,i}(:,j) = data{datai,i}(:,j)*trx(i).fps^n;
               else
                 data{datai,i}(:,j) = interval_median(trx(i).(props{j})',trx(i).seg{datai}.t1,...
                                                      trx(i).seg{datai}.t2-1);
               end
              case 'interval start',
-             data{datai,i}(:,j) = trx(i).(props{j})(trx(i).seg{datai}.t1);
+              data{datai,i}(:,j) = trx(i).(props{j})(trx(i).seg{datai}.t1);
              case 'interval end',
-             data{datai,i}(:,j) = trx(i).(props{j})(trx(i).seg{datai}.t2-1);
+              data{datai,i}(:,j) = trx(i).(props{j})(trx(i).seg{datai}.t2-1);
             end
           end
         end
@@ -155,7 +137,7 @@ end
 
 % change to degrees if necessary
 for i = 1:length(centers),
-  if isanglename(props{i}),
+  if any(strcmpi(trx(1).units.(props{i}).num,'rad')),
     fprintf('Converting %s from radians to degrees\n',props{i});
     centers{i} = centers{i}*180/pi;
   end
