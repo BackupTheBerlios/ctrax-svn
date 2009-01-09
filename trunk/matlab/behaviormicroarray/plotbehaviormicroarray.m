@@ -22,7 +22,7 @@ function varargout = plotbehaviormicroarray(varargin)
 
 % Edit the above text to modify the response to help plotbehaviormicroarray
 
-% Last Modified by GUIDE v2.5 06-Jan-2009 09:35:55
+% Last Modified by GUIDE v2.5 08-Jan-2009 16:57:47
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -99,6 +99,7 @@ for i = 1:length(handles.autochooseallownames),
 end
 handles.autochoose.ignoreprops = {};
 handles.autochoose.nshow = 10;
+handles.autochoose.isindep = false;
 handles.types.name = 'All';
 handles.types.fields = {'All'};
 handles.typeselected = 1;
@@ -542,6 +543,7 @@ for i = 1:length(handles.autochoose.ignoreprops),
 end
 set(handles.ignorepropertieslist,'value',v+1);
 set(handles.npropsautoshowedit,'string',num2str(handles.autochoose.nshow));
+set(handles.chooseindepbox,'value',handles.autochoose.isindep);
 
 function handles = initializegui(handles)
 
@@ -1238,7 +1240,328 @@ function autochoosebutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% TODO
+nallowed = handles.maxnautochoose;
+nchoose = min(nallowed,handles.autochoose.nshow);
+nflies = length(handles.microarrays);
+nbehaviors = length(handles.behaviors);
+nprops = length(handles.allpropnames);
+
+isduration = nbehaviors > 0 && strcmpi(handles.autochoose.duration,'allow');
+isfractime = nbehaviors > 0 && strcmpi(handles.autochoose.fractime,'allow');
+isfrequency = nbehaviors > 0 && strcmpi(handles.autochoose.freq,'allow');
+isperframe = strcmpi(handles.autochoose.perframe,'allow');
+isduring = nbehaviors > 0 && strcmpi(handles.autochoose.duringbehavior,'allow');
+isinvert = nbehaviors > 0 && strcmpi(handles.autochoose.invertbehavior,'allow');
+isnoaveraging = nbehaviors > 0 && strcmpi(handles.autochoose.noaveraging,'allow');
+ismean = nbehaviors > 0 && strcmpi(handles.autochoose.mean,'allow');
+ismedian = nbehaviors > 0 && strcmpi(handles.autochoose.median,'allow');
+isstart = nbehaviors > 0 && strcmpi(handles.autochoose.start,'allow');
+isend = nbehaviors > 0 && strcmpi(handles.autochoose.end,'allow');
+isallframes = strcmpi(handles.autochoose.allframes,'allow');
+
+% grab out allowed fields
+X = zeros(nflies,nallowed);
+allowedprops.name = 'Property 1';
+allowedprops.behavior = 1;
+allowedprops.proptype = 'perframe';
+allowedprops.perframe = 'velmag';
+allowedprops.during = 'allframes';
+allowedprops.averaging = 'None (per-frame)';
+allowedprops = repmat(allowedprops,[1,nallowed]);
+
+off = 0;
+tmpbehaviors = mat2cell(1:nbehaviors,1,ones(1,nbehaviors));
+behaviornames = {handles.behaviors.name};
+if isduration,
+  idx = off+(1:nbehaviors);
+  X(:,idx) = reshape([handles.microarrays.duration],[nbehaviors,nflies])';
+  [allowedprops(idx).proptype] = 'duration';
+  [allowedprops(idx).behavior] = deal(tmpbehaviors{:});
+  for i = 1:nbehaviors,
+    allowedprops(idx(i)).name = sprintf('%s duration',behaviornames{i});
+  end
+  off = off + nbehaviors;
+end
+if isfractime,
+  idx = off+(1:nbehaviors);
+  X(:,idx) = reshape([handles.microarrays.fractime],[nbehaviors,nflies])';
+  [allowedprops(idx).proptype] = 'fractime';
+  [allowedprops(idx).behavior] = deal(tmpbehaviors{:});
+  for i = 1:nbehaviors,
+    allowedprops(idx(i)).name = sprintf('%s fractime',behaviornames{i});
+  end
+  off = off + nbehaviors;
+end
+if isfrequency,
+  idx = off+(1:nbehaviors);
+  X(:,idx) = reshape([handles.microarrays.frequency],[nbehaviors,nflies])';
+  [allowedprops(idx).proptype] = 'frequency';
+  [allowedprops(idx).behavior] = deal(tmpbehaviors{:});
+  for i = 1:nbehaviors,
+    allowedprops(idx(i)).name = sprintf('%s frequency',behaviornames{i});
+  end
+  off = off + nbehaviors;
+end
+if isperframe,
+  propsallowed = setdiff(handles.allpropnames,handles.autochoose.ignoreprops);
+  if isduring,
+    if isnoaveraging,
+      for propi = 1:length(propsallowed),
+        prop = propsallowed{propi};
+        s = sprintf('%s_during_none',prop);
+        idx = off+(1:nbehaviors);
+        X(:,idx) = reshape([handles.microarrays.(s)],[nbehaviors,nflies])';
+        [allowedprops(idx).proptype] = deal('perframe');
+        [allowedprops(idx).behavior] = deal(tmpbehaviors{:});
+        [allowedprops(idx).perframe] = deal(prop);
+        [allowedprops(idx).during] = deal('during');
+        [allowedprops(idx).averaging] = deal('None (per-frame)');
+        for i = 1:nbehaviors,
+          allowedprops(idx(i)).name = sprintf('%s %s',behaviornames{i},s);
+        end
+        off = off + nbehaviors;
+      end      
+    end
+    if ismean,
+      for propi = 1:length(propsallowed),
+        prop = propsallowed{propi};
+        s = sprintf('%s_during_mean',prop);
+        idx = off+(1:nbehaviors);
+        X(:,idx) = reshape([handles.microarrays.(s)],[nbehaviors,nflies])';
+        [allowedprops(idx).proptype] = deal('perframe');
+        [allowedprops(idx).behavior] = deal(tmpbehaviors{:});
+        [allowedprops(idx).perframe] = deal(prop);
+        [allowedprops(idx).during] = deal('during');
+        [allowedprops(idx).averaging] = deal('interval mean');
+        for i = 1:nbehaviors,
+          allowedprops(idx(i)).name = sprintf('%s %s',behaviornames{i},s);
+        end
+        off = off + nbehaviors;
+      end      
+    end
+    if ismedian,
+      for propi = 1:length(propsallowed),
+        prop = propsallowed{propi};
+        s = sprintf('%s_during_median',prop);
+        idx = off+(1:nbehaviors);
+        X(:,idx) = reshape([handles.microarrays.(s)],[nbehaviors,nflies])';
+        [allowedprops(idx).proptype] = deal('perframe');
+        [allowedprops(idx).behavior] = deal(tmpbehaviors{:});
+        [allowedprops(idx).perframe] = deal(prop);
+        [allowedprops(idx).during] = deal('during');
+        [allowedprops(idx).averaging] = deal('interval median');
+        for i = 1:nbehaviors,
+          allowedprops(idx(i)).name = sprintf('%s %s',behaviornames{i},s);
+        end
+        %[fieldsallowed{idx}] = deal(s);
+        %fieldsallowedbehi(idx) = 1:nbehaviors;
+        off = off + nbehaviors;
+      end      
+    end
+    if isstart,
+      for propi = 1:length(propsallowed),
+        prop = propsallowed{propi};
+        s = sprintf('%s_during_start',prop);
+        idx = off+(1:nbehaviors);
+        X(:,idx) = reshape([handles.microarrays.(s)],[nbehaviors,nflies])';
+        [allowedprops(idx).proptype] = deal('perframe');
+        [allowedprops(idx).behavior] = deal(tmpbehaviors{:});
+        [allowedprops(idx).perframe] = deal(prop);
+        [allowedprops(idx).during] = deal('during');
+        [allowedprops(idx).averaging] = deal('interval start');
+        for i = 1:nbehaviors,
+          allowedprops(idx(i)).name = sprintf('%s %s',behaviornames{i},s);
+        end
+        %[fieldsallowed{idx}] = deal(s);
+        %fieldsallowedbehi(idx) = 1:nbehaviors;
+        off = off + nbehaviors;
+      end      
+    end
+    if isend,
+      for propi = 1:length(propsallowed),
+        prop = propsallowed{propi};
+        s = sprintf('%s_during_end',prop);
+        idx = off+(1:nbehaviors);
+        X(:,idx) = reshape([handles.microarrays.(s)],[nbehaviors,nflies])';
+        [allowedprops(idx).proptype] = deal('perframe');
+        [allowedprops(idx).behavior] = deal(tmpbehaviors{:});
+        [allowedprops(idx).perframe] = deal(prop);
+        [allowedprops(idx).during] = deal('during');
+        [allowedprops(idx).averaging] = deal('interval end');
+        for i = 1:nbehaviors,
+          allowedprops(idx(i)).name = sprintf('%s %s',behaviornames{i},s);
+        end
+        %[fieldsallowed{idx}] = deal(s);
+        %fieldsallowedbehi(idx) = 1:nbehaviors;
+        off = off + nbehaviors;
+      end      
+    end
+
+  end % end isduring
+  
+  if isinvert,
+    if isnoaveraging,
+      for propi = 1:length(propsallowed),
+        prop = propsallowed{propi};
+        s = sprintf('%s_invert_none',prop);
+        idx = off+(1:nbehaviors);
+        X(:,idx) = reshape([handles.microarrays.(s)],[nbehaviors,nflies])';
+        [allowedprops(idx).proptype] = deal('perframe');
+        [allowedprops(idx).behavior] = deal(tmpbehaviors{:});
+        [allowedprops(idx).perframe] = deal(prop);
+        [allowedprops(idx).during] = deal('invert');
+        [allowedprops(idx).averaging] = deal('None (per-frame)');
+        for i = 1:nbehaviors,
+          allowedprops(idx(i)).name = sprintf('%s %s',behaviornames{i},s);
+        end
+        %[fieldsallowed{idx}] = deal(s);
+        %fieldsallowedbehi(idx) = 1:nbehaviors;
+        off = off + nbehaviors;
+      end      
+    end
+    if ismean,
+      for propi = 1:length(propsallowed),
+        prop = propsallowed{propi};
+        s = sprintf('%s_invert_mean',prop);
+        idx = off+(1:nbehaviors);
+        X(:,idx) = reshape([handles.microarrays.(s)],[nbehaviors,nflies])';
+        [allowedprops(idx).proptype] = deal('perframe');
+        [allowedprops(idx).behavior] = deal(tmpbehaviors{:});
+        [allowedprops(idx).perframe] = deal(prop);
+        [allowedprops(idx).during] = deal('invert');
+        [allowedprops(idx).averaging] = deal('interval mean');
+        for i = 1:nbehaviors,
+          allowedprops(idx(i)).name = sprintf('%s %s',behaviornames{i},s);
+        end
+        %[fieldsallowed{idx}] = deal(s);
+        %fieldsallowedbehi(idx) = 1:nbehaviors;
+        off = off + nbehaviors;
+      end      
+    end
+    if ismedian,
+      for propi = 1:length(propsallowed),
+        prop = propsallowed{propi};
+        s = sprintf('%s_invert_median',prop);
+        idx = off+(1:nbehaviors);
+        X(:,idx) = reshape([handles.microarrays.(s)],[nbehaviors,nflies])';
+        [allowedprops(idx).proptype] = deal('perframe');
+        [allowedprops(idx).behavior] = deal(tmpbehaviors{:});
+        [allowedprops(idx).perframe] = deal(prop);
+        [allowedprops(idx).during] = deal('invert');
+        [allowedprops(idx).averaging] = deal('interval median');
+        for i = 1:nbehaviors,
+          allowedprops(idx(i)).name = sprintf('%s %s',behaviornames{i},s);
+        end
+        %[fieldsallowed{idx}] = deal(s);
+        %fieldsallowedbehi(idx) = 1:nbehaviors;
+        off = off + nbehaviors;
+      end      
+    end
+    if isstart,
+      for propi = 1:length(propsallowed),
+        prop = propsallowed{propi};
+        s = sprintf('%s_invert_start',prop);
+        idx = off+(1:nbehaviors);
+        X(:,idx) = reshape([handles.microarrays.(s)],[nbehaviors,nflies])';
+        [allowedprops(idx).proptype] = deal('perframe');
+        [allowedprops(idx).behavior] = deal(tmpbehaviors{:});
+        [allowedprops(idx).perframe] = deal(prop);
+        [allowedprops(idx).during] = deal('invert');
+        [allowedprops(idx).averaging] = deal('interval start');
+        for i = 1:nbehaviors,
+          allowedprops(idx(i)).name = sprintf('%s %s',behaviornames{i},s);
+        end
+        %[fieldsallowed{idx}] = deal(s);
+        %fieldsallowedbehi(idx) = 1:nbehaviors;
+        off = off + nbehaviors;
+      end      
+    end
+    if isend,
+      for propi = 1:length(propsallowed),
+        prop = propsallowed{propi};
+        s = sprintf('%s_invert_end',prop);
+        idx = off+(1:nbehaviors);
+        X(:,idx) = reshape([handles.microarrays.(s)],[nbehaviors,nflies])';
+        [allowedprops(idx).proptype] = deal('perframe');
+        [allowedprops(idx).behavior] = deal(tmpbehaviors{:});
+        [allowedprops(idx).perframe] = deal(prop);
+        [allowedprops(idx).during] = deal('invert');
+        [allowedprops(idx).averaging] = deal('interval end');
+        for i = 1:nbehaviors,
+          allowedprops(idx(i)).name = sprintf('%s %s',behaviornames{i},s);
+        end
+        %[fieldsallowed{idx}] = deal(s);
+        %fieldsallowedbehi(idx) = 1:nbehaviors;
+        off = off + nbehaviors;
+      end      
+    end
+
+  end % end isinvert
+  
+  if isallframes,
+    
+    for propi = 1:length(propsallowed),
+      prop = propsallowed{propi};
+      s = sprintf('%s_allframes',prop);
+      idx = off+1;
+      X(:,idx) = [handles.microarrays.(s)]';
+      allowedprops(idx).proptype = 'perframe';
+      allowedprops(idx).perframe = prop;
+      allowedprops(idx).during = 'allframes';
+      allowedprops(idx).name = s;
+      %[fieldsallowed{idx}] = deal(s);
+      %fieldsallowedbehi(idx) = nan;
+      off = off + 1;
+    end
+    
+  end % end isallframes
+  
+end % end isperframe
+
+% get types 
+ntypes = length(handles.types);
+isall = false(1,ntypes);
+types = nan(nflies,ntypes);
+for i = 1:ntypes,
+  % if all is one of the types, then include all flies
+  if any(strcmpi('All',handles.types(i).fields)),
+    types(:,i) = true;
+    isall(i) = true;
+  else
+    for fly = 1:nflies,
+      if any(strcmpi(handles.microarrays(fly).type,handles.types(i).fields)),
+        types(fly,i) = true;
+      end
+    end
+  end
+end
+y = nan(nflies,1);
+% break ties
+for fly = 1:nflies,
+  tmp = find(types(fly,:));
+  if length(tmp) == 1,
+    y(fly) = tmp;
+  elseif length(tmp) > 1,
+    if any(~isall(tmp)),
+      i = tmp(find(~isall(tmp),1));
+      y(fly) = i;
+    else
+      y(fly) = tmp(1);
+    end
+  end
+end
+
+% remove flies with no type
+ignoreflies = any(isnan(X),2) | any(isnan(y));
+  
+chosenprops = choosediscriminativeprops(X(~ignoreflies,:),y(~ignoreflies),nchoose,...
+                                        'isindependent',handles.autochoose.isindep);
+nchosen = length(chosenprops);
+
+% create props structure
+handles.props = allowedprops(chosenprops);
+handles = initializeprops(handles);
+guidata(hObject,handles);
 
 % --- Executes on selection change in allowdurationmenu.
 function allowdurationmenu_Callback(hObject, eventdata, handles)
@@ -1706,6 +2029,8 @@ handles.plotstuff = plotbehaviormicroarray_fcn(propsperfly,types,...
     'errorbars',handles.plotsettings.errorbars,...
     'hfig',hfig);
 
+guidata(hObject,handles);
+
 % --- Executes on button press in exportbutton.
 function exportbutton_Callback(hObject, eventdata, handles)
 % hObject    handle to exportbutton (see GCBO)
@@ -1741,7 +2066,7 @@ function propnameedit_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: get(hObject,'String') returns contents of propnameedit as text
-%        str2double(get(hObject,'String')) returns contents of propnameedit as a double
+%        get(hObject,'String')) returns contents of propnameedit as a double
 handles.props(handles.propselected).name = get(hObject,'String');
 set(handles.propertymenu,'string',{handles.props.name});
 guidata(hObject,handles);
@@ -2054,4 +2379,14 @@ if v,
 end
 guidata(hObject,handles);
 
+
+% --- Executes on button press in chooseindepbox.
+function chooseindepbox_Callback(hObject, eventdata, handles)
+% hObject    handle to chooseindepbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of chooseindepbox
+handles.autochoose.isindep = get(hObject,'value');
+guidata(hObject,handles);
 

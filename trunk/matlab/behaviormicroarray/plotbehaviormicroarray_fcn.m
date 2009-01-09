@@ -102,7 +102,9 @@ if normalize,
   if plotindivs,
     plotstuff.hall_indivs = plot(1:nprops,propsperfly0,'.');
   end
-  set(plotstuff.hall_axes,'xtick',1:nprops,'xticklabel',{});
+  tmp = propnames;
+  [tmp{1:2:end}] = deal('');
+  set(plotstuff.hall_axes,'xtick',1:nprops,'xticklabel',tmp);
   title('Unnormalized properties for all flies');  
 
   axisalmosttight;
@@ -138,8 +140,9 @@ end
 
 % individuals, lines
 if plotindivs,
+  plotstuff.hindivs_lines = zeros(nflies,ntypes);
   for typei = 1:ntypes,
-    plotstuff.hindivs_lines = plot(1:nprops,propsperfly(types(:,typei),:),'-');
+    plotstuff.hindivs_lines(types(:,typei),typei) = plot(1:nprops,propsperfly(types(:,typei),:),'-');
   end
 end
 
@@ -148,32 +151,43 @@ skipmeans = normalize && plotindivs && ntypes == 1;
 
 if ~skipmeans,
   
+  colors = lines(nflies);
+  
   % errorbars
   if strcmpi(errorbars,'std dev'),
-    plotstuff.herrorbars = errorbar(repmat(1:nprops,[ntypes,1])',mu',sig','o');
+    plotstuff.herrorbars = zeros(1,ntypes);
+    for i = 1:ntypes,
+      plotstuff.herrorbars(i) = errorbar(1:nprops,mu(i,:),sig(i,:),'o','color',colors(i,:));
+    end
   elseif strcmpi(errorbars,'std err'),
     plotstuff.stderr = sig./sqrt(nflies_type);
-    plotstuff.herrorbars = errorbar(repmat(1:nprops,[ntypes,1])',mu',plotstuff.stderr','o');
+    plotstuff.herrorbars = zeros(1,ntypes);
+    for i = 1:ntypes,
+      plotstuff.herrorbars(i) = errorbar(1:nprops,mu(i,:),plotstuff.stderr(i,:),'o',...
+                                         'color',colors(i,:));
+    end
   end
     
   % means
-  plotstuff.hmeans = plot(1:nprops,mu,'o');
+  plotstuff.hmeans = zeros(1,ntypes);
   for i = 1:ntypes,
-    set(plotstuff.hmeans(i),'markerfacecolor',get(plotstuff.hmeans(i),'color'));
+    plotstuff.hmeans(i) = plot(1:nprops,mu(i,:),'o',...
+                               'color',colors(i,:),'markerfacecolor',colors(i,:));
   end
   
   % individuals
   if plotindivs,
+    plotstuff.hindivs = zeros(nflies,ntypes);
     for typei = 1:ntypes,
-      c = get(plotstuff.hmeans(typei),'color');
-      c = (2+c)/3;
-      plotstuff.hindivs = plot(1:nprops,propsperfly(types(:,typei),:),'.','color',c);
-      set(plotstuff.hindivs_lines(typei),'color',c);
+      c = (colors(typei,:)+2)/3;
+      plotstuff.hindivs(types(:,typei),typei) = ...
+          plot(1:nprops,propsperfly(types(:,typei),:),'.','color',c);
+      set(plotstuff.hindivs_lines(types(:,typei),typei),'color',c);
     end
   end
 else
   plotstuff.hindivs = plot(1:nprops,propsperfly,'o-');
-  for i = 1:ntypes,
+  for i = 1:nflies,
     set(plotstuff.hindivs(i),'markerfacecolor',get(plotstuff.hindivs(i),'color'));
   end    
 end
@@ -187,7 +201,15 @@ if normalize,
   ylabel('Std devs');
 end
 
-set(plotstuff.hmain_axes,'xtick',1:nprops,'xticklabel',propnames);
+if normalize,
+  tmp = propnames;
+  [tmp{2:2:end}] = deal('');
+  set(plotstuff.hmain_axes,'xtick',1:nprops,'xticklabel',tmp);  
+else
+  set(plotstuff.hmain_axes,'xtick',1:nprops,'xticklabel',propnames);
+end
+fprintf('Properties, from left to right:\n');
+fprintf('%s\n',propnames{:});
 if normalize,
   linkaxes([plotstuff.hmain_axes,plotstuff.hall_axes],'x');
 end
@@ -197,7 +219,7 @@ if skipmeans,
   for i = 1:nflies,
     s{i} = sprintf('Fly %d',i);
   end
-  plotstuff.hlegend = legend(plotstuff.hmeans,s);  
+  plotstuff.hlegend = legend(plotstuff.hindivs,s);  
 else
   plotstuff.hlegend = legend(plotstuff.hmeans,typenames);
 end

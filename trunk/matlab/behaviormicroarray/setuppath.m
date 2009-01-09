@@ -17,7 +17,15 @@ for i = 1:length(dirnamestry),
   if exist(dirname,'dir') && exist([dirname,'/filehandling'],'dir') && ...
         exist([dirname,'/misc'],'dir') && ...
         exist([dirname,'/filehandling/get_readframe_fcn.m'],'file'),
-    addpath(genpath(dirname));
+    p = genpath(dirname);
+    % remove svn
+    tmp = textscan(p,'%s','delimiter',':');
+    tmp = tmp{1};
+    matches = strfind(tmp,'.svn');
+    keep = cellfun(@isempty,matches);
+    tmp(~keep) = [];
+    p1 = sprintf('%s:',tmp{:});
+    addpath(p1);
   end
   isdone = ~isempty(which('get_readframe_fcn'));
   if isdone, 
@@ -36,7 +44,15 @@ if isnumeric(dirname) && dirname == 0,
   error('Error setting up path.\n');
   return;
 end
-addpath(genpath(dirname));
+p = genpath(dirname);
+% remove svn
+tmp = textscan(p,'%s','delimiter',':');
+tmp = tmp{1};
+matches = strfind(tmp,'.svn');
+keep = cellfun(@isempty,matches);
+tmp(~keep) = [];
+p1 = sprintf('%s:',tmp{:});
+addpath(p1);
 if isempty(which('get_readframe_fcn'))
   error('Error setting up path.\n');
 end
