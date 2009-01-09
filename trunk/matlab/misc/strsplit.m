@@ -1,3 +1,4 @@
+% t = strsplit(s,delim)
 function t = strsplit(s,delim)
 
 if ischar(delim),
