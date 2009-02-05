@@ -291,7 +291,6 @@ instead, where <basename> is the base name of the movie.\n")
 
     def OpenMovie( self ):
         """Attempt to open a movie given the current filename."""
-        self.movie = movies.Movie( self.filename, params.interactive )
         try:
             # open movie file
             self.movie = movies.Movie( self.filename, params.interactive )
