@@ -2,7 +2,7 @@
 # KMB 11/06/2008
 
 import numpy as num
-import scipy.io.mio
+import scipy.io.matlab.mio
 import wx
 
 from version import DEBUG

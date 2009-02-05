@@ -265,7 +265,6 @@ instead, where <basename> is the base name of the movie.\n")
             wx.BeginBusyCursor()
             wx.Yield()
 
-        print "Reading annotation file " + self.ann_filename
         self.ann_data = self.ann_file.GetAnnotation( params.interactive, self.bg_imgs )
         if params.interactive:
             self.status.SetBackgroundColour( start_color )
@@ -292,7 +291,6 @@ instead, where <basename> is the base name of the movie.\n")
 
     def OpenMovie( self ):
         """Attempt to open a movie given the current filename."""
-        self.movie = movies.Movie( self.filename, params.interactive )
         try:
             # open movie file
             self.movie = movies.Movie( self.filename, params.interactive )

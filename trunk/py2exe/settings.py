@@ -183,7 +183,7 @@ class AppWithSettings( wx.App ):
         if state == 'stopped':
             self.EnablePlayBitmap(True)
             self.SetPlayToolTip(self.start_playback_tooltip)
-            self.EnableStopBitmap(False)
+            self.EnableStopBitmap(True)
             self.SetSpeedUpToolTip(self.speedup_playback_tooltip)
             self.SetSlowDownToolTip(self.slowdown_playback_tooltip)
             self.EnableRefreshBitmap(False)

@@ -320,7 +320,6 @@ class Avi:
         # need to open in binary mode to support Windows:
         # self.file = open( filename, 'r' )
         self.file = open( filename, 'rb' )
-        print "avi"
         self.read_header()
         
         # added to help masquerade as FMF file:
@@ -390,7 +389,7 @@ class Avi:
         if not vids == 'vids':
             raise TypeError("Unsupported AVI file type. First stream found is not a video stream.")
         # check fcc
-        if fcc not in ['DIB ', '\x00\x00\x00\x00', "", "RAW ", "NONE"]:
+        if fcc not in ['DIB ', '\x00\x00\x00\x00', "", "RAW ", "NONE", chr(24)+"BGR"]:
             raise TypeError("Unsupported AVI file type %s, only uncompressed AVIs supported."%fcc)
 
         # skip the rest of the stream header
@@ -425,19 +424,31 @@ class Avi:
 
         #if self.isindexed:
         #    raise TypeError("Unsupported AVI file type: indexed colormap. Only RGB and grayscale, uncompressed AVIs are currently supported")
-
-        LIST,movilist_size = struct.unpack( '4sI', self.file.read( 8 ) )
+        
+        while True:
+            # find LIST chunk
+            LIST,movilist_size = struct.unpack( '4sI', self.file.read( 8 ) )
+            if LIST == 'LIST':
+                # find movi
+                movistart = self.file.tell()
+                movi, = struct.unpack('4s',self.file.read(4))
+                if movi == 'movi':
+                    break
+                else:
+                    self.file.seek(-4,1)
+            # found some other chunk, seek past
+            self.file.seek(movilist_size,1)            
 
         # sometimes there is junk here
-        if LIST == 'JUNK':
-            self.file.seek(movilist_size,1)
-            LIST,movilist_size = struct.unpack( '4sI', self.file.read( 8 ) )
-        movistart = self.file.tell()
+        #if LIST == 'JUNK':
+        #    self.file.seek(movilist_size,1)
+        #    LIST,movilist_size = struct.unpack( '4sI', self.file.read( 8 ) )
+        #movistart = self.file.tell()
 
-        if not LIST == 'LIST':
-            raise TypeError("Invalid AVI file. Did not find movie LIST.")
+        #if not LIST == 'LIST':
+        #    raise TypeError("Invalid AVI file. Did not find movie LIST.")
 
-        movi, = struct.unpack('4s',self.file.read(4))
+        #movi, = struct.unpack('4s',self.file.read(4))
 
         if not movi == 'movi':
             raise TypeError("Invalid AVI file. Did not find movi, found %s."%movi)
@@ -647,7 +658,7 @@ class Avi:
         
         # read frame from file
         self.file.seek( self.data_start + (self.buf_size+8)*framenumber )
-        
+       
         # rest of this function has been moved into get_next_frame(), which
         #   pretty much just reads without the seek
         
@@ -657,7 +668,7 @@ class Avi:
         """returns next frame"""
        
         currentseekloc = self.file.tell()
-        
+         
         this_frame_id, frame_size = struct.unpack( '4sI', self.file.read( 8 ) )
         if frame_size != self.buf_size:
             raise ValueError( "Frame size does not equal buffer size; movie must be uncompressed" )
@@ -682,9 +693,11 @@ class Avi:
         elif frame.size == self.width*self.height:
             frame.resize( (self.height, self.width) )
         elif frame.size == self.width*self.height*3:
-            frame.resize( (self.height, self.width, 3) )
+            frame.resize( (self.height, self.width*3) )
             tmp = frame.astype(float)
-            tmp = tmp[:,:,0]*.3 + tmp[:,:,1]*.59 + tmp[:,:,2]*.11
+            tmp = tmp[:,2:self.width*3:3]*.3 + \
+                tmp[:,1:self.width*3:3]*.59 + \
+                tmp[:,0:self.width*3:3]*.11
             frame = tmp.astype(num.uint8)
             #frame = imops.to_mono8( 'RGB24', frame )
             #raise TypeError( "movie must be grayscale" )
@@ -721,10 +734,10 @@ class Avi:
             # this might screw up playback, at least
         
         
-        if self.fmfmode:
-            # row/column order is swapped:
-            shape = frame.shape
-            frame.shape = (shape[1], shape[0])
+        #if self.fmfmode:
+        #    # row/column order is swapped:
+        #    shape = frame.shape
+        #    frame.shape = (shape[1], shape[0])
         
         return frame, stamp
         
