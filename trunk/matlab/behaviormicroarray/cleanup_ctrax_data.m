@@ -4,6 +4,13 @@ if ~exist('ds','var')
   ds = '';
 end
 
+in.x_pos = in.x_pos(:)';
+in.y_pos = in.y_pos(:)';
+in.maj_ax = in.maj_ax(:)';
+in.min_ax = in.min_ax(:)';
+in.angle = in.angle(:)';
+in.identity = in.identity(:)';
+
 idscurr = unique(in.identity);
 
 in.x_pos = in.x_pos + 1;

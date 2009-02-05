@@ -79,7 +79,7 @@ for fly = 1:nflies,
   data(fly).units.corfrac_min = parseunits('unit');
   data(fly).units.abscorfrac_min = parseunits('unit');
   data(fly).units.corisonfly = parseunits('unit');
-  [x_cor_curr,y_cor_curr,x_cor_next,y_cor_next] = rfrac2center(data(fly),data(fly).corfrac);
+  [x_cor_curr,y_cor_curr,x_cor_next,y_cor_next] = rfrac2center(data(fly),[data(fly).corfrac_maj;data(fly).corfrac_min]);
 
   % change in center of rotation
   dx_cor = x_cor_next - x_cor_curr;

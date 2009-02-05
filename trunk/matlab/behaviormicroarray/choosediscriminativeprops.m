@@ -58,6 +58,9 @@ else
       keep = ~isnan(X(:,i));
       sig = std(X(keep,i),1);
       mu = mean(X(keep,i));
+      if sig == 0,
+        sig = 1;
+      end
       X(:,i) = (X(:,i) - mu)/sig;
     end
     
