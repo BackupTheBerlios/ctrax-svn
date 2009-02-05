@@ -6,7 +6,6 @@
 
 moviename = '';
 moviepath = '';
-px2mm = 4;
 
 %% read last settings
 pathtofixerrors = which('fixerrors');
@@ -19,7 +18,6 @@ end
 
 fprintf('Choose a movie to fix errors in\n');
 movieexts = {'*.fmf','*.sbfmf','*.avi'}';
-moviename = [moviename,moviepath];
 [moviename,moviepath,filterindex] = uigetfile(movieexts,'Choose movie file',moviename);
 if isnumeric(moviename) && moviename == 0, 
   return;
@@ -28,14 +26,14 @@ end
 fprintf('Choose the corresponding mat file containing the trajectories.\n');
 matname = [moviepath,strrep(moviename,movieexts{filterindex}(2:end),'.mat')];
 [matname,matpath] = uigetfile({'.mat'},'Choose mat file',matname);
-if isempty(matname), 
+if isnumeric(matname) && matname == 0, 
   return;
 end
 
 annname = [matpath,moviename,'.ann'];
 fprintf('Choose the corresponding annotation file containing the trajectories.\n');
 [annname,annpath] = uigetfile({'.ann'},'Choose ann file',annname);
-if isempty(annname), 
+if isnumeric(annname) && annname == 0,
   return;
 end
 
@@ -50,6 +48,19 @@ if exist('savedsettingsfile','file'),
 else
   save(savedsettingsfile,'moviename','moviepath');
 end
+
+%% convert to px, seconds
+
+ISAUTOMATIC = true;
+ISMATNAME = true;
+ISMOVIENAME= true;
+savedsettingsfile0 = savedsettingsfile;
+convert_units;
+if ~alreadyconverted,
+  matname = savename;
+end
+savedsettingsfile = savedsettingsfile0;
+
 %% see if we should restart
 
 tag = moviename(length(moviepath)+1:end-length(movieexts{filterindex})+1);
@@ -79,23 +90,8 @@ if ~DORESTART,
   read_ann(annname,'max_jump','maxmajor','meanmajor','arena_radius');
 meanmajor = meanmajor * 4;
 maxmajor = maxmajor * 4;
-im = readframe(1);
-[height,width,tmp] = size(im); %#ok<NASGU>
 
-shortdescr = 'Pixels per mm: ';
-descr = 'Conversion from pixels to mm';
-relev = sprintf('Mean major axis length: %.2f px, image size: %d width x %d height px',meanmajor,width,height);
-if ~isempty(arena_radius),
-  relev = [relev,sprintf(', arena radius = %.1f px',arena_radius)];
-end
-prompt1 = {['**',descr,'** Relevant quantities: ',relev]};
-title1 = shortdescr;
-tmp = inputdlg(prompt1,title1,1,{num2str(px2mm)});
-if isempty(tmp),
-  return;
-end
-
-px2mm = str2double(tmp{1});
+px2mm = pxpermm;
 save('-append',savedsettingsfile,'px2mm');
 
 max_jump = max_jump / px2mm;
@@ -194,7 +190,7 @@ matcherrclose = matcherrclose*px2mm^2;
 minanglediff = minanglediff*pi/180;
 [seqs,trx0,params] = suspicious_sequences(matname,annname,...
   'minerrjumpfrac',minerrjumpfrac,'minorientchange',minorientchange,...
-  'manmajorfrac',maxmajorfrac,'minwalkvel',minwalkvel,...
+  'maxmajorfrac',maxmajorfrac,'minwalkvel',minwalkvel,...
   'matcherrclose',matcherrclose,'minanglediff',minanglediff);
 
 end
@@ -216,9 +212,17 @@ end
 
 %% save
 
+for i = 1:length(trx),
+  trx(i).pxpermm = pxpermm;
+  trx(i).fps = fps;
+end
+
 fprintf('Save fixed tracks to a file\n');
 savename = sprintf('fixed_%s.mat',tag);
 [savename, savepath] = uiputfile('*.mat', 'Save results?', savename);
+if isnumeric(savename) && savename == 0,
+  return;
+end
 trx = rmfield(trx,{'xpred','ypred','thetapred','dx','dy','v','f2i'});
 if ~isempty(savename),
   save(savename,'trx');
