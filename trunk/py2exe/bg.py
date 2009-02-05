@@ -6,7 +6,7 @@ from numpy import fft
 from numpy import random
 from scipy.interpolate import interpolate
 from scipy.linalg.basic import eps
-import scipy.io.matlab.mio
+import scipy.io
 import sys
 import threading
 import time
@@ -1298,12 +1298,12 @@ class BgSettingsDialog:
 
 def save_image( filename, img ):
     """Saves an image as a MATLAB array."""
-    scipy.io.matlab.mio.savemat( filename + '.mat', {filename: img} )
+    scipy.io.savemat( filename + '.mat', {filename: img})
     print "saved", filename, ".mat"
 
 def read_image( filename ):
     """Reads an image from a mat-file."""
-    new_dict = scipy.io.matlab.mio.loadmat( filename )
+    new_dict = scipy.io.loadmat( filename )
     print "loaded", filename, ".mat"
     return new_dict[filename]
 

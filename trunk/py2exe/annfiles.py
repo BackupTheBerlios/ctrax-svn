@@ -2,7 +2,7 @@
 # KMB 11/06/2008
 
 import numpy as num
-import scipy.io.matlab.mio
+import scipy.io
 import wx
 
 from version import DEBUG
@@ -624,7 +624,7 @@ class AnnotationFile:
             stamps = params.movie.get_some_timestamps(t1=startframe,t2=startframe+nframes)
             save_dict['timestamps'] = stamps
 
-        scipy.io.mio.savemat( filename, save_dict )
+        scipy.io.savemat( filename, save_dict )
         # menu_file_write_timestamps
     def RewriteTracks(self,data):
 
