@@ -30,10 +30,10 @@ if isempty(zoomflies),
       zoomflies = zoomflies(1:nzoom);
     else
       zoomflies = [1:nids,nan(1,nzoom-length(fliesmaybeplot))];
-      warn('Not enough flies to plot');
+      warning('Not enough flies to plot');
     end
   else
-    zoomflies = sort(randsample(length(fliesmaybeplot),nzoom));
+    zoomflies = sort(randsample(fliesmaybeplot,nzoom));
   end
 end
 zoomflies = reshape(zoomflies,[nzoomr,nzoomc]);
@@ -103,8 +103,14 @@ for frame = 1:nframes,
       % grab a box around (x,y)
       x = round(trx(fly).x(idx(fly)));
       y = round(trx(fly).y(idx(fly)));
-      box = im(max(1,y-boxradius):min(size(im,1),y+boxradius),...
-        max(1,x-boxradius):min(size(im,2),x+boxradius));
+      boxradx1 = min(boxradius,x-1);
+      boxradx2 = min(boxradius,size(im,2)-x);
+      boxrady1 = min(boxradius,y-1);
+      boxrady2 = min(boxradius,size(im,1)-y);
+      box = uint8(zeros(2*boxradius+1));
+      box(boxradius+1-boxrady1:boxradius+1+boxrady2,...
+        boxradius+1-boxradx1:boxradius+1+boxradx2) = ...
+        im(y-boxrady1:y+boxrady2,x-boxradx1:x+boxradx2);
       if frame == 1,
         himzoom(i,j) = image([x0(j),x1(j)],[y0(i),y1(i)],repmat(box,[1,1,3]));
       else
