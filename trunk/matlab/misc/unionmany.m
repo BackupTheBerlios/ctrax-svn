@@ -1,3 +1,4 @@
+% c = unionmany(set1,set2,...,setn,['rows'])
 function c = unionmany(varargin)
 
 if ischar(varargin{end}) && strcmpi(varargin{end},'rows'),

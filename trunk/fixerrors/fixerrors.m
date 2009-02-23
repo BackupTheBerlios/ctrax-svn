@@ -6,6 +6,7 @@
 
 moviename = '';
 moviepath = '';
+setuppath;
 
 %% read last settings
 pathtofixerrors = which('fixerrors');
@@ -57,6 +58,10 @@ ISMOVIENAME= true;
 savedsettingsfile0 = savedsettingsfile;
 convert_units;
 if ~alreadyconverted,
+  if ~ischar(savename),
+    error('Savename not set in convert_units');
+    return;
+  end
   matname = savename;
 end
 savedsettingsfile = savedsettingsfile0;

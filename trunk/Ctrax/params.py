@@ -189,7 +189,7 @@ class Parameters:
         # Background Subtraction Parameters
 
         # do we assume dark on light, light on dark, or no assumption?
-        self.bg_type = self.BG_TYPE_LIGHTONDARK
+        self.bg_type = self.BG_TYPE_OTHER
         # how do we normalize the background subtraction image?
         self.bg_norm_type = self.BG_NORM_STD
         # homomorphic filtering constants

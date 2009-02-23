@@ -24,10 +24,10 @@ n = length(x);
 if nargin < 3 || isempty(costmatrix),
   costmatrix = [-1 1 ; 1 1];
 else
-  if numel(costmatrix) ~= 4 | rows(costmatrix) ~= 2,
+  if numel(costmatrix) ~= 4 || rows(costmatrix) ~= 2,
     error('costmatrix must be 2 x 2');
   end;
-  if abs(costmatrix(1,1)) ~= 1 | abs(costmatrix(2,1)) ~= 1,
+  if abs(costmatrix(1,1)) ~= 1 || abs(costmatrix(2,1)) ~= 1,
     error('costmatrix(1,1) and constmatrix(2,1) can either be 1 or -1');
   end;
   if costmatrix(1,1) == costmatrix(2,1),
@@ -66,7 +66,7 @@ isid = [false;diff(sortedx) == 0];
 if any(isid),
   [startid,endid] = get_interval_ends(isid);
   for i = 1:length(startid),
-    t0 = startid(i);
+    t0 = startid(i)-1;
     t1 = endid(i)-1;
     tmp = sum(sortedweights(t0:t1).*sortedl(t0:t1));
     sortedweights(t0) = abs(tmp);
