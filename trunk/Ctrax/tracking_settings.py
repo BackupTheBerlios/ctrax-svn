@@ -457,8 +457,6 @@ class TrackingSettings:
 
     def SetMotion(self,evt):
         
-        print 'in SetMotion'
-      
         angle_weight = float(self.angle_weight_input.GetValue())
         if angle_weight >= 0:
             params.params.ang_dist_wt = angle_weight
@@ -466,10 +464,8 @@ class TrackingSettings:
             self.angle_weight_input.SetValue(str(params.params.ang_dist_wt))
 
         max_jump = float(self.max_jump_input.GetValue())
-        print 'set max_jump to %d'%max_jump
         if max_jump > 0:
             params.params.max_jump = max_jump
-            print 'stored, %d'%params.params.max_jump
         else:
             self.max_jump_input.SetValue(str(params.params.max_jump))
 

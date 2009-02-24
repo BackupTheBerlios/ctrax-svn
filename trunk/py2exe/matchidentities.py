@@ -11,7 +11,7 @@ import ellipsesk as ell
 from params import params
 import time
 
-def matchidentities( cost, maxcost=params.max_jump ):
+def matchidentities( cost, maxcost=-1 ):
 	"""(observationfortarget,unassignedobservations) = matchidentities( cost,maxcost )
 
 	An observation is a new piece of information, i.e., something
@@ -29,6 +29,8 @@ def matchidentities( cost, maxcost=params.max_jump ):
 	isunnassignedobservation[i] is True if the observation is not assigned to any target."""
 
 	# TODO: this raises errors when n_observations and(/or?) n_targets == 0
+	if maxcost < 0:
+		maxcost = params.max_jump
 
 	# number of targets in the previous frame
 	ntargets = cost.shape[1]
@@ -78,7 +80,7 @@ def matchidentities( cost, maxcost=params.max_jump ):
 	
 	# optimize using hungarian method
 	(targetforobservation,observationfortarget) = hungarian.hungarian(costpad)
-	if params.print_crap: 
+	if params.print_crap:
 		print 'Time to optimize: %.2f'%(time.time() - last_time)
 		last_time = time.time()
 
