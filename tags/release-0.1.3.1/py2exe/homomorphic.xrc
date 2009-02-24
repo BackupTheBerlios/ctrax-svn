@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resource>
+  <object class="wxFrame" name="homomorphic_settings_frame">
+    <title>Homomorphic Filtering Settings</title>
+    <object class="wxBoxSizer">
+      <orient>wxVERTICAL</orient>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxBoxSizer">
+              <orient>wxVERTICAL</orient>
+              <object class="sizeritem">
+                <object class="wxStaticText" name="hm_cutoff_text">
+                  <label>Cutoff</label>
+                  <font>
+                    <size>10</size>
+                    <family>swiss</family>
+                    <style>normal</style>
+                    <weight>bold</weight>
+                    <underlined>0</underlined>
+                    <face>Sans</face>
+                  </font>
+                </object>
+              </object>
+              <object class="sizeritem">
+                <object class="wxStaticText" name="hm_cutoff_fulltext">
+                  <label>Cutoff frequency of the filter used in homomorphic filtering. Frequencies lower than cutoff are attenuated.</label>
+                  <size>300,45</size>
+                  <font>
+                    <size>9</size>
+                    <family>swiss</family>
+                    <style>normal</style>
+                    <weight>normal</weight>
+                    <underlined>0</underlined>
+                    <face>Sans</face>
+                  </font>
+                </object>
+              </object>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="hm_cutoff_input">
+              <value>0.35</value>
+            </object>
+          </object>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticLine">
+          <size>380,2</size>
+        </object>
+        <flag>wxALIGN_CENTRE</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxBoxSizer">
+              <orient>wxVERTICAL</orient>
+              <object class="sizeritem">
+                <object class="wxStaticText" name="hm_boost_text">
+                  <label>Boost</label>
+                  <font>
+                    <size>10</size>
+                    <family>swiss</family>
+                    <style>normal</style>
+                    <weight>bold</weight>
+                    <underlined>0</underlined>
+                    <face>Sans</face>
+                  </font>
+                </object>
+              </object>
+              <object class="sizeritem">
+                <object class="wxStaticText" name="hm_boost_fulltext">
+                  <label>Boost ratio of the filter used in homomorphic filtering. BOOST is the ratio that high frequency values are boosted relative to the low frequency values.</label>
+                  <size>300,60</size>
+                  <font>
+                    <size>9</size>
+                    <family>swiss</family>
+                    <style>normal</style>
+                    <weight>normal</weight>
+                    <underlined>0</underlined>
+                    <face>Sans</face>
+                  </font>
+                </object>
+              </object>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="hm_boost_input">
+              <value>2.0</value>
+            </object>
+          </object>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticLine">
+          <size>380,2</size>
+        </object>
+        <flag>wxALIGN_CENTRE</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxBoxSizer">
+              <orient>wxVERTICAL</orient>
+              <object class="sizeritem">
+                <object class="wxStaticText" name="hm_order_text">
+                  <label>Order</label>
+                  <font>
+                    <size>10</size>
+                    <family>swiss</family>
+                    <style>normal</style>
+                    <weight>bold</weight>
+                    <underlined>0</underlined>
+                    <face>Sans</face>
+                  </font>
+                </object>
+              </object>
+              <object class="sizeritem">
+                <object class="wxStaticText" name="hm_order_fulltext">
+                  <label>Order of the filter used in homomorphic filtering. The higher ORDER is the sharper the transition is.</label>
+                  <size>300,45</size>
+                  <font>
+                    <size>9</size>
+                    <family>swiss</family>
+                    <style>normal</style>
+                    <weight>normal</weight>
+                    <underlined>0</underlined>
+                    <face>Sans</face>
+                  </font>
+                </object>
+              </object>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="hm_order_input">
+              <value>2</value>
+            </object>
+          </object>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticLine">
+          <size>380,2</size>
+        </object>
+        <flag>wxALIGN_CENTRE</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxButton" name="hm_done_button">
+          <label>Done</label>
+          <font>
+            <size>10</size>
+            <family>swiss</family>
+            <style>normal</style>
+            <weight>bold</weight>
+            <underlined>0</underlined>
+            <face>Sans</face>
+          </font>
+        </object>
+        <flag>wxALIGN_CENTRE</flag>
+      </object>
+    </object>
+    <centered>1</centered>
+  </object>
+</resource>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resource>
+  <object class="wxFrame" name="orientationframe">
+    <title>Choose Orientations Now?</title>
+    <object class="wxBoxSizer">
+      <orient>wxVERTICAL</orient>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <label>Velocity Weight Constant:  </label>
+              <size>180,20</size>
+              <style>wxALIGN_RIGHT</style>
+            </object>
+            <flag>wxALIGN_CENTRE_HORIZONTAL</flag>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="weight"/>
+            <flag>wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+        </object>
+        <flag>wxALIGN_LEFT</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <label>Maximum Velocity Weight:  </label>
+              <size>180,20</size>
+              <style>wxALIGN_RIGHT</style>
+            </object>
+            <flag>wxALIGN_CENTRE_HORIZONTAL</flag>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="max_weight"/>
+            <flag>wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+        </object>
+        <flag>wxALIGN_LEFT</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticText">
+          <label>We would like the current orientation theta_1 to:
+  (a) be close to the previous orientation theta_0 and
+  (b) be close to the direction of velocity, arctan(vy,vx). 
+We choose theta_1 to minimize:
+    (1 - w) dist(theta_1, theta_0) +
+    w dist(theta_1, arctan(vy,vx)). 
+The weight w is computed as:
+    w = min{c2, c1 sqrt(vx^2 + vy^2)}
+where c1 is the Velocity Weight Constant and 
+c2 is the Maximum Velocity Weight.</label>
+          <font>
+            <size>8</size>
+            <family>swiss</family>
+            <style>normal</style>
+            <weight>normal</weight>
+            <underlined>0</underlined>
+            <face>Sans</face>
+          </font>
+        </object>
+        <flag>wxALIGN_LEFT|wxALIGN_CENTRE_VERTICAL</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticLine">
+          <size>300,20</size>
+        </object>
+        <flag>wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticText">
+          <label>Estimate orientations modulo 2 pi now?
+</label>
+          <style>wxALIGN_CENTRE</style>
+          <font>
+            <size>10</size>
+            <family>swiss</family>
+            <style>normal</style>
+            <weight>bold</weight>
+            <underlined>0</underlined>
+            <face>Sans</face>
+          </font>
+        </object>
+        <flag>wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxButton" name="ID_CANCEL">
+              <label>Cancel</label>
+            </object>
+            <flag>wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+          </object>
+          <object class="sizeritem">
+            <object class="wxButton" name="ID_OK">
+              <label>Compute</label>
+              <default>1</default>
+            </object>
+            <flag>wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+          </object>
+        </object>
+        <flag>wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+      </object>
+    </object>
+    <style>wxDEFAULT_DIALOG_STYLE</style>
+  </object>
+</resource>

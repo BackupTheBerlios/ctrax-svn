@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resource>
+  <object class="wxFrame" name="FRAME">
+    <title></title>
+    <object class="wxPanel" name="PANEL"/>
+  </object>
+</resource>
