@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-DISABLE_INSTALL_REQUIRES = True
+DISABLE_INSTALL_REQUIRES = False
 
 try:
     from setuptools import setup, Extension
