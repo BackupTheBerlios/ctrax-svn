@@ -795,7 +795,7 @@ def find_flies( old0, old1, obs ):
                 cost[i,j] = observation.dist( target )
 
     # find optimal matching between targ and observations
-    obs_for_target, unass_obs = m_id.matchidentities( cost )
+    obs_for_target, unass_obs = m_id.matchidentities( cost, params.max_jump )
     if params.print_crap: print "best matches:", obs_for_target
 
     # make a new list containing the best matches to each prediction
