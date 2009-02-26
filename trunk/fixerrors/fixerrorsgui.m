@@ -2126,7 +2126,7 @@ if f < handles.trx(fly).firstframe,
   handles.trx(fly).b(1:n) = handles.trx(fly).b(n+1);
   handles.trx(fly).theta(1:n) = handles.trx(fly).theta(n+1);
   handles.trx(fly).firstframe = f;
-  handles.trx(fly).f2i = @(f) f - trk.firstframe + 1;
+  handles.trx(fly).f2i = @(f) f - handles.trx(fly).firstframe + 1;
   handles.trx(fly).nframes = length(handles.trx(fly).x);
   % move the death event
   handles = FixDeathEvent(handles,fly);

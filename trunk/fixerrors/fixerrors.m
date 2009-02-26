@@ -228,6 +228,7 @@ savename = sprintf('fixed_%s.mat',tag);
 if isnumeric(savename) && savename == 0,
   return;
 end
+savename = [savepath,savename];
 trx = rmfield(trx,{'xpred','ypred','thetapred','dx','dy','v','f2i'});
 if ~isempty(savename),
   save(savename,'trx');
