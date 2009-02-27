@@ -210,40 +210,62 @@ def gmmupdate(mu,S,priors,gamma,x,weights=1,mincov=.01,initcovars=None):
     gamma *= num.tile(weights.reshape(n,1),[1,k])
 
     # update the priors (note that it has not been normalized yet)
-    priors[:] = num.sum(gamma,axis=0)    
+    priors[:] = num.sum(gamma,axis=0)
+    Z = priors.copy()
+    priors /= num.sum(priors)
     #print 'updated priors to ' + str(priors)
 
+    issmall = priors < .01
+    issmall = issmall.any()
+
     # if any prior is to small, then reinitialize that cluster
-    fixsmallpriors(x,mu,S,priors,initcovars,gamma)
+    if issmall:
+        fixsmallpriors(x,mu,S,priors,initcovars,gamma)
+        priors[:] = num.sum(gamma,axis=0)
+        Z = priors.copy()
+        priors /= num.sum(priors)
+        print 'after fixsmallpriors, priors is ' + str(priors)
+
+    issmall = issmall.any()
+    if issmall:
+        print 'outside fixsmallpriors'
+        print 'reset mu = ' + str(mu)
+        for i in range(k):
+            print 'reset S[:,:,%d] = '%i + str(S[:,:,i])
+        print 'reset priors = ' + str(priors)
+        #print 'reset gamma = '
+        #print gamma
 
     for i in range(k):
         # update the means
-        mu[i,:] = num.sum(num.tile(gamma[:,i].reshape(n,1),[1,d])*x,axis=0)/priors[i]
-        #print 'updated mu[%d,:] to '%i + str(mu[i,:])
+        mu[i,:] = num.sum(num.tile(gamma[:,i].reshape(n,1),[1,d])*x,axis=0)/Z[i]
+        if issmall: print 'updated mu[%d,:] to '%i + str(mu[i,:])
         # update the covariances
         diffs = x - num.tile(mu[i,:],[n,1])
+        #if issmall: print 'diffs = ' + str(diffs)
         diffs *= num.tile(num.sqrt(gamma[:,i].reshape(n,1)),[1,d])
-        S[:,:,i] = (num.dot(num.transpose(diffs),diffs)) / priors[i]
-        #print 'updated S[:,:,%d] to [%.4f,%.4f;%.4f,%.4f]'%(i,S[0,0,i],S[0,1,i],S[1,0,i],S[1,1,i])
+        #if issmall: print 'weighted diffs = ' + str(diffs)
+        S[:,:,i] = (num.dot(num.transpose(diffs),diffs)) / Z[i]
+        if issmall: print 'updated S[:,:,%d] to [%.4f,%.4f;%.4f,%.4f]'%(i,S[0,0,i],S[0,1,i],S[1,0,i],S[1,1,i])
         # make sure covariance is not too small
         if mincov > 0:
             [D,V] = num.linalg.eig(S[:,:,i])
-            #print 'mineigval = %.4f'%num.min(D)
             if num.min(D) < mincov:
                 S[:,:,i] = initcovars[:,:,i]
-                #print 'reinitializing covariance'
-                #print 'D = '
-                #print D
-                #print 'initcovars[:,:,%d] = [%.4f,%.4f;%.4f,%.4f]'%(i,initcovars[0,0,i],initcovars[0,1,i],initcovars[1,0,i],initcovars[1,1,i])
+                print 'mineigval = %.4f'%num.min(D)
+                print 'reinitializing covariance'
+                print 'D = '
+                print D
+                print 'initcovars[:,:,%d] = [%.4f,%.4f;%.4f,%.4f]'%(i,initcovars[0,0,i],initcovars[0,1,i],initcovars[1,0,i],initcovars[1,1,i])
                 
-    # normalize priors
-    priors /= num.sum(priors)
-    #print 'normalized priors: ' + str(priors)
-
-def gmmem(x,mu,S,priors,weights=None,niters=100,thresh=.001,mincov=.01):
+def gmmem(x,mu0,S0,priors0,weights=None,niters=100,thresh=.001,mincov=.01):
 
     #print 'data = '
     #print x
+
+    mu = mu0.copy()
+    S = S0.copy()
+    priors = priors0.copy()
 
     e = num.inf
     # store initial covariance in case covariance becomes too small
@@ -279,7 +301,7 @@ def gmmem(x,mu,S,priors,weights=None,niters=100,thresh=.001,mincov=.01):
 
     return (mu,S,priors,gamma,e)
 
-def fixsmallpriors(x,mu,S,priors,initcovars,gamma=None):
+def fixsmallpriors(x,mu,S,priors,initcovars,gamma):
 
     #print 'calling fixsmallpriors with: '
     #print 'mu = ' + str(mu)
@@ -300,19 +322,6 @@ def fixsmallpriors(x,mu,S,priors,initcovars,gamma=None):
     n = x.shape[0]
     d = x.shape[1]
     k = mu.shape[0]
-
-    normal = (2.0*num.pi)**(num.double(d)/2.0)
-
-    if gamma is None:
-        
-        # compute the density for each x from each mixture component
-        gamma = num.zeros((n,k))
-        for i in range(k):
-            diffs = x - num.tile(mu[i,:],[n,1])
-            c = decomp.cholesky(S[:,:,i])
-            temp = num.transpose(num.linalg.solve(num.transpose(c),num.transpose(diffs)))
-            gamma[:,i] = num.exp(-.5*num.sum(temp**2,axis=1))/(normal*num.prod(num.diag(c)))
-    # end gamma is None
 
     # loop through all small priors
     smalli, = num.where(issmall)
@@ -336,7 +345,7 @@ def fixsmallpriors(x,mu,S,priors,initcovars,gamma=None):
         # create a new cluster
         mu[i,:] = x[j,:]
         S[:,:,i] = initcovars[:,:,i]
-        priors *= (1 - MINPRIOR)/(1.-priors[i])
+        priors *= (1. - MINPRIOR)/(1.-priors[i])
         priors[i] = MINPRIOR
 
         print 'reset cluster %d to: '%i
@@ -344,13 +353,10 @@ def fixsmallpriors(x,mu,S,priors,initcovars,gamma=None):
         print 'S = '
         print S[:,:,i]
         print 'S.shape: ' + str(S[:,:,i].shape)
-        print 'prior = ' + str(priors[i])
+        print 'priors = ' + str(priors)
 
         # update gamma
-        diffs = x - num.tile(mu[i,:],[n,1])
-        c = decomp.cholesky(S[:,:,i])
-        temp = num.transpose(num.linalg.solve(num.transpose(c),num.transpose(diffs)))
-        gamma[:,i] = num.exp(-.5*num.sum(temp**2,axis=1))/(normal*num.prod(num.diag(c)))
+        [gamma[:],newe] = gmmmemberships(mu,S,priors,x,1,initcovars)
 
 #n0 = 100
 #n1 = 100
