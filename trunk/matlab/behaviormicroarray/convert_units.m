@@ -241,9 +241,13 @@ end
 %% save to file
 
 savename = matname;
-[savename, savepath] = uiputfile('*.mat', sprintf('Save results for input %s to',matname), savename);
-if isnumeric(savename) && savename == 0,
-  return;
+while true,
+  [savename, savepath] = uiputfile('*.mat', sprintf('Save results for input %s to',matname), savename);
+  if ~isnumeric(savename),
+    break;
+  end
+  fprintf('missed\n');
+  savename = matname;
 end
 savename = [savepath,savename];
 

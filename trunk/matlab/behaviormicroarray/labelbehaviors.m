@@ -258,7 +258,7 @@ else
   set(handles.dtheta_text,'string',sprintf('dtheta: %f',180/pi*handles.trx(handles.fly).dtheta(i)));
   set(handles.ducor_text,'string',sprintf('du_cor: %f',handles.trx(handles.fly).du_cor(i)));
   set(handles.dvcor_text,'string',sprintf('dv_cor: %f',handles.trx(handles.fly).dv_cor(i)));
-  set(handles.corfrac_text,'string',sprintf('cor: %f',handles.trx(handles.fly).corfrac(1,i)));
+  set(handles.corfrac_text,'string',sprintf('cor: %f',handles.trx(handles.fly).corfrac_maj(i)));
 end
 function v = isalive(track,f)
 

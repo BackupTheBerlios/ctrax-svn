@@ -41,6 +41,18 @@ end
 
 thetafil = [1     4     6     4     1]/16;
 
+if ~isfield(data,'x_mm'),
+  if ~isfield(data,'pxpermm'),
+    error('Conversion from pixels to mm not set.');
+  end
+  for fly = 1:nflies,
+    data(fly).x_mm = data(fly).x / data(fly).pxpermm;
+    data(fly).y_mm = data(fly).y / data(fly).pxpermm;
+    data(fly).a_mm = data(fly).a / data(fly).pxpermm;
+    data(fly).b_mm = data(fly).b / data(fly).pxpermm;
+  end
+end
+
 % compute velocities in the canonical coordinates of the fly
 for fly = 1:nflies,
 
