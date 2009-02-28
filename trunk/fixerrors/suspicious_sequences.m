@@ -191,7 +191,11 @@ for i = 2:nframes,
   dopt = sum(diag(d));
   
   % try all possible swaps
-  pairs = nchoosek(1:length(xpred),2);
+  if length(xpred) < 2,
+    pairs = [];
+  else
+    pairs = nchoosek(1:length(xpred),2);
+  end
   
   for j = 1:rows(pairs),
   
