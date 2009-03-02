@@ -664,6 +664,7 @@ class Hindsight:
                 if DEBUG: print 'tracks[%d][%d] = '%(t,id1) + str(self.tracks[t][id1])
                 if DEBUG: print 'tracks[%d][%d] = '%(t,id2) + str(self.tracks[t][id2])
                 (cost,targ) = est.hindsight_computemergepenalty(self.tracks[t],id1,id2,cc,dfore)
+                if DEBUG: print 'cost of merging = ' + str(cost)
                 costs[pair] = max(costs[pair],cost)
 
                 # if the cost is too high, then just return
@@ -983,8 +984,8 @@ def splitobservation(bw,dfore,k,init):
             print S0[:,:,i]
     if DEBUG: print 'priors0 = '
     if DEBUG: print priors0
-
-    # are there no data points?
+ 
+   # are there no data points?
     if len(r) == 0:
         return None
         

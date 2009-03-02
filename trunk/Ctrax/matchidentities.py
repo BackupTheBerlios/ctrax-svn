@@ -29,7 +29,6 @@ def matchidentities( cost, maxcost=-1 ):
 	isunnassignedobservation[i] is True if the observation is not assigned to any target."""
 
 	# TODO: this raises errors when n_observations and(/or?) n_targets == 0
-
 	if maxcost < 0:
 		maxcost = params.max_jump
 

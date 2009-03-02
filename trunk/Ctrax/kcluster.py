@@ -262,7 +262,6 @@ def gmmem(x,mu0,S0,priors0,weights=None,niters=100,thresh=.001,mincov=.01):
 
     #print 'data = '
     #print x
-
     mu = mu0.copy()
     S = S0.copy()
     priors = priors0.copy()

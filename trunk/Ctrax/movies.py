@@ -670,7 +670,6 @@ class Avi:
         currentseekloc = self.file.tell()
          
         this_frame_id, frame_size = struct.unpack( '4sI', self.file.read( 8 ) )
-
         if frame_size != self.buf_size:
             raise ValueError( "Frame size does not equal buffer size; movie must be uncompressed" )
         if not hasattr( self, 'frame_id' ):

@@ -164,7 +164,6 @@ class Hindsight:
         # id2 can be merged with id1 in all frames t1:T-3
 
         # for each death in frame T-2
-        global DEBUG
         didfix = False
         deathscurr = list(self.milestones.getdeaths(T-2))
         if params.do_fix_split:
@@ -184,13 +183,6 @@ class Hindsight:
         if params.do_fix_lost:
             for id2 in birthscurr:
                 didfix |= self.fix_lostdetection(id2,T-2)
-
-        for tt in range(max(0,T-50),T):
-            idscurr = self.tracks[tt].keys()
-            for i in range(len(idscurr)):
-                if self.tracks[tt][idscurr[i]].major > 100:
-                    DEBUG = True
-                    print 'Found very large ellipse in frame %d, after fixerrors at frame %d for fly %d, major = %f'%(tt,T,idscurr[i],self.tracks[tt][idscurr[i]].major)
             
     def fix_spuriousdetection(self,id,t2):
 
