@@ -1,25 +1,31 @@
-function [isfore,dfore,xpred,ypred,thetapred,r0,r1,c0,c1,im] = FixBgSub(fly,f,handles)
+function [isfore,dfore,xpred,ypred,thetapred,r0,r1,c0,c1,im] = FixBgSub(flies,f,handles)
 
-trk = handles.trx(fly);
+trx = handles.trx(flies);
+nflies = length(flies);
 boxrad = handles.maxjump;
 
-i = trk.f2i(f);
-x1 = trk.x(i-1);
-y1 = trk.y(i-1);
-theta1 = trk.theta(i-1);
-if i == 2,
-  xpred = x1;
-  ypred = y1;
-  thetapred = theta1;
-else
-  x2 = trk.x(i-2);
-  y2 = trk.y(i-2);
-  theta2 = trk.theta(i-2);
-  [xpred,ypred,thetapred] = cvpred(x2,y2,theta2,x1,y1,theta1);
+xpred = zeros(1,nflies);
+ypred = zeros(1,nflies);
+thetapred = zeros(1,nflies);
+for j = 1:nflies,
+  i = trx(j).f2i(f);
+  x1 = trx(j).x(i-1);
+  y1 = trx(j).y(i-1);
+  theta1 = trx(j).theta(i-1);
+  if i == 2,
+    xpred(j) = x1;
+    ypred(j) = y1;
+    thetapred(j) = theta1;
+  else
+    x2 = trx(j).x(i-2);
+    y2 = trx(j).y(i-2);
+    theta2 = trx(j).theta(i-2);
+    [xpred(j),ypred(j),thetapred(j)] = cvpred(x2,y2,theta2,x1,y1,theta1);
+  end
 end
 
-r0 = max(floor(ypred-boxrad),1); r1 = min(ceil(ypred+boxrad),handles.nr);
-c0 = max(floor(xpred-boxrad),1); c1 = min(ceil(xpred+boxrad),handles.nc);
+r0 = max(floor(min(ypred)-boxrad),1); r1 = min(ceil(max(ypred)+boxrad),handles.nr);
+c0 = max(floor(min(xpred)-boxrad),1); c1 = min(ceil(max(xpred)+boxrad),handles.nc);
 im = handles.readframe(f);
 im = im(r0:r1,c0:c1);
 

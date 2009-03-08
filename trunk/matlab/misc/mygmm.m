@@ -26,6 +26,9 @@ else
 end
               
 [N,D] = size(X);
+if isstruct(start),
+  nreplicates = length(start);
+end
 
 options = foptions;
 options(1) = display;
@@ -37,10 +40,13 @@ minerr = inf;
 for replicate = 1:nreplicates,
 
   % initialize
-  [idx,C] = mykmeans(X,k,kmeansparams{:});
-
-  % create gmm structure
-  mix = mygmminit(X,C,idx,covartype);
+  if isstruct(start),
+    mix = start(replicate);
+  else
+    [idx,C] = mykmeans(X,k,kmeansparams{:});
+    % create gmm structure
+    mix = mygmminit(X,C,idx,covartype);
+  end
 
   if isempty(weights),
     [mix,options,errlog,post] = gmmem(mix,X,options);

@@ -108,7 +108,7 @@ for n = 1:niters
   new_c = post' * x;
   
   % Now move new estimates to old parameter vectors
-  mix.priors = new_pr ./ ndata;
+  mix.priors = new_pr;% ./ ndata;
   
   mix.centres = new_c ./ (new_pr' * ones(1, mix.nin));
   

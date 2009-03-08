@@ -46,16 +46,7 @@ handles.annname = varargin{4};
 handles.params = varargin{5};
 if length(varargin) > 5,
   handles.savename = varargin{6};
-  if exist(handles.savename,'file')
-    load(handles.savename);
-    handles.doneseqs = doneseqs;
-    handles.moviename = moviename;
-    handles.trx = trx;
-    handles.seqs = seqs;
-    didload = true;
-  else
-    didload = false;
-  end
+  didload = false;
 else
   didload = false;
 end
@@ -549,12 +540,14 @@ else
   % set the current fly as selected
   SetFlySelected(handles,fly,true);
   % unselect another fly if necessary
-  unselect = handles.selected(end);
-  if unselect > 0,
-    SetFlySelected(handles,unselect,false);
+  if length(nnz(handles.selected)) == handles.nselect,
+    unselect = handles.selected(find(handles.selected>0,1,'last'));
+    if ~isempty(unselect),
+      SetFlySelected(handles,unselect,false);
+    end
   end
   % store selected
-  handles.selected = [fly,handles.selected(1:end-1)];
+  handles.selected = [fly,handles.selected];
 end
 
 fprintf('selected = %d\n',handles.selected);
@@ -1252,6 +1245,14 @@ elseif strcmpi(s,'flip orientation...'),
   handles.selected = 0;
   handles.flipframe = -1;
   set(handles.flipdoitbutton,'enable','off');
+elseif strcmpi(s,'auto track multiple...'),
+  set(handles.manytrackpanel,'visible','on');
+  EnablePanel(handles.editpanel,'off');
+  handles.nselect = handles.nflies;
+  handles.selected = 0;
+  handles.manytrackframe = -1;
+  set(handles.manytrackdoitbutton,'enable','off');
+  set(handles.manytracksettingsbutton,'enable','off');
 end
 guidata(hObject,handles);
 
@@ -2437,6 +2438,7 @@ for f = f0+1:f1
 end
 
 
+
 % --- Executes on button press in showtrackingbutton.
 function showtrackingbutton_Callback(hObject, eventdata, handles)
 % hObject    handle to showtrackingbutton (see GCBO)
@@ -2551,3 +2553,292 @@ for fly = 1:length(handles.trx)
     fly,handles.trx(fly).firstframe,handles.trx(fly).endframe,handles.trx(fly).nframes,...
     length(handles.trx(fly).x));
 end
+
+function handles = FixTrackFlies(flies,f0,f1,handles)
+
+MINPRIOR = .01;
+se = strel('disk',1);
+nflies = length(flies);
+mu0 = zeros(nflies,2);
+S0 = zeros([2,2,nflies]);
+prior0 = zeros(1,nflies);
+for i = 1:nflies,
+  fly = flies(i);
+  j = handles.trx(fly).f2i(f0);
+  mu0(i,:) = [handles.trx(fly).x(j),handles.trx(fly).y(j)];
+  S0(:,:,i) = axes2cov(handles.trx(fly).a(j)*2,handles.trx(fly).b(j)*2,handles.trx(fly).theta(j));
+  priors0(i) = handles.trx(fly).a(j)*handles.trx(fly).b(j);
+end
+priosr0 = prior0 / sum(priors0);
+for f = f0+1:f1
+
+  drawnow;
+  handles = guidata(handles.figure1);
+  if isfield(handles,'stoptracking') && handles.stoptracking
+    break;
+  end
+  
+  % get foreground/background classification around flies
+  [isfore,dfore,xpred,ypred,thetapred,r0,r1,c0,c1,im] = FixBgSub(flies,f,handles);
+
+  [cc,ncc] = bwlabel(isfore);
+  isdeleted = [];
+  for fly2 = 1:handles.nflies,
+    if ismember(fly2,flies), continue; end
+    if ~isalive(handles.trx(fly2),f), continue; end
+    i2 = handles.trx(fly2).f2i(f);
+    if handles.trx(fly2).x(i2)-(2*handles.trx(fly2).a(i2)+5) > c1 || ...
+        handles.trx(fly2).x(i2) + (2*handles.trx(fly2).a(i2)+5)< c0 || ...
+        handles.trx(fly2).y(i2) + (2*handles.trx(fly2).a(i2)+5)< r0 || ...
+        handles.trx(fly2).y(i2) - (2*handles.trx(fly2).a(i2)+5)> r1,
+      continue;
+    end
+    bw = ellipsepixels([handles.trx(fly2).x(i2),handles.trx(fly2).y(i2),...
+      handles.trx(fly2).a(i2)*4,handles.trx(fly2).b(i2)*4,handles.trx(fly2).theta(i2)],...
+      [r0,r1,c0,c1]);
+    j = 1;
+    while true,
+      if j > ncc,
+        break;
+      end
+
+      if ismember(j,isdeleted), 
+        j = j + 1;
+        continue; 
+      end
+      fracoverlap = sum(dfore((cc==j) & bw)) / sum(dfore(cc==j));
+      if fracoverlap > .85
+        isfore(cc==j) = false;
+        isdeleted(end+1) = j;
+        cc(cc==j) = 0;
+      elseif fracoverlap > 0
+        %bw = imdilate(bw,se);
+        isfore(bw) = false;
+        cc(bw) = 0;
+        tmp = cc == j;
+        tmp = imopen(tmp,se);
+        %[cctmp,ncctmp] = bwlabel(tmp);
+        %if ncctmp > 1
+        %  areas = regionprops(cctmp,'area');
+        %  areas = getstructarrayfield(areas,'Area');
+        %  k = argmax(areas);
+        %else
+        %  k = 1;
+        %end
+        %tmp = cctmp==k;
+        isfore(cc==j) = false;
+        cc(cc==j) = 0;
+        cc(tmp) = j;
+        isfore(tmp) = true;
+        [cctmp,ncctmp] = bwlabel(tmp);
+        for k = 2:ncctmp,
+          ncc = ncc+1;
+          cc(cctmp==k) = ncc;
+        end
+      end
+      j = j + 1;
+    end
+  end
+  % choose the closest connected component
+  if ~any(isfore(:)),
+    msgbox(sprintf('Frame %d: Could not find the selected fly. Quitting',f));
+    return;
+  end
+  w = dfore(isfore);
+  w = w / max(w);
+  %[cc,ncc] = bwlabel(isfore);
+  mix = gmm(2, nflies, 'full');
+  mix.centres = mu0;
+  mix.covars = S0;
+  mix.priors = priors0;
+  [y,x] = find(isfore);
+  x = x + c0 - 1;
+  y = y + r0 - 1;
+  [mu,S,priors] = mygmm([x(:),y(:)],nflies,'start',mix,'weights',w);
+  if any(priors) < MINPRIOR,
+    msgbox(sprintf('Frame %d: Prior for a fly got too small, aborting.',f));
+    return;
+  end
+  for i = 1:nflies,
+    fly = flies(i);
+    j = handles.trx(fly).f2i(f);
+    handles.trx(fly).x(j) = mu(i,1);
+    handles.trx(fly).y(j) = mu(i,2);
+    [a,b,theta] = cov2ell(S(:,:,i));
+    handles.trx(fly).a(j) = a/2;
+    handles.trx(fly).b(j) = b/2;
+    dtheta = modrange(theta-handles.trx(fly).theta(j-1),-pi/2,pi/2);
+    handles.trx(fly).theta(j) = modrange(handles.trx(fly).theta(j-1)+dtheta,-pi,pi);
+  end
+  handles.f = f;
+  if handles.trx(fly).endframe < handles.f
+    handles.trx(fly).endframe = f;
+  end
+  handles.trx(fly).nframes = length(handles.trx(fly).x);
+  guidata(handles.figure1,handles);
+
+  if get(handles.manytrackshowtrackingbutton,'value')
+    PlotFrame(handles);
+    xlim = get(handles.mainaxes,'xlim');
+    ylim = get(handles.mainaxes,'ylim');
+    minx = min(mu(:,1));
+    maxx = max(mu(:,1));
+    miny = min(mu(:,2));
+    maxy = max(mu(:,2));
+    if minx < xlim(1) || maxx > xlim(2) || miny < ylim(1) || maxy > ylim(2)
+      seq.frames = [max(f0,f-20),min(f1,f+20)];
+      seq.flies = flies;
+      ZoomInOnSeq(handles,seq);
+    end
+  else
+    set(handles.frameedit,'string',sprintf('%05d',f));
+  end
+
+  mu0 = mu;
+  S0 = S;
+  priors0 = priors;
+  
+end
+
+
+% --- Executes on button press in manytrackdoitbutton.
+function manytrackdoitbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to manytrackdoitbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+f0 = min(handles.f,handles.manytrackframe);
+f1 = max(handles.f,handles.manytrackframe);
+
+for fly = handles.manytrackflies(:)',
+  SetFlySelected(handles,fly,false);
+end
+handles.selected = [];
+
+flies = handles.manytrackflies;
+
+% save to undo list
+for i = 1:length(flies),
+  fly = flies(i);
+  oldtrx(i) = GetPartOfTrack(handles.trx(fly),f0,f1);
+end
+handles.undolist{end+1} = {'manytrack',[f0,f1],flies,oldtrx,f0,f1};
+
+set(handles.manytrackcancelbutton,'string','Stop');
+set(handles.manytrackdoitbutton,'enable','off');
+handles.stoptracking = false;
+
+% track
+seq.flies = flies;
+seq.frames = f0:min(f1,[handles.trx(flies).endframe]);
+if get(handles.manytrackshowtrackingbutton,'value')
+  ZoomInOnSeq(handles,seq);
+end
+handles.stoptracking = false;
+handles = FixTrackFlies(flies,f0,f1,handles);
+for fly = flies(:)',
+  handles = FixDeathEvent(handles,fly);
+end
+delete(handles.hmanytrack);
+set(handles.manytrackcancelbutton,'string','Cancel');
+set(handles.manytrackfirstframebutton,'Enable','on');
+set(handles.manytrackdoitbutton,'enable','off');
+set(handles.manytrackpanel','visible','off');
+EnablePanel(handles.editpanel,'on');
+
+guidata(hObject,handles);
+
+for fly = flies(:)',
+  FixUpdateFly(handles,fly);
+end
+
+
+% --- Executes on button press in manytrackcancelbutton.
+function manytrackcancelbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to manytrackcancelbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if strcmpi(get(handles.manytrackcancelbutton,'string'),'stop')
+  handles.stoptracking = true;
+else
+  if isfield(handles,'hmanytrack') && ishandle(handles.hmanytrack),
+    delete(handles.hmanytrack);
+  end
+  handles.nselect = 0;
+  if isfield(handles,'manytrackflies'),
+    for fly = handles.manytrackflies(:)',
+      SetFlySelected(handles,fly,false);
+    end
+  end
+  handles.selected = [];
+  set(handles.manytrackfirstframebutton,'Enable','on');
+  set(handles.manytrackdoitbutton,'enable','off');
+  set(handles.manytrackpanel','visible','off');
+  EnablePanel(handles.editpanel,'on');
+end
+guidata(hObject,handles);
+
+
+% --- Executes on button press in manytrackfirstframebutton.
+function manytrackfirstframebutton_Callback(hObject, eventdata, handles)
+% hObject    handle to manytrackfirstframebutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+handles.selected = handles.selected(handles.selected > 0);
+if isempty(handles.selected),
+  errordlg('Please select flies track to track first.','No Fly Selected');
+  return;
+end
+for fly = handles.selected(:)',
+  if ~isalive(handles.trx(fly),handles.f),
+    errordlg('One of the selected flies is not alive in current frame!','Bad Selection');
+    return;
+  end
+end
+handles.manytrackflies = handles.selected;
+handles.manytrackframe = handles.f;
+
+handles.nselect = 0;
+handles.selected = [];
+set(handles.manytrackdoitbutton,'enable','on');
+set(handles.manytrackfirstframebutton,'enable','off');
+set(handles.manytracksettingsbutton,'enable','on');
+% draw the fly
+handles.hmanytrack = [];
+for fly = handles.manytrackflies(:)',
+  i = handles.trx(fly).f2i(handles.f);
+  x = handles.trx(fly).x(i);
+  y = handles.trx(fly).y(i);
+  a = 2*handles.trx(fly).a(i);
+  b = 2*handles.trx(fly).b(i);
+  theta = handles.trx(fly).theta(i);
+  handles.hmanytrack(end+1) = ellipsedraw(a,b,x,y,theta);
+  color = handles.colors(fly,:);
+  set(handles.hmanytrack(end),'color',color*.75,'linewidth',3,'linestyle','--',...
+    'hittest','off');
+end
+handles.bgcurr = handles.bgmed;
+
+guidata(hObject,handles);
+
+
+% --- Executes on button press in manytracksettingsbutton.
+function manytracksettingsbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to manytracksettingsbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+handles = retrack_settings(handles);
+guidata(hObject,handles);
+
+% --- Executes on button press in manytrackshowtrackingbutton.
+function manytrackshowtrackingbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to manytrackshowtrackingbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of manytrackshowtrackingbutton
+
+
