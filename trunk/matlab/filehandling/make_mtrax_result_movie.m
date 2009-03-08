@@ -1,15 +1,16 @@
 function make_mtrax_result_movie(moviename,trx,aviname,varargin)
 
-[colors,zoomflies,nzoomr,nzoomc,boxradius,taillength,bitrate,NFRAMESBUFFER,fps,maxnframes] = ...
+[colors,zoomflies,nzoomr,nzoomc,boxradius,taillength,bitrate,NFRAMESBUFFER,fps,maxnframes,firstframe] = ...
   myparse(varargin,'colors',[],'zoomflies',[],'nzoomr',5,'nzoomc',3,...
   'boxradius',20,'taillength',100,'bitrate',20000,'nframesbuffer',2000,'fps',20,...
-  'maxnframes',inf);
+  'maxnframes',inf,'firstframe',1);
 
 addpath /home/kristin/FLIES/code/exploremtraxresults;
 
 [readframe,nframes,fid] = get_readframe_fcn(moviename);
-nframes = min(nframes,maxnframes);
-im = readframe(1);
+endframe = min(nframes,firstframe+maxnframes-1);
+nframes = endframe - firstframe + 1;
+im = readframe(firstframe);
 [nr,nc] = size(im);
 nids = length(trx);
 
@@ -65,7 +66,7 @@ hzoom = zeros(nzoomr,nzoomc);
 % for compression
 isfirst = true;
 
-for frame = 1:nframes,
+for frame = firstframe:endframe,
   fprintf('frame %d\n',frame);
   
   % relative frame

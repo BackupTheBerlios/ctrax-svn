@@ -68,7 +68,6 @@ end
 % read data
 load(matname);
 load(matname,'angle'); % because matlab is retarded :)
-
 % the scipy interface has changed, everything that was once row vectors is
 % now column vectors. convert to row vectors again so that my code works.
 x_pos = x_pos(:)';
