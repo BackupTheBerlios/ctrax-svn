@@ -67,6 +67,13 @@ end
 
 % read data
 load(matname);
+if exist('trx','var'),
+  data = trx;
+  for fly = 1:length(data),
+    data(fly).f2i = @(f) f - data(fly).firstframe + 1;
+  end
+  return;
+end
 load(matname,'angle'); % because matlab is retarded :)
 % the scipy interface has changed, everything that was once row vectors is
 % now column vectors. convert to row vectors again so that my code works.
