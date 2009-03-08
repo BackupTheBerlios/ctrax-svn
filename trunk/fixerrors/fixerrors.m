@@ -222,11 +222,15 @@ for i = 1:length(trx),
   trx(i).fps = fps;
 end
 
-fprintf('Save fixed tracks to a file\n');
-savename = sprintf('fixed_%s.mat',tag);
-[savename, savepath] = uiputfile('*.mat', 'Save results?', savename);
-if isnumeric(savename) && savename == 0,
-  return;
+while true,
+  fprintf('Save fixed tracks to a file\n');
+  savename = sprintf('fixed_%s.mat',tag);
+  [savename, savepath] = uiputfile('*.mat', 'Save results?', savename);
+  if isnumeric(savename) && savename == 0,
+    fprintf('missed\n');
+  else
+    break;
+  end
 end
 savename = [savepath,savename];
 trx = rmfield(trx,{'xpred','ypred','thetapred','dx','dy','v','f2i'});
