@@ -212,6 +212,9 @@ if ~DORESTART,
 else
   load(loadname);
   trx0 = trx;
+  for i = 1:length(trx0),
+    trx0(i).f2i = @(f) f - trx0(i).firstframe + 1;
+  end
   trx = fixerrorsgui(seqs,moviename,trx0,annname,params,loadname);
 end
 

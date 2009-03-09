@@ -535,13 +535,12 @@ if ismember(fly,handles.selected),
   SetFlySelected(handles,fly,false);
   i = find(handles.selected==fly,1);
   handles.selected(i) = [];
-  handles.selected(end+1) = 0;
 else
   % set the current fly as selected
   SetFlySelected(handles,fly,true);
   % unselect another fly if necessary
-  if length(nnz(handles.selected)) == handles.nselect,
-    unselect = handles.selected(find(handles.selected>0,1,'last'));
+  if length(handles.selected) == handles.nselect,
+    unselect = handles.selected(end);
     if ~isempty(unselect),
       SetFlySelected(handles,unselect,false);
     end
@@ -549,6 +548,7 @@ else
   % store selected
   handles.selected = [fly,handles.selected];
 end
+%handles.selected = handles.selected(handles.selected > 0);
 
 fprintf('selected = %d\n',handles.selected);
 
@@ -909,7 +909,7 @@ if ~isfield(handles,'savename') || isempty(handles.savename),
   handles.savename = [defaultpath,filename];
 end
 
-trx = handles.trx;
+trx = rmfield(handles.trx,'f2i');
 seqs = handles.seqs;
 doneseqs = handles.doneseqs;
 moviename = handles.moviename;
@@ -1006,7 +1006,7 @@ function deletecancelbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-if handles.selected > 0,
+if ~isempty(handles.selected),
   SetFlySelected(handles,handles.selected,false);
 end
 handles.nselect = 0;
@@ -1031,7 +1031,7 @@ function renamedoitbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-if nnz(handles.selected) ~= 2, 
+if length(handles.selected) ~= 2,
     errordlg('You must first select the two flies two swap. See Swap Identities Instructions Panel',...
     'Bad Selection');
   return;
@@ -1202,19 +1202,19 @@ if strcmpi(s,'delete track...'),
   set(handles.deletepanel,'visible','on');
   EnablePanel(handles.editpanel,'off');
   handles.nselect = 1;
-  handles.selected = 0;
+  handles.selected = [];
 elseif strcmpi(s,'interpolate...'),
   set(handles.interpolatepanel,'visible','on');
   EnablePanel(handles.editpanel,'off');
   handles.nselect = 1;
-  handles.selected = 0;
+  handles.selected = [];
   handles.interpolatefirstframe = -1;
   set(handles.interpolatedoitbutton,'enable','off');
 elseif strcmpi(s,'connect tracks...'),
   set(handles.connectpanel,'visible','on');
   EnablePanel(handles.editpanel,'off');
   handles.nselect = 1;
-  handles.selected = 0;
+  handles.selected = [];
   handles.connectfirstframe = -1;
   handles.connectfirstfly = -1;
   set(handles.connectdoitbutton,'enable','off');
@@ -1222,19 +1222,19 @@ elseif strcmpi(s,'swap identities...')
   set(handles.swappanel,'visible','on');
   EnablePanel(handles.editpanel,'off');
   handles.nselect = 2;
-  handles.selected = zeros(1,2);
+  handles.selected = [];
 elseif strcmpi(s,'extend track...'),
   set(handles.extendpanel,'visible','on');
   EnablePanel(handles.editpanel,'off');
   handles.nselect = 1;
-  handles.selected = 0;
+  handles.selected = [];
   handles.extendfirstframe = -1;
   set(handles.extenddoitbutton,'enable','off');
 elseif strcmpi(s,'auto track...'),
   set(handles.autotrackpanel,'visible','on');
   EnablePanel(handles.editpanel,'off');
   handles.nselect = 1;
-  handles.selected = 0;
+  handles.selected = [];
   handles.autotrackframe = -1;
   set(handles.autotrackdoitbutton,'enable','off');
   set(handles.autotracksettingsbutton,'enable','off');
@@ -1242,14 +1242,14 @@ elseif strcmpi(s,'flip orientation...'),
   set(handles.flippanel,'visible','on');
   EnablePanel(handles.editpanel,'off');
   handles.nselect = 1;
-  handles.selected = 0;
+  handles.selected = [];
   handles.flipframe = -1;
   set(handles.flipdoitbutton,'enable','off');
 elseif strcmpi(s,'auto track multiple...'),
   set(handles.manytrackpanel,'visible','on');
   EnablePanel(handles.editpanel,'off');
   handles.nselect = handles.nflies;
-  handles.selected = 0;
+  handles.selected = [];
   handles.manytrackframe = -1;
   set(handles.manytrackdoitbutton,'enable','off');
   set(handles.manytracksettingsbutton,'enable','off');
@@ -1632,7 +1632,7 @@ function interpolatefirstframebutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-if handles.selected == 0,
+if isempty(handles.selected),
   errordlg('Please select fly track to interpolate first.','No Fly Selected');
   return;
 end
@@ -1669,7 +1669,7 @@ function extendfirstflybutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-if handles.selected == 0,
+if isempty(handles.selected),
   errordlg('Please select fly track to extend first.','No Fly Selected');
   return;
 end
@@ -1716,7 +1716,7 @@ function connectdoitbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-if handles.selected == 0,
+if isempty(handles.selected),
   errordlg('Please select fly track to connect first.','No Fly Selected');
   return;
 end
@@ -1934,7 +1934,7 @@ function connectcancelbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-if handles.selected > 0,
+if ~isempty(handles.selected),
   SetFlySelected(handles,handles.selected,false);
 end
 if isfield(handles,'connectfirstfly') && handles.connectfirstfly > 0,
@@ -1956,7 +1956,7 @@ function connectfirstflybutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-if handles.selected == 0,
+if isempty(handles.selected),
   errordlg('Please select fly track to connect first.','No Fly Selected');
   return;
 end
@@ -1966,7 +1966,7 @@ if ~isalive(handles.trx(handles.selected),handles.f),
 end
 handles.connectfirstfly = handles.selected;
 handles.nselect = 1;
-handles.selected = 0;
+handles.selected = [];
 handles.connectfirstframe = handles.f;
 set(handles.connectdoitbutton,'enable','on');
 set(handles.connectfirstflybutton,'enable','off');
@@ -2252,7 +2252,7 @@ function autotrackfirstframebutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-if handles.selected == 0,
+if isempty(handles.selected),
   errordlg('Please select fly track to track first.','No Fly Selected');
   return;
 end
@@ -2511,7 +2511,7 @@ function flipfirstframebutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-if handles.selected == 0,
+if isempty(handles.selected),
   errordlg('Please select fly track to flip first.','No Fly Selected');
   return;
 end
@@ -2561,7 +2561,7 @@ se = strel('disk',1);
 nflies = length(flies);
 mu0 = zeros(nflies,2);
 S0 = zeros([2,2,nflies]);
-prior0 = zeros(1,nflies);
+priors0 = zeros(1,nflies);
 for i = 1:nflies,
   fly = flies(i);
   j = handles.trx(fly).f2i(f0);
@@ -2569,7 +2569,7 @@ for i = 1:nflies,
   S0(:,:,i) = axes2cov(handles.trx(fly).a(j)*2,handles.trx(fly).b(j)*2,handles.trx(fly).theta(j));
   priors0(i) = handles.trx(fly).a(j)*handles.trx(fly).b(j);
 end
-priosr0 = prior0 / sum(priors0);
+priors0 = priors0 / sum(priors0);
 for f = f0+1:f1
 
   drawnow;
@@ -2762,8 +2762,9 @@ function manytrackcancelbutton_Callback(hObject, eventdata, handles)
 if strcmpi(get(handles.manytrackcancelbutton,'string'),'stop')
   handles.stoptracking = true;
 else
-  if isfield(handles,'hmanytrack') && ishandle(handles.hmanytrack),
-    delete(handles.hmanytrack);
+  if isfield(handles,'hmanytrack')
+    idx = ishandle(handles.hmanytrack);
+    delete(handles.hmanytrack(idx));
   end
   handles.nselect = 0;
   if isfield(handles,'manytrackflies'),
@@ -2786,7 +2787,7 @@ function manytrackfirstframebutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-handles.selected = handles.selected(handles.selected > 0);
+%handles.selected = handles.selected(handles.selected > 0);
 if isempty(handles.selected),
   errordlg('Please select flies track to track first.','No Fly Selected');
   return;
@@ -2797,6 +2798,8 @@ for fly = handles.selected(:)',
     return;
   end
 end
+handles.autotrackfly = handles.selected;
+handles.autotrackframe = handles.f;
 handles.manytrackflies = handles.selected;
 handles.manytrackframe = handles.f;
 

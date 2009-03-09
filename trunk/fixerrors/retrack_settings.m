@@ -92,10 +92,10 @@ uiwait(handles.figure1);
 
 function handles = ShowCurrentFrame(handles)
 
-fly = handles.fixhandles.autotrackfly;
+flies = handles.fixhandles.autotrackfly;
 f = handles.fixhandles.autotrackframe;
 [isfore,dfore,xpred,ypred,thetapred,handles.r0,handles.r1,handles.c0,handles.c1,handles.im] = ...
-  FixBgSub(fly,f,handles.fixhandles);
+  FixBgSub(flies,f,handles.fixhandles);
 handles.nr = handles.r1-handles.r0+1;
 handles.nc = handles.c1-handles.c0+1;
 axes(handles.axes1);
