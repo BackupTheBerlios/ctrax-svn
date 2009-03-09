@@ -32,7 +32,7 @@ end;
 if isspecial,
   sz = str2num(value);
   value = fread(fid,sz,'uint8');
-else,
+else
   tmp = str2num(value);
   if ~isempty(tmp),
     value = tmp;

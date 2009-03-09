@@ -46,6 +46,7 @@ while true,
   if readtrx && strcmpi(param,'start_frame')
     startframe = value;
   end
+  disp(param);
   
   if readall,
     params.(param) = value;
