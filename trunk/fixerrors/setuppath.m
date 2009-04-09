@@ -1,5 +1,5 @@
 % set up the paths
-isdone = ~isempty(which('get_readframe_fcn'));
+isdone = exist('get_readframe_fcn.m','file') == 2;
 if isdone, return; end
 
 dirnamestry = {'.','matlab','../matlab','../Ctrax/matlab'};
@@ -25,13 +25,16 @@ for i = 1:length(dirnamestry),
     keep = cellfun(@isempty,matches);
     tmp(~keep) = [];
     p1 = sprintf('%s:',tmp{:});
+    oldpath = path;
     addpath(p1);
-  end
-  isdone = ~isempty(which('get_readframe_fcn'));
-  if isdone, 
-    fprintf('Found Ctrax/matlab at %s\n',dirname);
-    save(rcfile,'dirname');
-    return; 
+    isdone = exist('get_readframe_fcn.m','file') == 2;
+    if isdone,
+      fprintf('Found Ctrax/matlab at %s\n',dirname);
+      save(rcfile,'dirname');
+      return;
+    else
+      path(oldpath);
+    end
   end
 end
 
