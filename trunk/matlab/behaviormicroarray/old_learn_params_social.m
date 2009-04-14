@@ -1,13 +1,13 @@
-% learn_params
+% learn_params_social
 setuppath;
 
 %% set all defaults
 
+px2mm = 4;
 labelmatname = '';
 labelmatpath = '';
 paramsmatpath = '';
 minseqlengthorder = 5;
-succeeded = false;
 
 %% load settings
 
@@ -19,7 +19,6 @@ end
 
 %% get the labeled data
 
-fprintf('Do you want to label new data, or load pre-labeled data from a mat file?\n');
 labelmode = questdlg('Label new data or load labeled data?','Data source',...
   'Label','Load','Cancel','Label');
 
@@ -35,14 +34,8 @@ if strcmpi(labelmode,'load'),
     return;
   end
   load(labelmatname);
-  fprintf('Labeled data loaded\n');
 else  
-  [labeldata_succeeded,labelmatname] = label_data_f();
-  if ~labeldata_succeeded,
-    return;
-  end
-  load(labelmatname);
-
+  label_data_social;
 end
 
 %% crop out labeled data
@@ -51,9 +44,13 @@ clear labeledtrx;
 nmovies = length(movienames);
 starts = {};
 ends = {};
+load(labelmatname);
 for i = 1:nmovies,
-  fprintf('Getting tracks for movie %s\n',movienames{i});
   load(matnames{i});
+  % assume this has already been done
+  %trx = process_data(trx,matnames{i},movienames{i});
+  %trx = process_data_crabwalks(trx);
+  nflies = length(trx);
   for j = 1:length(fliestolabel{i}),
     fly = fliestolabel{i}(j);
     if length(labeledbehavior{i}) < fly || ~isfield(labeledbehavior{i}(fly),'starts'),
@@ -62,8 +59,9 @@ for i = 1:nmovies,
     end
     t0 = t0tolabel{i}(j) + trx(fly).firstframe - 1;
     t1 = t1tolabel{i}(j) + trx(fly).firstframe - 1;
-    labeledbehavior{i}(fly).starts =  sort(labeledbehavior{i}(fly).starts);
-    labeledbehavior{i}(fly).ends =  sort(labeledbehavior{i}(fly).ends);
+    [labeledbehavior{i}(fly).starts,order] =  sort(labeledbehavior{i}(fly).starts);
+    labeledbehavior{i}(fly).ends =  labeledbehavior{i}(fly).ends(order);
+    labeledbehavior{i}(fly).otherfly = labeledbehavior{i}(fly).otherfly(order);
     if ~isempty(labeledbehavior{i}(fly).starts) && labeledbehavior{i}(fly).starts(1) <= t0,
       fprintf('The first frame for fly %d, movie %d is labeled.\n',j,i);
       fprintf('Assuming that the sequence has been artificially cropped\n');
@@ -71,6 +69,7 @@ for i = 1:nmovies,
       fprintf('Shortening to frames %d to %d\n',t0,t1);
       labeledbehavior{i}(fly).starts(1) = [];
       labeledbehavior{i}(fly).ends(1) = [];
+      labeledbehavior{i}(fly).otherfly(1) = [];
     end
     if ~isempty(labeledbehavior{i}(fly).ends) && labeledbehavior{i}(fly).ends(end) >= t1,
       fprintf('The last frame for fly %d, movie %d is labeled.\n',j,i);
@@ -79,65 +78,92 @@ for i = 1:nmovies,
       fprintf('Shortening to frames %d to %d\n',t0,t1);      
       labeledbehavior{i}(fly).starts(end) = [];
       labeledbehavior{i}(fly).ends(end) = [];
+      labeledbehavior{i}(fly).otherfly(end) = [];
     end
-    % assuming this is already done
-    trk = trx(fly);
-    trk.matname = matnames{i};
-    trk.moviename = movienames{i};
-    % sometimes weird things happen with this member function
-    trk.f2i = @(f) f - trk.firstframe + 1;
-    %trk = process_data(trx(fly),matnames{i},movienames{i});
-    %trk = process_data_crabwalks(trk);
-    trk = GetPartOfTrack(trk,t0,t1);
-    if ~exist('labeledtrx','var'),
-      labeledtrx = trk;
-    else
-      fieldsremove = setdiff(fieldnames(labeledtrx),fieldnames(trk));
-      labeledtrx = rmfield(labeledtrx,fieldsremove);
-      fieldsremove = setdiff(fieldnames(trk),fieldnames(labeledtrx));
-      trk = rmfield(trk,fieldsremove);
-      labeledtrx(end+1) = labeledtrx(1);
-      fns = fieldnames(labeledtrx);
-      for tmp = 1:length(fns),
-        labeledtrx(end).(fns{tmp}) = trk.(fns{tmp});
+    fprintf('Processing data for movie %d, fly %d\n',i,j);
+    trk = process_data_social(trx,fly,t0,t1);
+    
+    % split into one track per pair of flies
+    newtrx = struct([]);
+    fns = fieldnames(trk);
+    for ii = 1:length(fns),
+      fn = fns{ii};
+      kk = 1;
+      for jj = 1:nflies,
+        if jj == fly, continue; end
+        t0curr = max(t0,trx(jj).firstframe);
+        t1curr = min(t1,trx(jj).endframe);
+        if t0curr >= t1curr,
+          continue;
+        end
+        if size(trk.(fn),1) == nflies && size(trk.(fn),2) >= trk.nframes - 10,
+          newtrx(kk).(fn) = trk.(fn)(jj,:);
+        else
+          newtrx(kk).(fn) = trk.(fn);
+        end
+        kk = kk + 1;
       end
     end
-    starts{end+1} = labeledbehavior{i}(fly).starts;
-    ends{end+1} = labeledbehavior{i}(fly).ends;
+    if kk == 1, continue; end
+    for jj = 1:length(newtrx),
+      t0curr = max(t0,trx(jj).firstframe);
+      t1curr = min(t1,trx(jj).endframe);
+      newtrx(jj) = GetPartOfTrack(newtrx(jj),t0curr,t1curr);
+    end
+    if ~exist('labeledtrx','var'),
+      labeledtrx = newtrx;
+    else
+      fieldsremove = setdiff(fieldnames(labeledtrx),fieldnames(newtrx));
+      labeledtrx = rmfield(labeledtrx,fieldsremove);
+      fieldsremove = setdiff(fieldnames(newtrx),fieldnames(labeledtrx));
+      newtrx = rmfield(newtrx,fieldsremove);
+      newtrx = orderfields(newtrx,labeledtrx);
+      labeledtrx = [labeledtrx,newtrx];
+    end
+    
+    % create labels for each other fly
+    newstarts = cell(1,nflies-1);
+    newends = cell(1,nflies-1);
+    kk = 1;
+    for jj = 1:nflies,
+      if jj == fly,
+        continue;
+      end
+      idx = labeledbehavior{i}(fly).otherfly == jj;
+      newstarts{kk} = labeledbehavior{i}(fly).starts(idx);
+      newends{kk} = labeledbehavior{i}(fly).ends(idx);
+      kk = kk + 1;
+    end
+    starts = [starts,newstarts];
+    ends = [ends,newends];
   end
 end
 
+fprintf('Done processing data\n');
+
 % put in format used by systematic_learn_params
 datalearn = labeledtrx;
-labels = struct('starts',{},'ends',{},'notes',{});
-for i = 1:nmovies,
-  labels = [labels,labeledbehavior{i}(fliestolabel{i})];
-end
-for fly = 1:length(datalearn),
-  t0 = datalearn(fly).firstframe;
-  datalearn(fly).firstframe = 1;
-  datalearn(fly).endframe = datalearn(fly).nframes;
-  datalearn(fly).f2i = @(f) f;
-  labels(fly).starts = labels(fly).starts - t0 + 1;
-  labels(fly).ends = labels(fly).ends - t0 + 1;
+labels = struct('starts',starts,'ends',ends,'notes',cell(size(starts)));
+for pair = 1:length(datalearn),
+  t0 = datalearn(pair).firstframe;
+  datalearn(pair).firstframe = 1;
+  datalearn(pair).endframe = datalearn(pair).nframes;
+  datalearn(pair).f2i = @(f) f;
+  labels(pair).starts = labels(pair).starts - t0 + 1;
+  labels(pair).ends = labels(pair).ends - t0 + 1;
 end
 
 %% choose file to save params to
 
-fprintf('Choose a file to save the learned behavior parameters to.\n');
 if ~exist('ds','var')
   ds = datestr(now,30);
 end
 paramsmatname = sprintf('learnedparams_%s.mat',ds);
 paramsmatname = [labelmatpath,paramsmatname];
 [paramsmatname,paramsmatpath] = uiputfile('.mat','Choose file to save parameters to',paramsmatname);
-if isnumeric(paramsmatname) && paramsmatname == 0,
-  return;
-end
 
 %% choose parameters
 
-fprintf('Define the type of classifier: choose per-frame properties to bound, set lower and upper limits on the bounds\n');
 try
   load(paramsmatname,'params');
 catch
@@ -216,7 +242,6 @@ end
 isunknown = isunknown || (params.minr < params.maxr);
 
 if ~isunknown,
-  fprintf('All parameters set exactly, no learning necessary\n');
   behaviorparams = struct('minx',struct,'maxx',struct,'minxclose',struct,...
     'maxxclose',struct,'minsumx',struct,'maxsumx',struct,'minmeanx',struct,...
     'maxmeanx',struct','r',params.minr,'minseqlength',nan,'maxseqlength',inf);
@@ -234,10 +259,6 @@ if ~isunknown,
   behaviorparams.r = params.minr;
   lengths = getstructarrayfield(labels,'ends')-getstructarrayfield(labels,'starts');
   behaviorparams.minseqlength = prctile(lengths,minseqlengthorder);
-  
-  save('-append',paramsmatname,'behaviorparams');
-
-  succeeded = true;
   return;
 end
 
@@ -267,13 +288,9 @@ params.options{end+1} = minseqlengthorder;
 
 %% learn parameters
 
-fprintf('Learning parameters ... This will take a while. Hit the quit button to stop early.\n');
-
 behaviorparams = systematic_learn_params2(datalearn,labels,params.minxfns,...
   params.maxxfns,params.minxclosefns,params.maxxclosefns,...
   params.minsumxfns,params.maxsumxfns,params.minmeanxfns,...
   params.maxmeanxfns,params.options{:});
 
 save('-append',paramsmatname,'behaviorparams');
-
-succeeded = true;

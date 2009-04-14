@@ -7,6 +7,7 @@ labelmatname = '';
 labelmatpath = '';
 paramsmatpath = '';
 minseqlengthorder = 5;
+succeeded = false;
 
 %% load settings
 
@@ -18,6 +19,7 @@ end
 
 %% get the labeled data
 
+fprintf('Do you want to label new data, or load pre-labeled data from a mat file?\n');
 labelmode = questdlg('Label new data or load labeled data?','Data source',...
   'Label','Load','Cancel','Label');
 
@@ -33,8 +35,14 @@ if strcmpi(labelmode,'load'),
     return;
   end
   load(labelmatname);
+  fprintf('Labeled data loaded\n');
 else  
-  label_data;
+  [labeldata_succeeded,labelmatname] = label_data_f();
+  if ~labeldata_succeeded,
+    return;
+  end
+  load(labelmatname);
+
 end
 
 %% crop out labeled data
@@ -44,6 +52,7 @@ nmovies = length(movienames);
 starts = {};
 ends = {};
 for i = 1:nmovies,
+  fprintf('Getting tracks for movie %s\n',movienames{i});
   load(matnames{i});
   for j = 1:length(fliestolabel{i}),
     fly = fliestolabel{i}(j);
@@ -115,18 +124,29 @@ end
 
 %% choose file to save params to
 
+fprintf('Choose a file to save the learned behavior parameters to.\n');
 if ~exist('ds','var')
   ds = datestr(now,30);
 end
-paramsmatname = sprintf('learnedparams_%s.mat',ds);
-paramsmatname = [labelmatpath,paramsmatname];
-[paramsmatname,paramsmatpath] = uiputfile('.mat','Choose file to save parameters to',paramsmatname);
-if isnumeric(paramsmatname) && paramsmatname == 0,
-  return;
+hasmissed = false;
+while true,
+  paramsmatname = sprintf('learnedparams_%s.mat',ds);
+  paramsmatname = [labelmatpath,paramsmatname];
+  [paramsmatname,paramsmatpath] = uiputfile('.mat','Choose file to save parameters to',paramsmatname);
+  if isnumeric(paramsmatname) && paramsmatname == 0,
+    if hasmissed,
+      return;
+    else
+      hasmissed = true;
+      continue;
+    end
+  end
+  break;
 end
 
 %% choose parameters
 
+fprintf('Define the type of classifier: choose per-frame properties to bound, set lower and upper limits on the bounds\n');
 try
   load(paramsmatname,'params');
 catch
@@ -205,6 +225,7 @@ end
 isunknown = isunknown || (params.minr < params.maxr);
 
 if ~isunknown,
+  fprintf('All parameters set exactly, no learning necessary\n');
   behaviorparams = struct('minx',struct,'maxx',struct,'minxclose',struct,...
     'maxxclose',struct,'minsumx',struct,'maxsumx',struct,'minmeanx',struct,...
     'maxmeanx',struct','r',params.minr,'minseqlength',nan,'maxseqlength',inf);
@@ -222,6 +243,10 @@ if ~isunknown,
   behaviorparams.r = params.minr;
   lengths = getstructarrayfield(labels,'ends')-getstructarrayfield(labels,'starts');
   behaviorparams.minseqlength = prctile(lengths,minseqlengthorder);
+  
+  save('-append',paramsmatname,'behaviorparams');
+
+  succeeded = true;
   return;
 end
 
@@ -251,9 +276,13 @@ params.options{end+1} = minseqlengthorder;
 
 %% learn parameters
 
+fprintf('Learning parameters ... This will take a while. Hit the quit button to stop early.\n');
+
 behaviorparams = systematic_learn_params2(datalearn,labels,params.minxfns,...
   params.maxxfns,params.minxclosefns,params.maxxclosefns,...
   params.minsumxfns,params.maxsumxfns,params.minmeanxfns,...
   params.maxmeanxfns,params.options{:});
 
 save('-append',paramsmatname,'behaviorparams');
+
+succeeded = true;

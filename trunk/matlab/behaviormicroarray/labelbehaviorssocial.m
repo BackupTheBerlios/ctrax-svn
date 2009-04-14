@@ -145,11 +145,19 @@ for i = 1:length(handles.segstarts),
     handles.trx(handles.fly).y(i1:i2),'m','linewidth',4,'hittest','off');
   handles.hstarts(i) = plot(handles.trx(handles.fly).x(i1),handles.trx(handles.fly).y(i1),'o','color',colors(mod(i-1,6)+1,:));
   handles.hends(i) = plot(handles.trx(handles.fly).x(i2),handles.trx(handles.fly).y(i2),'s','color',colors(mod(i-1,6)+1,:));
+  fmid = ceil((f1+f2)/2);
+  imid1 = handles.trx(handles.fly).f2i(fmid);
+  otherfly = handles.otherfly(i);
+  imid2 = handles.trx(otherfly).f2i(fmid);
+  handles.hotherflyline(i) = ...
+    plot([handles.trx(handles.fly).x(imid1),handles.trx(otherfly).x(imid2)],...
+    [handles.trx(handles.fly).y(imid1),handles.trx(otherfly).y(imid2)],...
+    '-','color',colors(mod(i-1,6)+1,:),'hittest','off');
   if isfield(handles,'segcolors'),
     set(handles.isseg(i1),'color',handles.segcolors(i,:));
   end
 end
-plot(handles.trx(handles.fly).x,handles.trx(handles.fly).y,'w-','hittest','off');
+plot(handles.trx(handles.fly).x,handles.trx(handles.fly).y,'-','color',[.7,.7,.7],'hittest','off');
 handles.hpath = myscatter(handles.trx(handles.fly).x,handles.trx(handles.fly).y,[],handles.c,[],@jet,'.');
 caxis([min(handles.c),max(handles.c)]);
 colormap jet;
@@ -179,6 +187,7 @@ i = handles.otherflyselected;
 set(handles.hotherflymarker(i),'color',(1+colors(i,:))/2,'linewidth',4);
 handles.hcenter = plot(0,0,'o','color','r','hittest','off');
 set(handles.hmarker,'color','r','linewidth',2,'hittest','off');
+handles.hotherflyselectedline = plot([0,0],[0,0],'w-','hittest','off');
 
 handles.hlabel = zeros(size(handles.labels));
 for i = 1:length(handles.labels),
@@ -225,17 +234,23 @@ for j = 1:handles.nflies,
 end
 set(handles.hcenter,'xdata',handles.trx(fly).x(i),'ydata',handles.trx(fly).y(i));
 
-for j = 1:length(handles.segstarts),
-  if handles.f < handles.segstarts(j) || handles.f > handles.segends(j),
-    set(handles.hotherflyline,'visible','off');
-  else
-    fly2 = handles.otherfly(j);
-    k = handles.trx(fly2).f2i(handles.f);
-    set(handles.hotherflyline,'visible','on',...
-      'xdata',[handles.trx(fly).x(i),handles.trx(fly2).x(k)],...
-      'ydata',[handles.trx(fly).y(i),handles.trx(fly2).y(k)]);
-  end
-end
+% for j = 1:length(handles.segstarts),
+%   if handles.f < handles.segstarts(j) || handles.f > handles.segends(j),
+%     set(handles.hotherflyline(j),'visible','off');
+%   else
+%     fly2 = handles.otherfly(j);
+%     k = handles.trx(fly2).f2i(handles.f);
+%     set(handles.hotherflyline(j),'visible','on',...
+%       'xdata',[handles.trx(fly).x(i),handles.trx(fly2).x(k)],...
+%       'ydata',[handles.trx(fly).y(i),handles.trx(fly2).y(k)]);
+%   end
+% end
+
+otherfly = handles.otherflyselected;
+i2 = handles.trx(otherfly).f2i(handles.f);
+set(handles.hotherflyselectedline,...
+  'xdata',[handles.trx(handles.fly).x(i),handles.trx(otherfly).x(i2)],...
+  'ydata',[handles.trx(handles.fly).y(i),handles.trx(otherfly).y(i2)]);
 
 if get(handles.zoombutton,'value'),
   ZoomInOnFlies(handles);
@@ -310,7 +325,7 @@ else
   set(handles.dtheta_text,'string',sprintf('dtheta: %f',180/pi*handles.trx(handles.fly).dtheta(i)));
   set(handles.ducor_text,'string',sprintf('du_cor: %f',handles.trx(handles.fly).du_cor(i)));
   set(handles.dvcor_text,'string',sprintf('dv_cor: %f',handles.trx(handles.fly).dv_cor(i)));
-  set(handles.corfrac_text,'string',sprintf('cor: %f',handles.trx(handles.fly).corfrac(1,i)));
+  set(handles.corfrac_text,'string',sprintf('cor: %f',handles.trx(handles.fly).corfrac_maj(i)));
 end
 function v = isalive(track,f)
 
@@ -442,6 +457,12 @@ set(handles.hotherflymarker(oldfly),'color',handles.otherflycolors(oldfly,:),...
 set(handles.hotherflymarker(fly),'color',(1+handles.otherflycolors(fly,:))/2,...
   'linewidth',4);
 handles.otherflyselected = fly;
+i = handles.trx(handles.fly).f2i(handles.f);
+i2 = handles.trx(fly).f2i(handles.f);
+set(handles.hotherflyselectedline,...
+  'xdata',[handles.trx(handles.fly).x(i),handles.trx(fly).x(i2)],...
+  'ydata',[handles.trx(handles.fly).y(i),handles.trx(fly).y(i2)]);
+
 guidata(handles.figure1,handles);
 
 % --- Executes on mouse press over axes background.
@@ -541,8 +562,10 @@ end
 handles.currentstarti = i1;
 %i1 = handles.trx(handles.fly).f2i(f1);
 %i2 = handles.trx(handles.fly).f2i(f2);
+colors = lines(6);
+i = mod(length(handles.segstarts)-1,6)+1;
 handles.isseg(i1:i2) = plot(handles.trx(handles.fly).x(i1:i2),...
-  handles.trx(handles.fly).y(i1:i2),'m','linewidth',4,'hittest','off');
+  handles.trx(handles.fly).y(i1:i2),'-','color',colors(i,:),'linewidth',4,'hittest','off');
 chil = get(handles.mainaxes,'children');
 chil = [chil(2:end-1);chil(1);chil(end)];
 set(handles.mainaxes,'children',chil);
@@ -550,15 +573,13 @@ handles.segstarts(end+1) = i1;
 handles.segends(end+1) = i2;
 fly2 = handles.otherflyselected;
 handles.otherfly(end+1) = fly2;
-colors = lines(6);
-i = mod(length(handles.segstarts)-1,6)+1;
 handles.hstarts(end+1) = plot(handles.trx(handles.fly).x(i1),handles.trx(handles.fly).y(i1),'o','color',colors(i,:));
 handles.hends(end+1) = plot(handles.trx(handles.fly).x(i2),handles.trx(handles.fly).y(i2),'s','color',colors(i,:));
 
-j = handles.trx(handles.fly).f2i(f1);
+j = handles.trx(fly2).f2i(f1);
 x = [handles.trx(handles.fly).x(i1),handles.trx(fly2).x(j)];
 y = [handles.trx(handles.fly).y(i1),handles.trx(fly2).y(j)];
-handles.hotherflyline(end+1) = plot(x,y,'w.-','hittest','off');
+handles.hotherflyline(end+1) = plot(x,y,'.-','color',colors(i,:),'hittest','off');
 
 guidata(hObject,handles);
 
