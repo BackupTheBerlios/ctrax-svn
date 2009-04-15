@@ -33,6 +33,7 @@ function showtrx_OpeningFcn(hObject, eventdata, handles, varargin)
 % varargin   command line arguments to showtrx (see VARARGIN)
 
 global showtrxlastmovie;
+setuppath;
 
 % Choose default command line output for showtrx
 handles.output = hObject;
@@ -81,15 +82,7 @@ handles.isselected = false(1,handles.nflies);
 handles.iszooming = false;
 handles.zoomwidth = 100;
 handles.lastflyselected = 1;
-handles.propnames = fieldnames(handles.trx);
-removeprops = [];
-for i = 1:length(handles.propnames),
-  if ~isnumeric(handles.trx(1).(handles.propnames{i})) && ...
-      ~ischar(handles.trx(1).(handles.propnames{i})),
-    removeprops(end+1) = i;
-  end
-end
-handles.propnames(removeprops) = [];
+handles.propnames = setpropnames(handles.trx);
 
 % setup gui
 InitializeFrameSlider(handles);
@@ -104,6 +97,18 @@ guidata(hObject, handles);
 
 % UIWAIT makes showtrx wait for user response (see UIRESUME)
 uiwait(handles.figure1);
+
+function propnames = setpropnames(trx)
+
+propnames = fieldnames(trx);
+removeprops = [];
+for i = 1:length(propnames),
+  if ~isnumeric(trx(1).(propnames{i})) && ...
+      ~ischar(trx(1).(propnames{i})),
+    removeprops(end+1) = i;
+  end
+end
+propnames(removeprops) = [];
 
 
 % --- Outputs from this function are returned to the command line.
@@ -562,4 +567,26 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+
+% --- Executes on button press in computeperframebutton.
+function computeperframebutton_Callback(hObject, eventdata, handles)
+% hObject    handle to computeperframebutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+[succeeded,savename,trx] = compute_perframe_stats_f('matname',handles.matname);
+if succeeded,
+  handles.matname = savename;
+  handles.trx = trx;
+  v = handles.propnames{get(handles.lastclickedprop,'value')};
+  handles.propnames = setpropnames(handles.trx);
+  i = find(strcmpi(v,handles.propnames),1);
+  if isempty(i),
+    i = 1;
+  end
+  set(handles.lastclickedprop,'string',handles.propnames);
+  set(handles.lastclickedprop,'value',i);
+  updatepropvalue(handles);
+end
+guidata(hObject,handles);
 
