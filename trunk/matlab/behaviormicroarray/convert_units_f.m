@@ -2,6 +2,8 @@ function [succeeded,savename] = convert_units_f(varargin)
 
 setuppath;
 
+fps = 20;
+pxpermm = 4;
 % parse inputs
 [matname,matpath,moviename,ISAUTOMATIC] = ...
   myparse(varargin,'matname',nan,'matpath',nan,'moviename',nan,'isautomatic',false);
