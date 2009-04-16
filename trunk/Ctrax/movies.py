@@ -1033,4 +1033,3 @@ def estimate_frame_delay_us(mov):
 
         frame_delay_us = float(stamp1-stamp0)/float(mov.n_frames-1)*1e6
         return frame_delay_us
-

@@ -1,12 +1,13 @@
 % set up the paths
+setuppathdir = which('setuppath');
+setuppathdir = strrep(setuppathdir,'setuppath.m','');
 isdone = exist('get_readframe_fcn.m','file') == 2;
 if isdone, return; end
 
-dirnamestry = {'.','matlab','../matlab','../Ctrax/matlab'};
+dirnamestry = {setuppathdir,[setuppathdir,'matlab'],[setuppathdir,'../matlab'],[setuppathdir,'../Ctrax/matlab']};
 
 % try last saved location
-rcfile = which('setuppath');
-rcfile = strrep(rcfile,'setuppath.m','.setuppathrc.mat');
+rcfile = [setuppathdir,'.setuppathrc.mat'];
 if exist(rcfile,'file')
   load(rcfile);
   dirnamestry{1} = dirname;
