@@ -37,7 +37,7 @@ if strcmpi(labelmode,'load'),
   load(labelmatname);
   fprintf('Labeled data loaded\n');
 else  
-  [labeldata_succeeded,labelmatname] = label_data_f();
+  [labeldata_succeeded,labelmatname] = label_data_social_f();
   if ~labeldata_succeeded,
     return;
   end
@@ -45,7 +45,7 @@ else
 
 end
 
-%% crop out labeled data
+%% compute the pairwise per-frame parameters for each fly labeled
 
 clear labeledtrx;
 nmovies = length(movienames);
@@ -80,13 +80,16 @@ for i = 1:nmovies,
       labeledbehavior{i}(fly).starts(end) = [];
       labeledbehavior{i}(fly).ends(end) = [];
     end
-    % assuming this is already done
-    trk = trx(fly);
-    trk.matname = matnames{i};
-    trk.moviename = movienames{i};
-    % sometimes weird things happen with this member function
-    trk.f2i = @(f) f - trk.firstframe + 1;
-    %trk = process_data(trx(fly),matnames{i},movienames{i});
+    pairwisematnames{i}{j} = strrep(matnames{i},'.mat',...
+      sprintf('_pairwiseperframefly%02d%t%05dto%05d.mat',fly,t0,t1));
+    fprintf('Computing pairwise per-frame properties for movie %s, fly %d, frames %d to %d\n',...
+      matnames{i},fly,t0,t1);
+    pairwise_succeeded = compute_pairwise_perframe_stats('matname',matnames{i},...
+      'fly',fly,'t0',t0,'t1',t1,'savename',pairwisematnames{i}{j});
+    if ~pairwise_succeeded,
+      return;
+    end
+
     %trk = process_data_crabwalks(trk);
     trk = GetPartOfTrack(trk,t0,t1);
     if ~exist('labeledtrx','var'),
