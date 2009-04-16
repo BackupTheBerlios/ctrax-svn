@@ -65,6 +65,12 @@ if k == 2,
   idx = ones(n,1);
   idx(besti+1:end) = 2;
   thresh = [1;besti+1;n+1];
+  % convert from indices to data points
+  threshx = zeros(k+1,1);
+  threshx(thresh==1) = x(1);
+  threshx(thresh==n+1) = x(n)+eps;
+  other = thresh > 1 & thresh <= n;
+  threshx(other) = (x(thresh(other)-1)+x(thresh(other)))/2;
   if ~issorted,
     idx = idx(reorder);
   end
