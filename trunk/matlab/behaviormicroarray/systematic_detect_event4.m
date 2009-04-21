@@ -1,4 +1,4 @@
-function seg = systematic_detect_event4(trk,eventname,isevent0,minx,maxx,minxclose,maxxclose,minsumx,maxsumx,minmeanx,maxmeanx,r,minseqlength,maxseqlength)
+function seg = systematic_detect_event4(trk,eventname,isevent0,minx,maxx,minxclose,maxxclose,minsumx,maxsumx,minmeanx,maxmeanx,r,minseqlength,maxseqlength,fps)
 
 % initialize
 %minseqlength = max(1,minseqlength - 1);
@@ -187,7 +187,7 @@ if w > maxseqlength,
 end
 
 % all frames have to be in the larger cube
-if w == minseqlength || w == 1 || docheck,
+if w-1 < minseqlength || w == 1 || docheck,
   nfails = 0;
   if any(isnotinlargecube(t0:t1) | ~isevent0(t0:t1)),
     dobreak = true;
@@ -272,15 +272,15 @@ doflip = 0;
 for i = 1:nsumxfns,
   fn = sumxfns{i}; 
   if sumxfnisabsdtheta(i),
-    sumx.(fn) = mod(trk.theta(t1+1)-trk.theta(t0)+pi,2*pi)-pi;
+    sumx.(fn) = (mod(trk.theta(t1)-trk.theta(t0)+pi,2*pi)-pi)*fps;
     doflip = 2*double(sumx.(fn) < 0)-1;
     sumx.(fn) = abs(sumx.(fn));
   elseif sumxfnisdtheta(i),
-    sumx.(fn) = mod(trk.theta(t1+1)-trk.theta(t0)+pi,2*pi)-pi;
+    sumx.(fn) = (mod(trk.theta(t1)-trk.theta(t0)+pi,2*pi)-pi)*fps;
   elseif sumxfnissmoothdtheta(i),
-    sumx.(fn) = mod(trk.smooththeta(t1+1)-trk.smooththeta(t0)+pi,2*pi)-pi;
+    sumx.(fn) = (mod(trk.smooththeta(t1)-trk.smooththeta(t0)+pi,2*pi)-pi)*fps;
   elseif sumxfnisabssmoothdtheta(i),
-    sumx.(fn) = abs(mod(trk.smooththeta(t1+1)-trk.smooththeta(t0)+pi,2*pi)-pi);
+    sumx.(fn) = abs(mod(trk.smooththeta(t1)-trk.smooththeta(t0)+pi,2*pi)-pi)*fps;
   else
     if t0 > 1,
       sumx.(fn) = cumsumx.(fn)(t1) - cumsumx.(fn)(t0-1);

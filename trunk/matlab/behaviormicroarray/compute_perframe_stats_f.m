@@ -86,22 +86,11 @@ if ~convertunits_succeeded,
 end
 
 %% load in the data
-
-tmp = load(matname);
-moviename = '?';
-%if ~exist('ds','var'),
-ds = datestr(now,30);
-%end
 fprintf('Checking file %s\n',matname);
-if ~isfield(tmp,'trx'),
-  if isfield(tmp,'ntargets'),
-    [trx,matname] = cleanup_ctrax_data(matname,moviename,tmp,ds);
-  else
-    msgbox('Could not load data from %s, exiting',matname);
-    return;
-  end
-else
-  trx = tmp.trx;
+[trx,matname,loadsucceeded] = load_tracks(matname);
+if ~loadsucceeded,
+  msgbox('Could not load data from %s, exiting',matname);
+  return;
 end
 
 %% compute per-frame stats

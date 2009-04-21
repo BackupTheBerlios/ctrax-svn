@@ -10,6 +10,8 @@ for i = 1:length(fns)
   fn = fns{i};
   if any(strcmpi(fn,dontsplit)),
     trk1.(fn) = trk0.(fn);
+  elseif max(size(trk0.(fn))) < trk0.nframes-1,
+    trk1.(fn) = trk0.(fn);
   else
     sz = size(trk0.(fn));
     nd = length(sz);

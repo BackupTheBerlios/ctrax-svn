@@ -1,5 +1,12 @@
 function trx = mindist2fly(trx)
 
+if isfield(trx,'dcenter'),
+  for i = 1:length(trx),
+    trx(i).mindist2fly = trx(i).dcenter;
+  end
+  return;
+end
+
 nflies = length(trx);
 for fly = 1:nflies,
   trx(fly).mindist2fly = nan(1,trx(fly).nframes);

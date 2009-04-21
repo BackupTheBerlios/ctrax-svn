@@ -8,7 +8,7 @@
 % costparams, rho, pctinit, minseqlengthorder, maxseqlengthorder, nsamples
 
 function params = systematic_learn_params2(data,labels,minxfns,maxxfns,minxclosefns,maxxclosefns,...
-  minsumxfns,maxsumxfns,minmeanxfns,maxmeanxfns,varargin)
+  minsumxfns,maxsumxfns,minmeanxfns,maxmeanxfns,fps,varargin)
 
 costparams.prepend = [0,.2];
 costparams.append = [0,.2];
@@ -71,17 +71,12 @@ end
 
 isevent = cell(1,nflies);
 for fly = 1:length(labels),
-  if isempty(labels(fly).starts), continue; end
-  isevent{fly} = false(1,max(labels(fly).ends)-1);
+  isevent{fly} = false(1,data(fly).nframes-1);
   for i = 1:length(labels(fly).starts),
     isevent{fly}(labels(fly).starts(i):labels(fly).ends(i)-1) = true;
   end
   for fn = datafns,
-    if strcmpi(fn{1},'corfrac'),
-      pos.(fn{1}) = [pos.(fn{1}),data(fly).(fn{1})(1,isevent{fly})];
-    else
-      pos.(fn{1}) = [pos.(fn{1}),data(fly).(fn{1})(isevent{fly})];
-    end
+    pos.(fn{1}) = [pos.(fn{1}),data(fly).(fn{1})(isevent{fly})];
   end
 end
 
@@ -127,15 +122,15 @@ for fly = 1:length(labels),
     doflip = 0;
     for fn = fns,
       if strcmpi(fn{1},'absdtheta'),
-        sumx.(fn{1})(ii) = modrange(data(fly).theta(t1+1)-data(fly).theta(t0),-pi,pi);
+        sumx.(fn{1})(ii) = modrange(data(fly).theta(t1+1)-data(fly).theta(t0),-pi,pi)*fps;
         doflip = 2*double(sumx.(fn{1})(ii) < 0)-1;
         sumx.(fn{1})(ii) = abs(sumx.(fn{1})(ii));
       elseif strcmpi(fn{1},'dtheta'),
-        sumx.(fn{1})(ii) = modrange(data(fly).theta(t1+1)-data(fly).theta(t0),-pi,pi);
+        sumx.(fn{1})(ii) = modrange(data(fly).theta(t1+1)-data(fly).theta(t0),-pi,pi)*fps;
       elseif strcmpi(fn{1},'smoothdtheta'),
-        sumx.(fn{1})(ii) = modrange(data(fly).smooththeta(t1+1)-data(fly).smooththeta(t0),-pi,pi);
+        sumx.(fn{1})(ii) = modrange(data(fly).smooththeta(t1+1)-data(fly).smooththeta(t0),-pi,pi)*fps;
       elseif strcmpi(fn{1},'abssmoothdtheta'),
-        sumx.(fn{1})(ii) = abs(modrange(data(fly).smooththeta(t1+1)-data(fly).smooththeta(t0),-pi,pi));
+        sumx.(fn{1})(ii) = abs(modrange(data(fly).smooththeta(t1+1)-data(fly).smooththeta(t0),-pi,pi))*fps;
       elseif strcmpi(fn{1},'corfrac'),
         sumx.(fn{1})(ii) = sum(data(fly).corfrac(1,t0:t1));
       elseif strcmpi(fn{1},'flipdv_cor'),
@@ -504,7 +499,7 @@ if any(isnan(vinit)),
 end
 
 scoref = @(x) systematic_score_params2(x,data,isevent,isevent0,minseqlength,maxseqlength,costparams,...
-  minxfns,maxxfns,minxclosefns,maxxclosefns,minsumxfns,maxsumxfns,minmeanxfns,maxmeanxfns);
+  minxfns,maxxfns,minxclosefns,maxxclosefns,minsumxfns,maxsumxfns,minmeanxfns,maxmeanxfns,fps);
 generatef = @(x,N) systematic_gen_params2(x,N,lb,ub,minr,maxr,minxfns,maxxfns,...
   minxclosefns,maxxclosefns,minsumxfns,maxsumxfns,minmeanxfns,maxmeanxfns);
 maximizef = @systematic_ml_distr;
@@ -574,6 +569,7 @@ end
 params.r = round(xbest(end));
 params.minseqlength = minseqlength;
 params.maxseqlength = maxseqlength;
+params.fps = fps;
 
 delete(hbutton);
 set(SHOWFIGURE,'closerequestfcn',realclosereq);

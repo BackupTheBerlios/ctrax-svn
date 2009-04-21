@@ -8,7 +8,6 @@ pxpermm = 4;
 [matname,matpath,moviename,ISAUTOMATIC] = ...
   myparse(varargin,'matname',nan,'matpath',nan,'moviename',nan,'isautomatic',false);
 
-savename = '';
 succeeded = false;
 
 ISMATNAME = ischar(matname);
@@ -59,30 +58,18 @@ end
 
 matname0 = matname;
 matname = [matpath,matname];
+savename = matname;
 
 %% read in the movie
-datacurr = load(matname);
-istrx = isfield(datacurr,'trx');
-if ~istrx,
-  if ~all(isfield(datacurr,{'x_pos','y_pos','maj_ax','min_ax','angle'})),
-    msgbox(sprintf('Could not find necessary variables in %s to convert to mm, seconds, aborting',matname));
-    return;
-  end
+[trx,matname,loadsucceeded] = load_tracks(matname);
+if ~loadsucceeded,
+  msgbox(sprintf('Could not load trx mat file %s',matname));
 end
 
 % check to see if it has already been converted
-alreadyconverted = false;
-if istrx && isfield(datacurr.trx,'pxpermm') && isfield(datacurr.trx,'fps'),
-  alreadyconverted = true;
-end
-if ~istrx && isfield(datacurr,'pxpermm') && isfield(datacurr,'fps'),
-  alreadyconverted = true;
-end
+alreadyconverted = isfield(trx,'pxpermm') && isfield(trx,'fps');
 if alreadyconverted,
-  if ~ISAUTOMATIC,
-    msgbox(sprintf('Units already converted for file %s, aborting',matname));
-  end
-  savename = matname;
+  fprintf('Units already converted for file %s, aborting\n',matname);
   succeeded = true;
   return;
 end
@@ -113,11 +100,7 @@ b = questdlg('Enter pixels per mm manually, or compute from landmarks','Pixels t
 if strcmpi(b,'manual'),
   
   % compute the mean major axis length
-  if istrx,
-    meanmaj = mean([datacurr.trx.a])*4;
-  else
-    meanmaj = mean(datacurr.maj_ax)*4;
-  end
+  meanmaj = mean([trx.a])*4;
   b = {num2str(pxpermm)};
   prompts = {sprintf('Pixels per mm [mean fly length = %.1f px]',meanmaj)};
   
@@ -199,57 +182,44 @@ save('-append',savedsettingsfile,'pxpermm');
 
 %% actually do the conversion now
 
-if istrx,
-  pxfns = {'xpred','ypred','dx','dy','v'};
-  % these are used for plotting, so we want to keep them in pixels
-  pxcpfns = {'x','y','a','b'};
-  okfns = {'x','y','theta','a','b','id','moviename','firstframe','arena',...
-    'f2i','nframes','endframe','xpred','ypred','thetapred','dx','dy','v'};
-  unknownfns = setdiff(fieldnames(datacurr.trx),okfns);
-  if ~isempty(unknownfns),
-    b = questdlg({'Do not know how to convert the following variables: ',...
-      sprintf('%s, ',unknownfns{:}),'Ignore these variables and continue?'},...
-      'Unknown Variables','Continue','Abort','Abort');
-    if strcmpi(b,'abort'),
-      return;
+pxfns = {'xpred','ypred','dx','dy','v'};
+% these are used for plotting, so we want to keep them in pixels
+pxcpfns = {'x','y','a','b'};
+okfns = {'x','y','theta','a','b','id','moviename','firstframe','arena',...
+  'f2i','nframes','endframe','xpred','ypred','thetapred','dx','dy','v'};
+unknownfns = setdiff(fieldnames(trx),okfns);
+if ~isempty(unknownfns),
+  b = questdlg({'Do not know how to convert the following variables: ',...
+    sprintf('%s, ',unknownfns{:}),'Ignore these variables and continue?'},...
+    'Unknown Variables','Continue','Abort','Abort');
+  if strcmpi(b,'abort'),
+    return;
+  end
+end
+for ii = 1:length(pxfns),
+  fn = pxfns{ii};
+  if isfield(trx,fn),
+    for fly = 1:length(trx),
+      trx(fly).(fn) = trx(fly).(fn) / pxpermm;
     end
   end
-  for ii = 1:length(pxfns),
-    fn = pxfns{ii};
-    if isfield(datacurr.trx,fn),
-      for fly = 1:length(datacurr.trx),
-        datacurr.trx(fly).(fn) = datacurr.trx(fly).(fn) / pxpermm;
-      end
+end
+for ii = 1:length(pxcpfns),
+  fn = pxcpfns{ii};
+  if isfield(trx,fn),
+    for fly = 1:length(trx),
+      trx(fly).([fn,'_mm']) = trx(fly).(fn) / pxpermm;
     end
   end
-  for ii = 1:length(pxcpfns),
-    fn = pxcpfns{ii};
-    if isfield(datacurr.trx,fn),
-      for fly = 1:length(datacurr.trx),
-        datacurr.trx(fly).([fn,'_mm']) = datacurr.trx(fly).(fn) / pxpermm;
-      end
-    end
-  end
+end
 
-  for fly = 1:length(datacurr.trx),
-    datacurr.trx(fly).pxpermm = pxpermm;
-    datacurr.trx(fly).fps = fps;
-  end
-else
-  pxfns = {'x_pos','y_pos','maj_ax','min_ax'};
-  for ii = 1:length(pxfns),
-    fn = pxfns{ii};
-    if isfield(datacurr,fn),
-      datacurr.([fn,'_mm']) = datacurr.(fn) / pxpermm;
-    end
-  end
-  datacurr.pxpermm = pxpermm;
-  datacurr.fps = fps;
+for fly = 1:length(trx),
+  trx(fly).pxpermm = pxpermm;
+  trx(fly).fps = fps;
 end
 
 %% save to file
 
-savename = matname;
 nmissed = 0;
 while true,
   [savename, savepath] = uiputfile('*.mat', sprintf('Save results for input %s to',matname), savename);
@@ -265,13 +235,12 @@ while true,
 end
 savename = [savepath,savename];
 
-fns = fieldnames(datacurr);
 if strcmpi(matname,savename),
   tmpname = tempname;
   fprintf('Overwriting %s with converted data...\n',savename);
   movefile(matname,tmpname);  
   try
-    save(savename,'-struct','datacurr',fns{:});
+    save('-append',savename,'trx');
   catch
     fprintf('Aborting overwriting\n');
     movefile(tmpname,matname);
@@ -280,7 +249,8 @@ if strcmpi(matname,savename),
   delete(tmpname);
 else
   fprintf('Saving converted data to file %s.\nUse this mat file instead of %s in the future\n',savename,matname);
-  save(savename,'-struct','datacurr',fns{:});
+  copyfile(matname,savename);
+  save('-append',savename,'trx');
 end
 
 succeeded = true;

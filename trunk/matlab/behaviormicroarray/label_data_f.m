@@ -84,10 +84,10 @@ ds = datestr(now,30);
 skipped = [];
 fnscurr = {};
 for i = 1:nmovies,
-  datacurr = load(matnames{i});
+  [trx,matnames{i},loadsucceeded] = load_tracks(matnames{i},movienames{i});
   fprintf('Checking file %s\n',matnames{i});
   
-  if ~isfield(datacurr,'trx'),
+  if ~loadsucceeded,
     b = questdlg(sprintf('Could not load data from %s, no trx variable.',matnames{i}),'Data error','Skip','Abort','Skip');
     if strcmpi(b,'abort'),
       return;
@@ -98,7 +98,7 @@ for i = 1:nmovies,
   end
   
   % convert units if necessary
-  if ~isfield(datacurr.trx,'fps') || ~isfield(datacurr.trx,'pxpermm'),
+  if ~isfield(trx,'fps') || ~isfield(trx,'pxpermm'),
     [convertunits_succeeded,newmatname] = convert_units_f('isautomatic',true,'matname',matnames0{i},'matpath',matpaths{i});
     if ~convertunits_succeeded,
       b = questdlg(sprintf('Could not load data from %s, no trx.fps or trx.pxpermm variables.',matnames{i}),'Data error','Skip','Abort','Skip');
@@ -113,13 +113,13 @@ for i = 1:nmovies,
     matnames{i} = newmatname;
     matnames0{i} = newmatname0;
     matpaths{i} = newmatpath;
-    datacurr = load(newmatname);
+    load(newmatname,'trx');
   end
   
   % check for perframe properties
   
   % get perframe properties from trx
-  fns = get_perframe_propnames(datacurr.trx);
+  fns = get_perframe_propnames(trx);
   
   % check to see if previous movies had per-frame properties that this one
   % doesn't
@@ -142,8 +142,8 @@ for i = 1:nmovies,
       matnames{i} = newmatname;
       matnames0{i} = newmatname0;
       matpaths{i} = newmatpath;
-      datacurr.trx = newtrx;
-      fns = get_perframe_propnames(datacurr.trx);
+      trx = newtrx;
+      fns = get_perframe_propnames(trx);
       fnscurr = intersect(fns,fnscurr);
     else
       return;
@@ -165,8 +165,8 @@ for i = 1:nmovies,
       matnames{i} = newmatname;
       matnames0{i} = newmatname0;
       matpaths{i} = newmatpath;
-      datacurr.trx = newtrx;
-      fns = get_perframe_propnames(datacurr.trx);
+      trx = newtrx;
+      fns = get_perframe_propnames(trx);
       fnscurr = intersect(fns,fnscurr);
     else
       if i == 1,
@@ -177,10 +177,10 @@ for i = 1:nmovies,
     end
   end
   
-  nflies1 = length(datacurr.trx);
-  nframesperfly1 = getstructarrayfield(datacurr.trx,'nframes');
-  if isfield(datacurr.trx,'sex'),
-    sex1 = getstructarrayfield(datacurr.trx,'sex');
+  nflies1 = length(trx);
+  nframesperfly1 = getstructarrayfield(trx,'nframes');
+  if isfield(trx,'sex'),
+    sex1 = getstructarrayfield(trx,'sex');
   else
     sex1 = repmat('?',[1,nflies1]);
   end
@@ -292,7 +292,11 @@ fprintf('and select as input %s.\n\n',labelmatname);
 
 clear labeledbehavior;
 for moviei = 1:nmovies,
-  load(matnames{moviei});
+  [trx,matnames{moviei},loadsucceeded] = load_tracks(matnames{moviei},movienames{moviei});
+  if ~loadsucceeded,
+    msgbox(sprintf('Could not load trx from %s\n',matnames{moviei}));
+    return;
+  end
   % assuming already processed now
   %trx = process_data(trx,matnames{moviei},movienames{moviei});
   for flyi = 1:length(fliestolabel{moviei}),

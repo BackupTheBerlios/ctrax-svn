@@ -2,7 +2,7 @@
 isdone = ~isempty(which('get_readframe_fcn'));
 if isdone, return; end
 
-dirnamestry = {'.','matlab','../matlab','../Ctrax/matlab'};
+dirnamestry = {'.','..','matlab','../matlab','../Ctrax/matlab'};
 
 % try last saved location
 rcfile = which('setuppath');

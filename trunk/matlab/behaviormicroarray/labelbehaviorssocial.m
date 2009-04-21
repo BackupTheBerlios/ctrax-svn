@@ -137,9 +137,9 @@ zoom reset;
 ax = axis;
 colors = lines(6);
 for i = 1:length(handles.segstarts),
-  f1 = handles.segstarts(i); f2 = handles.segends(i);
-  i1 = handles.trx(handles.fly).f2i(f1);
-  i2 = handles.trx(handles.fly).f2i(f2);
+  i1 = handles.segstarts(i); i2 = handles.segends(i);
+  f1 = handles.segstarts(i) + handles.trx(handles.fly).firstframe - 1;
+  f2 = handles.segends(i) + handles.trx(handles.fly).firstframe - 1;
   handles.isseg(i1:i2) = ...
     plot(handles.trx(handles.fly).x(i1:i2),...
     handles.trx(handles.fly).y(i1:i2),'m','linewidth',4,'hittest','off');

@@ -88,10 +88,9 @@ ds = datestr(now,30);
 skipped = [];
 fnscurr = {};
 for i = 1:nmovies,
-  datacurr = load(matnames{i});
-  fprintf('Checking file %s\n',matnames{i});
-  
-  if ~isfield(datacurr,'trx'),
+  [trx,matnames{i},loadsucceeded] = load_tracks(matnames{i},movienames{i});
+  fprintf('Checking file %s\n',matnames{i});  
+  if ~loadsucceeded,
     b = questdlg(sprintf('Could not load data from %s, no trx variable.',matnames{i}),'Data error','Skip','Abort','Skip');
     if strcmpi(b,'abort'),
       return;
@@ -102,7 +101,7 @@ for i = 1:nmovies,
   end
   
   % convert units if necessary
-  if ~isfield(datacurr.trx,'fps') || ~isfield(datacurr.trx,'pxpermm'),
+  if ~isfield(trx,'fps') || ~isfield(trx,'pxpermm'),
     [convertunits_succeeded,newmatname] = convert_units_f('isautomatic',true,'matname',matnames0{i},'matpath',matpaths{i});
     if ~convertunits_succeeded,
       b = questdlg(sprintf('Could not load data from %s, no trx.fps or trx.pxpermm variables.',matnames{i}),'Data error','Skip','Abort','Skip');
@@ -123,7 +122,7 @@ for i = 1:nmovies,
   % check for perframe properties
   
   % get perframe properties from trx
-  fns = get_perframe_propnames(datacurr.trx);
+  fns = get_perframe_propnames(trx);
   
   % check to see if previous movies had per-frame properties that this one
   % doesn't
@@ -146,8 +145,8 @@ for i = 1:nmovies,
       matnames{i} = newmatname;
       matnames0{i} = newmatname0;
       matpaths{i} = newmatpath;
-      datacurr.trx = newtrx;
-      fns = get_perframe_propnames(datacurr.trx);
+      trx = newtrx;
+      fns = get_perframe_propnames(trx);
       fnscurr = intersect(fns,fnscurr);
     else
       fnscurr = setdiff(fnscurr,missingfns);
@@ -169,8 +168,8 @@ for i = 1:nmovies,
       matnames{i} = newmatname;
       matnames0{i} = newmatname0;
       matpaths{i} = newmatpath;
-      datacurr.trx = newtrx;
-      fns = get_perframe_propnames(datacurr.trx);
+      trx = newtrx;
+      fns = get_perframe_propnames(trx);
       fnscurr = intersect(fns,fnscurr);
     else
       if i == 1,
@@ -181,10 +180,10 @@ for i = 1:nmovies,
     end
   end
     
-  nflies1 = length(datacurr.trx);
-  nframesperfly1 = getstructarrayfield(datacurr.trx,'nframes');
-  if isfield(datacurr.trx,'sex'),
-    sex1 = getstructarrayfield(datacurr.trx,'sex');
+  nflies1 = length(trx);
+  nframesperfly1 = getstructarrayfield(trx,'nframes');
+  if isfield(trx,'sex'),
+    sex1 = getstructarrayfield(trx,'sex');
   else
     sex1 = repmat('?',[1,nflies1]);
   end
@@ -326,9 +325,11 @@ fprintf('and select as input %s.\n\n',labelmatname);
 
 clear labeledbehavior;
 for moviei = 1:nmovies,
-  load(matnames{moviei});
+  fprintf('Loading in trx to label...\n');
+  [trx,matnames{moviei},loadsucceeded] = load_tracks(matnames{moviei},movienames{moviei});
   % assuming already processed now
   %trx = process_data(trx,matnames{moviei},movienames{moviei});
+  fprintf('Computing distance to closest fly...\n');
   trx = mindist2fly(trx);
   for flyi = 1:length(fliestolabel{moviei}),
     fly = fliestolabel{moviei}(flyi);
@@ -339,10 +340,12 @@ for moviei = 1:nmovies,
     for i = 1:length(trx),
       trx(i) = GetPartOfTrack(trx(i),t0,t1);
     end
+    bigenoughdist2fly = prctile([trx.mindist2fly],15);
+    % starts, ends are relative to movie, not to fly
     [labeledbehavior{moviei}(fly).starts,labeledbehavior{moviei}(fly).ends,...
       labeledbehavior{moviei}(fly).otherfly,labeledbehavior{moviei}(fly).notes] = ...
       labelbehaviorssocial(trx,fly,movienames{moviei},...
-      [],[],[],[],'max(0,50-trk.mindist2fly)');
+      [],[],[],[],sprintf('max(0,%.1f-trk.mindist2fly)',bigenoughdist2fly));
     succeeded = true;
     save('-append',labelmatname,'labeledbehavior');
     fprintf('Done labeling fly %d of movie %s,\n(fly %d / %d for movie %d / %d)\n',fly,movienames{moviei},...

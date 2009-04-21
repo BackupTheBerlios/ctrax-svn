@@ -1,4 +1,9 @@
-function [trx,matname] = load_tracks(matname,moviename)
+% [trx,matname,succeeded] = load_tracks(matname,[moviename])
+
+function [trx,matname,succeeded] = load_tracks(matname,moviename)
+
+succeeded = false;
+trx = [];
 
 tmp = load(matname);
 if ~isfield(tmp,'trx'),
@@ -14,4 +19,16 @@ if ~isfield(tmp,'trx'),
   end
 else
   trx = tmp.trx;
+  if exist('moviename','var') && ~isfield(trx,'moviename'),
+    for i = 1:length(trx),
+      trx(i).moviename = moviename;
+    end
+  end
 end
+
+% member functions can be weird
+for i = 1:length(trx),
+  trx(i).f2i = @(f) f - trx(i).firstframe + 1;
+end
+
+succeeded = true;

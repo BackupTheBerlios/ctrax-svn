@@ -34,6 +34,7 @@ if strcmpi(labelmode,'load'),
   if isnumeric(labelmatname) && labelmatname == 0,
     return;
   end
+  labelmatname = [labelmatpath,labelmatname];
   load(labelmatname);
   fprintf('Labeled data loaded\n');
 else  
@@ -53,7 +54,11 @@ starts = {};
 ends = {};
 for i = 1:nmovies,
   fprintf('Getting tracks for movie %s\n',movienames{i});
-  load(matnames{i});
+  [trx,matnames{i},loadsucceeded] = load_tracks(matnames{i},movienames{i});
+  if ~loadsucceeded,
+    msgbox('Could not load trx from file %s\n',matnames{i});
+    return;
+  end
   for j = 1:length(fliestolabel{i}),
     fly = fliestolabel{i}(j);
     if length(labeledbehavior{i}) < fly || ~isfield(labeledbehavior{i}(fly),'starts'),
@@ -118,6 +123,16 @@ for fly = 1:length(datalearn),
   datalearn(fly).firstframe = 1;
   datalearn(fly).endframe = datalearn(fly).nframes;
   datalearn(fly).f2i = @(f) f;
+  
+  % seems to be unhappy with non-speed parameters
+  fns = fieldnames(datalearn(fly));
+  for k = 1:length(fns),
+    fn = fns{k};
+    if length(datalearn(fly).(fn)) == datalearn(fly).nframes,
+      datalearn(fly).(fn) = datalearn(fly).(fn)(1:end-1);
+    end
+  end
+  
   labels(fly).starts = labels(fly).starts - t0 + 1;
   labels(fly).ends = labels(fly).ends - t0 + 1;
 end
@@ -141,6 +156,7 @@ while true,
       continue;
     end
   end
+  paramsmatname = [paramsmatpath,paramsmatname];
   break;
 end
 
@@ -159,19 +175,19 @@ if exist('params','var'),
     for j = 1:2:length(params.options{i}),
       if isfield(trx(1).units,params.options{i}{j}), 
         n = nnz(strcmpi('rad',trx(1).units.(params.options{i}{j}).num));
-        if n > 1,
+        if n >= 1,
           params.options{i}{j+1} = params.options{i}{j+1}*(180/pi)^n;
         end
         n = nnz(strcmpi('rad',trx(1).units.(params.options{i}{j}).den));
-        if n > 1,
+        if n >= 1,
           params.options{i}{j+1} = params.options{i}{j+1}/(180/pi)^n;
         end
       end
     end
   end
-  params = chooseproperties(fns,params);
+  params = chooseproperties(fns,datalearn(1).units,params);
 else
-  params = chooseproperties(fns);
+  params = chooseproperties(fns,datalearn(1).units);
 end
 
 % convert degrees to radians
@@ -179,13 +195,13 @@ for i = 2:2:length(params.options),
   for j = 1:2:length(params.options{i}),
     if isfield(trx(1).units,params.options{i}{j}), 
       n = nnz(strcmpi('rad',trx(1).units.(params.options{i}{j}).num));
-      if n > 1,
-        params.options{i}{j+1} = params.options{i}{j+1}*(180/pi)^n;
-      end
-      n = nnz(strcmpi('rad',trx(1).units.(params.options{i}{j}).den));
-      if n > 1,
+      if n >= 1,
         params.options{i}{j+1} = params.options{i}{j+1}/(180/pi)^n;
       end
+      n = nnz(strcmpi('rad',trx(1).units.(params.options{i}{j}).den));
+      if n >= 1,
+        params.options{i}{j+1} = params.options{i}{j+1}*(180/pi)^n;
+      end      
     end
   end
 end
@@ -273,6 +289,7 @@ params.options{end+1} = 'nsamples';
 params.options{end+1} = 100;
 params.options{end+1} = 'minseqlengthorder';
 params.options{end+1} = minseqlengthorder;
+params.fps = datalearn(1).fps;
 
 %% learn parameters
 
@@ -281,8 +298,159 @@ fprintf('Learning parameters ... This will take a while. Hit the quit button to 
 behaviorparams = systematic_learn_params2(datalearn,labels,params.minxfns,...
   params.maxxfns,params.minxclosefns,params.maxxclosefns,...
   params.minsumxfns,params.maxsumxfns,params.minmeanxfns,...
-  params.maxmeanxfns,params.options{:});
+  params.maxmeanxfns,params.fps,params.options{:});
 
 save('-append',paramsmatname,'behaviorparams');
 
 succeeded = true;
+
+%% show the resulting classifications
+
+% show at most maxn1 x maxn2 plots per figure
+nflies = length(datalearn);
+maxn1 = 3;
+maxn2 = 4;
+nperpage = maxn1*maxn2;
+npages = ceil(nflies/nperpage);
+nlastpage = mod(nflies,nperpage);
+if nlastpage == 0, nlastpage = nperpage; end
+
+page = 1;
+plotcurr = 1;
+if npages == 1,
+  nperpagecurr = nlastpage;
+else
+  nperpagecurr = nperpage;
+end
+
+for fly = 1:nflies,
+
+  % go to the next page
+  if plotcurr == 1,
+    figure('position',[360   402   886   519],'units','pixels');
+    if page == npages,
+      n2 = ceil(sqrt(nlastpage));
+      n1 = ceil(nlastpage / n2);
+    else
+      n1 = maxn1;
+      n2 = maxn2;
+    end
+    hax = createsubplots(n1,n2,.01);
+  end
+  
+  axes(hax(plotcurr));
+  hold on;
+  
+  % get labeled and detected behaviors for this fly
+  idxlabel = false(1,datalearn(fly).nframes);
+  for i = 1:length(labels(fly).starts),
+    idxlabel(labels(fly).starts(i):labels(fly).ends(i)) = true;
+  end
+  idxdetect = false(1,datalearn(fly).nframes);
+  seg = systematic_detect_event4(datalearn(fly),...
+    'event',true(1,datalearn(fly).nframes),...
+    behaviorparams.minx,behaviorparams.maxx,...
+    behaviorparams.minxclose,behaviorparams.maxxclose,...
+    behaviorparams.minsumx,behaviorparams.maxsumx,...
+    behaviorparams.minmeanx,behaviorparams.maxmeanx,...
+    behaviorparams.r,behaviorparams.minseqlength,...
+    behaviorparams.maxseqlength,behaviorparams.fps);
+  for i = 1:length(seg.t1),
+    idxdetect(seg.t1(i):seg.t2(i)) = true;
+  end
+  
+  % plot in and around detected and labeled frames
+  idxplotother = imdilate(idxdetect | idxlabel,ones(1,5));
+  if ~any(idxplotother),
+    ax = axis;  
+    text(mean(ax(1:2)),mean(ax(3:4)),'No detected or labeled sequences','horizontalalignment','center');
+  else
+    
+    % plot labels
+    for i = 1:length(labels(fly).starts),
+      hlabel = plot(datalearn(fly).x_mm(labels(fly).starts(i):labels(fly).ends(i)),...
+        datalearn(fly).y_mm(labels(fly).starts(i):labels(fly).ends(i)),...
+        'm-','linewidth',8);
+    end
+    
+    % plot the fly's position
+    hmain = plot(datalearn(fly).x_mm(idxplotother),datalearn(fly).y_mm(idxplotother),'k.-');
+    
+    % plot detected positions
+    for i = 1:length(seg.t1),
+      hdetect = plot(datalearn(fly).x_mm(seg.t1(i):seg.t2(i)),...
+        datalearn(fly).y_mm(seg.t1(i):seg.t2(i)),'c.-');
+      plot(datalearn(fly).x_mm(seg.t1(i)),...
+        datalearn(fly).y_mm(seg.t1(i)),'go','markerfacecolor','g');
+      plot(datalearn(fly).x_mm(seg.t2(i)),...
+        datalearn(fly).y_mm(seg.t2(i)),'ro','markerfacecolor','r');
+    end
+    
+    axisalmosttight;
+  end
+  set(hax(plotcurr),'xtick',[],'ytick',[]);
+  
+  % increment plot
+  plotcurr = plotcurr + 1;
+  if plotcurr > nperpagecurr && page ~= npages,
+    plotcurr = 1;
+    page = page + 1;
+    if npages == page,
+      nperpagecurr = nlastpage;
+    else
+      nperpagecurr = nperpage;
+    end
+  end
+  
+end
+
+if plotcurr > 1,
+  delete(hax(plotcurr:end));
+end
+
+fprintf('Illustration of detected and labeled behaviors\n');
+fprintf('We plot the fly''s position in and around\n');
+fprintf('frames where either the behavior is labeled or detected\n');
+fprintf('The fly''s position is plotted in black\n');
+fprintf('We plot labeled behaviors in magenta and detected behaviors\n');
+fprintf('in cyan. At the start and end of each detected behavior, we plot\n');
+fprintf('a green and red circle, resp. There is a subplot for each labeled fly.\n');
+fprintf('We plot nothing in cases where no behaviors are labeled or\n');
+fprintf('detected.\n');
+
+%% print out the learned parameters
+
+s = printparams(behaviorparams.minxclose,behaviorparams.maxxclose,datalearn(1).units);
+if ~isempty(s),
+  fprintf('All frame bounds:\n');
+  for i = 1:length(s),
+    fprintf(s{i});
+  end
+  fprintf('\n');
+end
+s = printparams(behaviorparams.minx,behaviorparams.maxx,datalearn(1).units);
+if ~isempty(s),
+  fprintf('Near-frame bounds:\n');
+  for i = 1:length(s),
+    fprintf(s{i});
+  end
+  fprintf('Near frame radius: %d frames\n',behaviorparams.r);
+  fprintf('\n');
+end
+s = printparams(behaviorparams.minsumx,behaviorparams.maxsumx,datalearn(1).units);
+if ~isempty(s),
+  fprintf('Sequence sum bounds:\n');
+  for i = 1:length(s),
+    fprintf(s{i});
+  end
+  fprintf('\n');
+end
+s = printparams(behaviorparams.minmeanx,behaviorparams.maxmeanx,datalearn(1).units);
+if ~isempty(s),
+  fprintf('Sequence mean bounds:\n');
+  for i = 1:length(s),
+    fprintf(s{i});
+  end
+  fprintf('\n');
+end
+fprintf('Sequence length: %f <= seqlength <= %f [frames]\n',behaviorparams.minseqlength,behaviorparams.maxseqlength);
