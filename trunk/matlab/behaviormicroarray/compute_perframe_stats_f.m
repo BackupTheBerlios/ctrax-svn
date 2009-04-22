@@ -4,9 +4,9 @@ function [succeeded,savename,trx] = compute_perframe_stats_f(varargin)
 setuppath;
 trx = [];
 
-[matname,matpath,docomputearena,docomputeclosest,fov] = ...
+[matname,matpath,docomputearena,docomputeclosest,fov,docomputemain,docomputecrabwalk] = ...
   myparse(varargin,'matname',nan,'matpath',nan,'docomputearena',nan,...
-  'docomputeclosest',nan,'fov',nan);
+  'docomputeclosest',nan,'fov',nan,'docomputemain',true,'docomputecrabwalk',true);
 
 succeeded = false;
 savename = '';
@@ -96,8 +96,12 @@ end
 %% compute per-frame stats
 
 fprintf('Computing statistics...\n');
-trx = process_data(trx,matname);
-trx = process_data_crabwalks(trx);
+if docomputemain,
+  trx = process_data(trx,matname);
+end
+if docomputecrabwalk,
+  trx = process_data_crabwalks(trx);
+end
 
 %% compute arena-based per-frame stats?
 

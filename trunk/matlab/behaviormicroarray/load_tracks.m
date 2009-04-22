@@ -5,7 +5,20 @@ function [trx,matname,succeeded] = load_tracks(matname,moviename)
 succeeded = false;
 trx = [];
 
+isinteractive = ~exist('matname','var');
+
+if isinteractive,
+  [matname,matpath] = uigetfile('*.mat','Choose mat file containing trajectories','');
+  if ~ischar(matname),
+    return;
+  end
+  matname = [matpath,matname];
+end
+
 tmp = load(matname);
+if isfield(tmp,'pairtrx'),
+  tmp.trx = tmp.pairtrx;
+end
 if ~isfield(tmp,'trx'),
   if isfield(tmp,'ntargets'),
     if ~exist('moviename','var'),

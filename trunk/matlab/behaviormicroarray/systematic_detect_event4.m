@@ -38,16 +38,16 @@ w = 0;
 isnotinsmallcube = false(1,trk.nframes-1);
 for fn1 = minxfns,
   if strcmpi(fn1{1},'corfrac'),
-    isnotinsmallcube = isnotinsmallcube | trk.(fn1{1})(1,:) < minx.(fn1{1});
+    isnotinsmallcube = isnotinsmallcube | trk.(fn1{1})(1,1:trk.nframes-1) < minx.(fn1{1});
   else
-    isnotinsmallcube = isnotinsmallcube | trk.(fn1{1}) < minx.(fn1{1});
+    isnotinsmallcube = isnotinsmallcube | trk.(fn1{1})(1:trk.nframes-1) < minx.(fn1{1});
   end
 end
 for fn1 = maxxfns,
   if strcmpi(fn1{1},'corfrac'),
-    isnotinsmallcube = isnotinsmallcube | trk.(fn1{1})(1,:) > maxx.(fn1{1});
+    isnotinsmallcube = isnotinsmallcube | trk.(fn1{1})(1,1:trk.nframes-1) > maxx.(fn1{1});
   else
-    isnotinsmallcube = isnotinsmallcube | trk.(fn1{1}) > maxx.(fn1{1});
+    isnotinsmallcube = isnotinsmallcube | trk.(fn1{1})(1:trk.nframes-1) > maxx.(fn1{1});
   end
 end
 
@@ -55,16 +55,16 @@ end
 isnotinlargecube = false(1,trk.nframes-1);
 for fn1 = minxclosefns,
   if strcmpi(fn1{1},'corfrac'),
-    isnotinlargecube = isnotinlargecube | trk.(fn1{1})(1,:) < minxclose.(fn1{1});
+    isnotinlargecube = isnotinlargecube | trk.(fn1{1})(1,1:trk.nframes-1) < minxclose.(fn1{1});
   else
-    isnotinlargecube = isnotinlargecube | trk.(fn1{1}) < minxclose.(fn1{1});
+    isnotinlargecube = isnotinlargecube | trk.(fn1{1})(1:trk.nframes-1) < minxclose.(fn1{1});
   end
 end
 for fn1 = maxxclosefns,
   if strcmpi(fn1{1},'corfrac'),
-    isnotinlargecube = isnotinlargecube | trk.(fn1{1})(1,:) > maxxclose.(fn1{1});
+    isnotinlargecube = isnotinlargecube | trk.(fn1{1})(1,1:trk.nframes-1) > maxxclose.(fn1{1});
   else
-    isnotinlargecube = isnotinlargecube | trk.(fn1{1}) > maxxclose.(fn1{1});
+    isnotinlargecube = isnotinlargecube | trk.(fn1{1})(1:trk.nframes-1) > maxxclose.(fn1{1});
   end
 end
 
