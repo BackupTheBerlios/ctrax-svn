@@ -1,5 +1,5 @@
 % set up the paths
-isdone = ~isempty(which('get_readframe_fcn'));
+isdone = ~isempty(which('ctrax_matlab_misc_check')) &&  ~isempty(which('ctrax_matlab_filehandling_check'));
 if isdone, return; end
 
 dirnamestry = {'.','..','matlab','../matlab','../Ctrax/matlab'};
