@@ -15,11 +15,10 @@ end
 
 %% choose a mat file to analyze
 fprintf('Choose per-frame stats mat file to plot.\n');
-[matname,matpath] = uigetfile('*.mat','Choose mat file to analyze',matname);
-if isnumeric(matname) && matname == 0,
+[trx,matname,loadsucceeded] = load_tracks();
+if ~loadsucceeded,
   return;
 end
-matname = [matpath,matname];
 fprintf('Matfile: %s\n\n',matname);
 
 if exist(savedsettingsfile,'file'),
@@ -28,11 +27,5 @@ else
   save(savedsettingsfile,'matname','matpath');
 end
 
-datacurr = load(matname);
-if ~isfield(datacurr,'trx') || ~isfield(datacurr.trx,'units'),
-  fprintf('No variable trx or trx.units required for histogramming\n');
-  return;
-end
-
 fprintf('Starting GUI histogramproperties, manipulate plot using histogramproperties figure\n');
-histogramproperties(datacurr.trx);
+histogramproperties(trx);

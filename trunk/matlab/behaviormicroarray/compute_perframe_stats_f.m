@@ -2,15 +2,15 @@ function [succeeded,savename,trx] = compute_perframe_stats_f(varargin)
 
 % parse inputs
 setuppath;
-trx = [];
 
-[matname,matpath,docomputearena,docomputeclosest,fov,docomputemain,docomputecrabwalk] = ...
+[matname,matpath,docomputearena,docomputeclosest,fov,docomputemain,docomputecrabwalk,trx] = ...
   myparse(varargin,'matname',nan,'matpath',nan,'docomputearena',nan,...
-  'docomputeclosest',nan,'fov',nan,'docomputemain',true,'docomputecrabwalk',true);
+  'docomputeclosest',nan,'fov',nan,'docomputemain',true,'docomputecrabwalk',true,'trx',[]);
 
 succeeded = false;
 savename = '';
 
+ISTRX = ~isempty(trx);
 ISMATNAME = ischar(matname);
 ISMATPATH = ischar(matpath);
 if ISMATNAME && ~ISMATPATH,
@@ -34,6 +34,9 @@ end
 if ~ISMATNAME,
   matname = '';
   matpath = '';
+  matnameonly = '';
+else
+  matnameonly = matname;
 end
 
 %% load settings
@@ -57,40 +60,50 @@ if exist(savedsettingsfile,'file')
 end
 
 %% choose a mat file to analyze
-if ~ISMATNAME,
-  fprintf('Choose mat file to analyze.\n');
-  matname = [matpath,matname];
-  [matname,matpath] = uigetfile('*.mat','Choose mat file to analyze',matname);
-  if isnumeric(matname) && matname == 0,
-    return;
-  end
-end
-fprintf('Matfile: %s%s\n\n',matpath,matname);
-  
-if exist(savedsettingsfile,'file'),
-  save('-append',savedsettingsfile,'matname','matpath');
-else
-  save(savedsettingsfile,'matname','matpath');
-end
+if ~ISTRX,
 
-matnameonly = matname;
-matname = [matpath,matname];
+  if ~ISMATNAME,
+    fprintf('Choose mat file to analyze.\n');
+    matname = [matpath,matname];
+    [matname,matpath] = uigetfile('*.mat','Choose mat file to analyze',matname);
+    if isnumeric(matname) && matname == 0,
+      return;
+    end
+  end
+  fprintf('Matfile: %s%s\n\n',matpath,matname);
+  
+  if exist(savedsettingsfile,'file'),
+    save('-append',savedsettingsfile,'matname','matpath');
+  else
+    save(savedsettingsfile,'matname','matpath');
+  end
+  
+  matnameonly = matname;
+  matname = [matpath,matname];
+
+end
 
 %% get conversion to mm, seconds
 
-[convertunits_succeeded,matname] = ...
-  convert_units_f('isautomatic',true,'matname',matnameonly,'matpath',matpath);
-
+if ISTRX,
+  [convertunits_succeeded,matname] = ...
+    convert_units_f('isautomatic',true,'trx',trx);
+else
+  [convertunits_succeeded,matname] = ...
+    convert_units_f('isautomatic',true,'matname',matnameonly,'matpath',matpath);
+end
 if ~convertunits_succeeded,
   return;
 end
 
 %% load in the data
-fprintf('Checking file %s\n',matname);
-[trx,matname,loadsucceeded] = load_tracks(matname);
-if ~loadsucceeded,
-  msgbox('Could not load data from %s, exiting',matname);
-  return;
+if ~ISTRX,
+  fprintf('Checking file %s\n',matname);
+  [trx,matname,loadsucceeded] = load_tracks(matname);
+  if ~loadsucceeded,
+    msgbox('Could not load data from %s, exiting',matname);
+    return;
+  end
 end
 
 %% compute per-frame stats
@@ -198,6 +211,9 @@ savename = [savepath,savename];
 %% save results
 
 fprintf('Saving results to file %s\n',savename);
+for i = 1:length(trx),
+  trx(i).matname = savename;
+end
 save(savename,'trx');
 
 succeeded = true;

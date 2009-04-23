@@ -22,7 +22,7 @@ function varargout = histogramproperties(varargin)
 
 % Edit the above text to modify the response to help histogramproperties
 
-% Last Modified by GUIDE v2.5 22-Dec-2008 22:25:04
+% Last Modified by GUIDE v2.5 23-Apr-2009 08:30:45
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -57,8 +57,21 @@ function histogramproperties_OpeningFcn(hObject, eventdata, handles, varargin)
 % [params]
 
 % Choose default command line output for histogramproperties
+setuppath;
 handles.output = hObject;
-handles.trx = varargin{1};
+if length(varargin) < 1,
+  fprintf('Select mat file containing trajectories with per-frame properties\n');
+  [handles.trx,handles.matname,loadsucceeded] = load_tracks();
+  if ~loadsucceeded,
+    error('Could not load tracks');
+  end
+else
+  handles.trx = varargin{1};
+  if isfield(handles.trx,'matname'),
+    handles.matname = handles.trx(1).matname;
+  end
+end
+
 if length(varargin) > 1,
   params0 = varargin{2};
 else
@@ -75,6 +88,45 @@ guidata(hObject, handles);
 % UIWAIT makes histogramproperties wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 
+function handles = setpropnames(handles)
+
+% store previous values
+prop1idx = get(handles.prop1menu,'Value');
+s = get(handles.prop1menu,'string');
+prop1name = s{prop1idx};
+prop2idx = get(handles.prop2menu,'Value');
+prop2name = s{prop2idx};
+
+handles.allpropnames = fieldnames(handles.trx);
+ignoreidx = [];
+for i = 1:length(handles.allpropnames),
+  for j = 1:length(handles.trx),
+    expectedlength = handles.trx(j).nframes-1;
+    if numel(handles.trx(j).(handles.allpropnames{i})) < expectedlength,
+      ignoreidx(end+1) = i;
+      break;
+    end
+  end
+end
+handles.allpropnames(ignoreidx) = [];
+ignorefns = {'x','y','a','b'};
+handles.allpropnames = setdiff(handles.allpropnames,ignorefns);
+handles.allpropnames{end+1} = 'duration';
+
+% set idx to previous values
+set(handles.prop1menu,'string',handles.allpropnames);
+set(handles.prop2menu,'string',handles.allpropnames);
+handles.prop1idx = find(strcmp(handles.allpropnames,prop1name),1);
+if isempty(handles.prop1idx),
+  handles.prop1idx = 1;
+end
+handles.prop2idx = find(strcmp(handles.allpropnames,prop2name),1);
+if isempty(handles.prop2idx),
+  handles.prop2idx = 1;
+end
+set(handles.prop1menu,'value',handles.prop1idx);
+set(handles.prop2menu,'value',handles.prop2idx);
+
 function handles = initializeparams(handles,params)
 
 handles.allpropnames = fieldnames(handles.trx);
@@ -82,7 +134,7 @@ ignoreidx = [];
 for i = 1:length(handles.allpropnames),
   for j = 1:length(handles.trx),
     expectedlength = handles.trx(j).nframes-1;
-    if prod(size(handles.trx(j).(handles.allpropnames{i}))) < expectedlength,
+    if numel(handles.trx(j).(handles.allpropnames{i})) < expectedlength,
       ignoreidx(end+1) = i;
       break;
     end
@@ -324,7 +376,8 @@ else
 end
 
 % seg name
-set(handles.segfile1edit,'string',handles.segfile{handles.datashow});
+[paths,files] = split_path_and_filename(handles.segfile{handles.datashow});
+set(handles.segfile1edit,'string',files,'tooltipstring',handles.segfile{handles.datashow});  
 
 % type of averaging
 set(handles.averaging1menu,'value',handles.averagingidx(handles.datashow));
@@ -628,17 +681,20 @@ while true,
     matname = [matpath,matname];
   end
   if ~exist(matname,'file'),
-    msgbox(sprintf('File %s does not exist',matname));
+    handles.segfile{handles.datashow} = '';
+    uiwait(msgbox(sprintf('File %s does not exist',matname)));
     continue;
   end
   segcurr = load(matname);
   if ~isfield(segcurr,'seg'),
-    msgbox(sprintf('File %s does not contain variable seg',matname));
+    handles.segfile{handles.datashow} = '';
+    uiwait(msgbox(sprintf('File %s does not contain variable seg',matname)));
     continue;
   end
   if length(handles.trx) ~= length(segcurr.seg)
-    msgbox(sprintf('Number of flies in trx = %d, number of flies in seg = %d',...
-      length(handles.trx),length(segcurr.seg)));
+    handles.segfile{handles.datashow} = '';
+    uiwait(msgbox(sprintf('Number of flies in trx = %d, number of flies in seg = %d',...
+      length(handles.trx),length(segcurr.seg))));
     continue;
   end
   handles.segfile{handles.datashow} = matname;
@@ -650,7 +706,8 @@ for i = 1:length(handles.trx),
   handles.trx(i).duration{handles.datashow} = ...
       (segcurr.seg(i).t2 - segcurr.seg(i).t1 + 1)/handles.trx(i).fps;
 end
-set(handles.segfile1edit,'string',handles.segfile{handles.datashow});  
+[paths,files] = split_path_and_filename(handles.segfile{handles.datashow});
+set(handles.segfile1edit,'string',files,'tooltipstring',handles.segfile{handles.datashow});  
 
 function segfile1edit_Callback(hObject, eventdata, handles)
 % hObject    handle to segfile1edit (see GCBO)
@@ -660,7 +717,8 @@ function segfile1edit_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of segfile1edit as text
 %        str2double(get(hObject,'String')) returns contents of segfile1edit as a double
 [handles,issegfile] = getsegfile(handles);
-set(handles.segfile1edit,'string',handles.segfile{handles.datashow});
+[paths,files] = split_path_and_filename(handles.segfile{handles.datashow});
+set(handles.segfile1edit,'string',files,'tooltipstring',handles.segfile{handles.datashow});  
 guidata(hObject,handles);
 
 % --- Executes during object creation, after setting all properties.
@@ -871,12 +929,14 @@ props{1} = handles.allpropnames{handles.prop1idx};
 if handles.nprops == 2,
   props{2} = handles.allpropnames{handles.prop2idx};
 end
+handles.datastuff.props = props;
 % number of bins
 nbins = zeros(1,handles.nprops);
 nbins(1) = handles.nbins1;
 if handles.nprops == 2,
   nbins(2) = handles.nbins2;
 end
+handles.datastuff.nbins = nbins;
 % lower and upper bounds
 lb = zeros(1,handles.nprops);
 ub = zeros(1,handles.nprops);
@@ -919,7 +979,9 @@ transforms{1} = handles.transform1;
 if handles.nprops == 2,
   transforms{2} = handles.transform2;
 end
-
+handles.datastuff.lb = lb;
+handles.datastuff.ub = ub;
+handles.datastuff.transforms = transforms;
 avprops = get(handles.averaging1menu,'string');
 averaging = cell(1,handles.ndata);
 for i = 1:handles.ndata,
@@ -929,12 +991,17 @@ for i = 1:handles.ndata,
     averaging{i} = '';
   end
 end
+handles.datastuff.isbehavior = handles.isbehavior;
+handles.datastuff.averaging = averaging;
+handles.datastuff.doinvert = handles.doinvert;
 flytype = handles.flytype;
 for i = 1:handles.ndata,
   if ismember('All',handles.flytype{i}),
     flytype{i} = setdiff(handles.alltypes,{'All'});
   end
 end
+handles.datastuff.flytype = flytype;
+handles.datastuff.dataname = handles.dataname;
 [handles.data,handles.histstuff] = extractdata(handles.trx,props,nbins,lb,ub,transforms,handles.isbehavior,averaging,handles.doinvert,flytype,handles.dataname);
 
 if ~isfield(handles,'plotstuff'),
@@ -961,6 +1028,9 @@ function exportbutton_Callback(hObject, eventdata, handles)
 
 fprintf('Enter name of mat file to save histogrammed data to.\n');
 [savename,savepath] = uiputfile('*.mat','Save histogrammed results',handles.savename);
+if ~ischar(savename),
+  return;
+end
 handles.savename = [savepath,savename];
 if ~isfield(handles,'histstuff') || isempty(fieldnames(handles.histstuff)),
   guidata(hObject,handles);
@@ -969,9 +1039,11 @@ if ~isfield(handles,'histstuff') || isempty(fieldnames(handles.histstuff)),
 end
 tmp = handles.histstuff;
 save(handles.savename,'-struct','tmp');
-handles.prop2name = handles.allpropnames{handles.prop2idx};
-handles.prop1name = handles.allpropnames{handles.prop1idx};
-save(handles.savename,'-append','-struct','handles',handles.paramsvars{:});
+tmp = handles.datastuff;
+save('-append',handles.savename,'-struct','tmp');
+%handles.prop2name = handles.allpropnames{handles.prop2idx};
+%handles.prop1name = handles.allpropnames{handles.prop1idx};
+%save(handles.savename,'-append','-struct','handles',handles.paramsvars{:});
 
 % --- Executes on button press in onepropbutton.
 function onepropbutton_Callback(hObject, eventdata, handles)
@@ -1455,3 +1527,167 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
+% --- If Enable == 'on', executes on mouse press in 5 pixel border.
+% --- Otherwise, executes on mouse press in 5 pixel border or over segfile1edit.
+function segfile1edit_ButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to segfile1edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+[matname,matpath] = uigetfile('*.mat','Choose behavior segmentation mat file',handles.segfile{handles.datashow});
+if ~ischar(matname),
+  return;
+end
+matname = [matpath,matname];
+if ~exist(matname,'file'),
+  msgbox(sprintf('File %s does not exist',matname));
+  return;
+end
+
+segcurr = load(matname);
+if ~isfield(segcurr,'seg'),
+  msgbox(sprintf('File %s does not contain variable seg',matname));
+  return;
+end
+if length(handles.trx) ~= length(segcurr.seg)
+  msgbox(sprintf('Number of flies in trx = %d, number of flies in seg = %d',...
+    length(handles.trx),length(segcurr.seg)));
+  return;
+end
+handles.segfile{handles.datashow} = matname;
+
+for i = 1:length(handles.trx),
+  handles.trx(i).seg{handles.datashow} = segcurr.seg(i);
+  handles.trx(i).duration{handles.datashow} = ...
+    (segcurr.seg(i).t2 - segcurr.seg(i).t1 + 1)/handles.trx(i).fps;
+end
+[paths,files] = split_path_and_filename(handles.segfile{handles.datashow});
+set(handles.segfile1edit,'string',files,'tooltipstring',handles.segfile{handles.datashow});  
+
+guidata(hObject,handles);
+
+
+% --- Executes on button press in changesegfilebutton.
+function changesegfilebutton_Callback(hObject, eventdata, handles)
+% hObject    handle to changesegfilebutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+[matname,matpath] = uigetfile('*.mat','Choose behavior segmentation mat file',handles.segfile{handles.datashow});
+if ~ischar(matname),
+  return;
+end
+matname = [matpath,matname];
+if ~exist(matname,'file'),
+  msgbox(sprintf('File %s does not exist',matname));
+  return;
+end
+
+segcurr = load(matname);
+if ~isfield(segcurr,'seg'),
+  msgbox(sprintf('File %s does not contain variable seg',matname));
+  return;
+end
+if length(handles.trx) ~= length(segcurr.seg)
+  msgbox(sprintf('Number of flies in trx = %d, number of flies in seg = %d',...
+    length(handles.trx),length(segcurr.seg)));
+  return;
+end
+handles.segfile{handles.datashow} = matname;
+
+for i = 1:length(handles.trx),
+  handles.trx(i).seg{handles.datashow} = segcurr.seg(i);
+  handles.trx(i).duration{handles.datashow} = ...
+    (segcurr.seg(i).t2 - segcurr.seg(i).t1 + 1)/handles.trx(i).fps;
+end
+[paths,files] = split_path_and_filename(handles.segfile{handles.datashow});
+set(handles.segfile1edit,'string',files,'tooltipstring',handles.segfile{handles.datashow});  
+
+guidata(hObject,handles);
+
+
+% --- Executes on button press in quitbutton.
+function quitbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to quitbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+savedefaults(handles);
+
+delete(handles.figure1);
+
+% --- Executes on button press in computeperframebutton.
+function computeperframebutton_Callback(hObject, eventdata, handles)
+% hObject    handle to computeperframebutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if isfield(handles,'matname'),
+  [matpath,matname] = split_path_and_filename(handles.matname);
+  opts = {'matname',matname,'matpath',matpath};
+else
+  opts = {};
+end
+[loadsucceeded,savename,trx] = compute_perframe_stats_f('trx',handles.trx,opts{:});
+if ~loadsucceeded,
+  return;
+end
+handles.matname = savename;
+handles.trx = trx;
+
+handles = setpropnames(handles);
+
+guidata(hObject,handles);
+
+
+% --- Executes on button press in detectbehaviorbutton.
+function detectbehaviorbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to detectbehaviorbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+[succeeded,savenames] = detect_behaviors_f('trxnames',{handles.matname});
+
+if ~succeeded,
+  return;
+end
+
+savename = savenames{1};
+
+olddatashow = handles.datashow;
+handles.datashow = handles.ndata + 1;
+
+newdata = sprintf('Data %d',handles.datashow);
+handles.dataname = [handles.dataname,{newdata}];
+set(handles.datamenu,'string',[handles.dataname,{'Add new data'}]);
+handles.ndata = handles.ndata + 1;
+handles.isbehavior(handles.ndata) = true;
+handles.doinvert(handles.ndata) = false;
+handles.averagingidx(handles.ndata) = handles.averagingidx(olddatashow);
+handles.segfile{handles.ndata} = savename;
+handles.flytype{handles.ndata} = {'All'};
+
+segcurr = load(savename);
+if ~isfield(segcurr,'seg'),
+  handles.segfile{handles.datashow} = '';
+  uiwait(msgbox(sprintf('File %s does not contain variable seg',savename)));
+  return;
+end
+if length(handles.trx) ~= length(segcurr.seg)
+  handles.segfile{handles.datashow} = '';
+  uiwait(msgbox(sprintf('Number of flies in trx = %d, number of flies in seg = %d',...
+    length(handles.trx),length(segcurr.seg))));
+  return;
+end
+for i = 1:length(handles.trx),
+  handles.trx(i).seg{handles.datashow} = segcurr.seg(i);
+  handles.trx(i).duration{handles.datashow} = ...
+    (segcurr.seg(i).t2 - segcurr.seg(i).t1 + 1)/handles.trx(i).fps;
+end
+
+%[paths,files] = split_path_and_filename(handles.segfile{handles.datashow});
+%set(handles.segfile1edit,'string',files,'tooltipstring',handles.segfile{handles.datashow});  
+
+handles = initializedatabox(handles);
+
+guidata(hObject,handles);

@@ -5,11 +5,11 @@ setuppath;
 fps = 20;
 pxpermm = 4;
 % parse inputs
-[matname,matpath,moviename,ISAUTOMATIC] = ...
-  myparse(varargin,'matname',nan,'matpath',nan,'moviename',nan,'isautomatic',false);
+[matname,matpath,moviename,ISAUTOMATIC,trx] = ...
+  myparse(varargin,'matname',nan,'matpath',nan,'moviename',nan,'isautomatic',false,'trx',[]);
 
 succeeded = false;
-
+ISTRX = ~isempty(trx);
 ISMATNAME = ischar(matname);
 ISMATPATH = ischar(matpath);
 if ISMATNAME && ~ISMATPATH,
@@ -38,32 +38,43 @@ end
 
 % get the mat file
 
-if ~ISMATNAME,
-  
-  fprintf('Choose mat file to convert units for.\n');
-  matname = [matpath,matname];
-  [matname,matpath] = uigetfile('*.mat','Choose mat file for which to convert units',matname);
-  if isnumeric(matname) && matname == 0,
-    return;
+if ISTRX,
+  if ~ISMATNAME,
+    matname = '';
+    matpath = '';
+    savename = '';
   end
-  fprintf('Matfile: %s%s\n\n',matpath,matname);
+  matname0 = matname;
+else
+  if ~ISMATNAME,
   
-  if exist(savedsettingsfile,'file'),
-    save('-append',savedsettingsfile,'matname','matpath');
-  else
-    save(savedsettingsfile,'matname','matpath');
-  end
+    fprintf('Choose mat file to convert units for.\n');
+    matname = [matpath,matname];
+    [matname,matpath] = uigetfile('*.mat','Choose mat file for which to convert units',matname);
+    if isnumeric(matname) && matname == 0,
+      return;
+    end
+    fprintf('Matfile: %s%s\n\n',matpath,matname);
     
+    if exist(savedsettingsfile,'file'),
+      save('-append',savedsettingsfile,'matname','matpath');
+    else
+      save(savedsettingsfile,'matname','matpath');
+    end
+    
+  end
+
+  matname0 = matname;
+  matname = [matpath,matname];
+  savename = matname;
 end
 
-matname0 = matname;
-matname = [matpath,matname];
-savename = matname;
-
 %% read in the movie
-[trx,matname,loadsucceeded] = load_tracks(matname);
-if ~loadsucceeded,
-  msgbox(sprintf('Could not load trx mat file %s',matname));
+if ~ISTRX,
+  [trx,matname,loadsucceeded] = load_tracks(matname);
+  if ~loadsucceeded,
+    msgbox(sprintf('Could not load trx mat file %s',matname));
+  end
 end
 
 % check to see if it has already been converted
@@ -234,6 +245,10 @@ while true,
   savename = matname;
 end
 savename = [savepath,savename];
+
+for i = 1:length(trx),
+  trx(i).matname = savename;
+end
 
 if strcmpi(matname,savename),
   tmpname = tempname;

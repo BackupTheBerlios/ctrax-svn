@@ -57,6 +57,11 @@ switch lower(plotmode),
     meandata = histstuff.countstotal;
     stddata = nan;
     stderrdata = nan;
+  case 'total fraction',
+    perflydata = nan;
+    meandata = histstuff.fractotal;
+    stddata = nan;
+    stderrdata = nan;
 end
 
 % plus and minus one standard deviation or standard error
@@ -105,7 +110,7 @@ if nprops == 1,
     % take gray and make it black
     maincolors(all(maincolors==.25,2),:) = 0;
   end
-  sigcolors = (4+maincolors)/5;
+  sigcolors = (2+maincolors)/3;
 
   plotstuff.haxes = axes;
   hold on;
@@ -211,7 +216,7 @@ else
     for datai = 1:ndata,
       nfliescurr = nnz(histstuff.istype(datai,:));
       nindivcol(datai) = max(1,round(sqrt(2*nfliescurr*w/h)));
-      nindivrow(datai) = ceil(nfliescurr/nindivcol);
+      nindivrow(datai) = ceil(nfliescurr/nindivcol(datai));
     end
   end
   if strcmpi(plotstd,'off') && ~plotindivs,
@@ -235,11 +240,14 @@ else
     plotstuff.haxes.mean = zeros(ndata,1);
     plotstuff.haxes.indiv = zeros(ndata,nflies);
     for datai = 1:ndata,
-      plotstuff.haxes.mean(datai) = subplot(2*(datai-1)+1,1,1);
-      for i = 1:nflies,
-        plotstuff.haxes.indiv(i) = subplot(nindivrow(datai)*2*ndata,...
+      % first row is all the means
+      plotstuff.haxes.mean(datai) = subplot(ndata+1,ndata,datai);
+      % next ndata rows are for individual flies
+      nfliescurr = nnz(histstuff.istype(datai,:));
+      for i = 1:nfliescurr,
+        plotstuff.haxes.indiv(datai,i) = subplot(nindivrow(datai)*(ndata+1),...
                                            nindivcol(datai),...
-                                           nindivrow(datai)*nindivcol(datai)*(2*datai-1)+i);
+                                           nindivrow(datai)*nindivcol(datai)*datai+i);
       end
     end
   elseif ~strcmpi(plotstd,'off') && plotindivs,
@@ -252,7 +260,8 @@ else
       plotstuff.haxes.minus(datai) = subplot(2*ndata,3,2*3*(datai-1)+1);
       plotstuff.haxes.mean(datai) = subplot(2*ndata,3,2*3*(datai-1)+2);
       plotstuff.haxes.plus(datai) = subplot(2*ndata,3,2*3*(datai-1)+3);
-      for i = 1:nflies,
+      nfliescurr = nnz(histstuff.istype(datai,:));
+      for i = 1:nfliescurr,
         plotstuff.haxes.indiv(datai,i) = subplot(nindivrow(datai)*2*ndata,...
                                                  nindivcol(datai),...
                                                  nindivrow(datai)*nindivcol(datai)*(2*datai-1)+i);
@@ -305,7 +314,7 @@ else
       axes(plotstuff.haxes.minus(datai));
       plotstuff.him.minus(datai) = imagesc(x,y,below(:,:,:,datai),[minv,maxv]);
       if datai == 1,
-        plotstuff.hcolorbar = colorbar('east');
+        plotstuff.hcolorbar = colorbar('eastoutside');
       end
       if datai == ndata,
         ylabel(strrep(histstuff.propnames{1},'_','\_'));
@@ -335,10 +344,15 @@ else
   set(plotstuff.hcolorbar,'edgecolor','w');
   if plotindivs,
     for datai = 1:ndata,
-      for i = 1:nflies,
+      nfliescurr = nnz(histstuff.istype(datai,:));
+      for i = 1:nfliescurr,
         axes(plotstuff.haxes.indiv(datai,i));
-        imagesc(x,y,perflydata(:,:,i),[minv,maxv]);
-        title(sprintf('Fly %d',i));
+        imagesc(x,y,perflydata(:,:,i,datai),[minv,maxv]);
+        if i == 1 && ndata > 1,
+          title(sprintf('Fly %d, %s',i,histstuff.dataname{datai}));
+        else
+          title(sprintf('Fly %d',i));
+        end
         axis off;
       end
     end

@@ -24,7 +24,7 @@ end
 istype = false(ndata,nflies);
 if ~isfield(trx,'type'),
   istype(:) = true;
-else,
+else
   for i = 1:ndata,
     for j = 1:nflies,
       istype(i,j) = ismember(trx(j).type,flytype{i});
@@ -162,11 +162,10 @@ for datai = 1:ndata,
       if ~istype(datai,i),
         continue;
       end
-      n = size(data{datai,i},1);
       countscurr = histc(data{datai,i},edges{1});
       countscurr(end) = [];
       histstuff.countsperfly(i,:,datai) = countscurr;
-      histstuff.fracperfly(i,:,datai) = countscurr / n;
+      histstuff.fracperfly(i,:,datai) = countscurr / sum(countscurr);
     end
   elseif nprops == 2,
     
@@ -174,12 +173,11 @@ for datai = 1:ndata,
       if ~istype(datai,i),
         continue;
       end
-      n = size(data{datai,i},1);
       countscurr = hist3(data{datai,i},'edges',edges);
       countscurr(:,end) = [];
       countscurr(end,:) = [];
       histstuff.countsperfly(:,:,i,datai) = countscurr;
-      histstuff.fracperfly(:,:,i,datai) = countscurr / n;
+      histstuff.fracperfly(:,:,i,datai) = countscurr / sum(countscurr(:));
     end
   else
     fprintf('Cannot histogram with more than 2 properties\n');

@@ -42,6 +42,7 @@ end
 % member functions can be weird
 for i = 1:length(trx),
   trx(i).f2i = @(f) f - trx(i).firstframe + 1;
+  trx(i).matname = matname;
 end
 
 succeeded = true;
