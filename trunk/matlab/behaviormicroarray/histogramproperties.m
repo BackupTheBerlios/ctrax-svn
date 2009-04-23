@@ -992,6 +992,7 @@ for i = 1:handles.ndata,
   end
 end
 handles.datastuff.isbehavior = handles.isbehavior;
+handles.datastuff.segfile = handles.segfile;
 handles.datastuff.averaging = averaging;
 handles.datastuff.doinvert = handles.doinvert;
 flytype = handles.flytype;

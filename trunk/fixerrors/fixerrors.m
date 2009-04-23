@@ -26,14 +26,14 @@ end
 
 fprintf('Choose the corresponding mat file containing the trajectories.\n');
 matname = [moviepath,strrep(moviename,movieexts{filterindex}(2:end),'.mat')];
-[matname,matpath] = uigetfile({'.mat'},'Choose mat file',matname);
+[matname,matpath] = uigetfile({'*.mat'},'Choose mat file',matname);
 if isnumeric(matname) && matname == 0, 
   return;
 end
 
 annname = [matpath,moviename,'.ann'];
 fprintf('Choose the corresponding annotation file containing the trajectories.\n');
-[annname,annpath] = uigetfile({'.ann'},'Choose ann file',annname);
+[annname,annpath] = uigetfile({'*.ann'},'Choose ann file',annname);
 if isnumeric(annname) && annname == 0,
   return;
 end
