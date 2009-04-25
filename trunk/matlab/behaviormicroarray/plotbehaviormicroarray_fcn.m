@@ -7,7 +7,8 @@
 %plotindivs: true/false
 %normalize: true/false
 %errorbars: {'none','std dev','std err'}
-%hfig: figure handle
+%hfig: figure handle for population means
+%hfig2: figure handle for microarray
 
 function plotstuff = plotbehaviormicroarray_fcn(propsperfly,types,varargin)
 
@@ -19,9 +20,9 @@ if nflies2 ~= nflies,
   return;
 end
 
-[propnames,typenames,plotindivs,normalize,errorbars,hfig] = ...
+[propnames,typenames,plotindivs,normalize,errorbars,hfig,hfig2] = ...
     myparse(varargin,'propnames',{},'typenames',{},'plotindivs',false,...
-            'normalize',true,'errorbars','none','hfig',nan);
+            'normalize',true,'errorbars','none','hfig',nan,'hfig2',nan);
 
 if isempty(propnames),
   propnames = cell(1,nprops);
@@ -222,4 +223,61 @@ if skipmeans,
   plotstuff.hlegend = legend(plotstuff.hindivs,s);  
 else
   plotstuff.hlegend = legend(plotstuff.hmeans,typenames);
+end
+
+% show the microarray
+
+% set up the figure, if necessary
+if ~ishandle(hfig2),
+  hfig2 = figure;
+  tmp = get(hfig2,'position');
+  desiredwidth = 1000;
+  desiredheight = 400;
+  if tmp(3) < desiredwidth,
+    tmp(1) = tmp(1) - (desiredwidth-tmp(3))/2;
+    tmp(3) = desiredwidth;
+  end
+  if tmp(4) < desiredheight,
+    tmp(2) = tmp(2) - (desiredheight-tmp(4))/2;
+    tmp(4) = desiredheight;
+  end
+  set(hfig2,'position',tmp);
+end
+plotstuff.hfig2 = hfig2;
+figure(hfig2);
+clf;
+
+% how many flies of each type
+% note that some flies might be plotted more than once if they are included
+% in more than one type
+nfliespertype = zeros(1,ntypes);
+for typei = 1:ntypes,
+  nfliespertype(typei) = nnz(types(:,typei));
+end
+
+% set up the subplots to be of a width proportional to the number of flies
+% of each type
+p_type = zeros(ntypes,4);
+hax_type = zeros(1,ntypes);
+% first type
+p_type(1,:) = [.1,.05,.8*nfliespertype(1)/sum(nfliespertype),.9];
+% all other types
+for typei = 2:ntypes,
+  p_type(typei,:) = [.01 + p_type(typei-1,1) + p_type(typei-1,3),.05,.8*nfliespertype(typei)/sum(nfliespertype),.9];
+end
+
+him_type = zeros(1,ntypes);
+for typei = 1:ntypes,
+  hax_type(typei) = axes('position',p_type(typei,:));
+  him_type(typei) = imagesc(propsperfly(types(:,typei),:)');
+  set(hax_type(typei),'xtick',[],'ytick',[]);
+  title(typenames{typei});
+end
+set(hax_type(1),'ytick',1:nprops,'yticklabel',propnames);
+linkprop(hax_type,'clim');
+linkaxes(hax_type,'y');
+hcol = colorbar;
+set(hcol,'units','normalized','position',[ 0.925    0.05    0.0236    0.9])
+if normalize,
+  set(get(hcol,'ylabel'),'string','Stds');
 end

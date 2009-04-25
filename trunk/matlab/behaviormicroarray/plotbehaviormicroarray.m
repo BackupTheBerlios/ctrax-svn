@@ -54,6 +54,7 @@ function plotbehaviormicroarray_OpeningFcn(hObject, eventdata, handles, varargin
 
 % Choose default command line output for plotbehaviormicroarray
 handles.output = hObject;
+setuppath;
 
 if length(varargin) >= 1,
   params0 = varargin{1};
@@ -134,7 +135,7 @@ end
 % set trxnames, behaviors, microarray
 handles = initializetrxnames(handles);
 
-function handles = initializetrxnames(handles);
+function handles = initializetrxnames(handles)
 
 % get at least one trx file
 if isempty(handles.trxnames),
@@ -220,31 +221,34 @@ function handles = initializetrxnames_empty(handles)
 handles.behaviors = struct('name',cell(1,0),'segnames',cell(1,0));
 handles.behaviorselected = 1;
 
-fprintf('Choose mat files containg trajectories and per-frame properties\n');
+fprintf('Choose mat file(s) containing trajectories and per-frame properties\n');
 
-while true,
-  [matname,matpath] = uigetfile('*.mat','Choose per-frame properties file',handles.lasttrxname);
-  
-  if isnumeric(matname) && matname == 0,
-    % cancel
-    if isempty(handles.trxnames),
-      error('At least one per-frame properties file must be selected');
-      else
-        break;
-    end
+[matnames,matpath] = uigetfile('*.mat','Choose per-frame properties file',handles.lasttrxname,'MultiSelect','on');
+
+if isnumeric(matnames) && matnames == 0,
+  % cancel
+  if isempty(handles.trxnames),
+    error('At least one per-frame properties file must be selected');
+  else
+    return;
   end
-  matname = [matpath,matname];
+elseif ischar(matnames),
+  matnames = {matnames};
+end
+
+for i = 1:length(matnames),
+  matname = [matpath,matnames{i}];
   [handles,succeeded] = addnewtrxfile(handles,matname,{});
   if ~succeeded,
     continue;
   end
-  b = questdlg('Add more trajectory files?','Add more?','Add more','Done','Done');
-  if strcmpi(b,'done'),
-    break;
-  end
 end
 
-function [handles,succeeded] = addnewtrxfile(handles,matname,segnames);
+if isempty(handles.trxnames),
+  error('No trajectories could be loaded from selected file(s).');
+end
+
+function [handles,succeeded] = addnewtrxfile(handles,matname,segnames)
 
 succeeded = false;
 if ~exist(matname,'file'),
@@ -253,15 +257,28 @@ if ~exist(matname,'file'),
 end
 
 fprintf('Checking %s...\n',matname);
-datacurr = load(matname);
-isok = isfield(datacurr,'trx') && isfield(datacurr.trx,'units');
-if ~isok,
-  msgbox(sprintf('File %s does not contain trx or trx.units\n',matname));
+[trx,matname,loadsucceeded] = load_tracks(matname);
+
+if ~loadsucceeded,
+  fprintf('Could not load trajectories from file %s\n',matname);
   return;
 end
 
+if ~isperframe(trx),
+  b = questdlg('Per-frame properties have not yet been computed for %s. Compute now, or skip this file?',...
+    'Compute Per-Frame Properties?','Compute','Skip','Compute');
+  if strcmpi(b,'skip'),
+    return;
+  end
+  [matpath,matname0] = split_path_and_filename(matname);
+  [computesucceeded,matname,trx] = compute_perframe_stats_f('matname',matname0,'matpath',matpath);
+  if ~computesucceeded,
+    return;
+  end
+end
+
 % initialize microarray
-[newmicroarray,isok] = makemicroarraypertrx(datacurr.trx,segnames,getbasename(matname));
+[newmicroarray,isok] = makemicroarraypertrx(trx,segnames,getbasename(matname));
 if ~isok,
   msgbox(sprintf('Error creating microarray for file %s\n',matname));
   return;
@@ -290,7 +307,7 @@ else
   handles.microarrays(end+1:end+handles.nflies(end)) = newmicroarray;
 end
 
-handles.propnamespertrx{end+1} = getperframepropnames(datacurr.trx);
+handles.propnamespertrx{end+1} = getperframepropnames(trx);
 if isempty(handles.trxnames),
   handles.allpropnames = handles.propnamespertrx{end};
 else
@@ -1004,8 +1021,8 @@ function changesegfilebutton_Callback(hObject, eventdata, handles)
 
 ntrx = length(handles.trxnames);
 nbehaviors = length(handles.behaviors);
-segi = handles.trxselected;
-behi = handles.behaviorselected;
+segi = min(length(handles.behaviors(1).segnames),handles.trxselected);
+behi = min(length(handles.behaviors),handles.behaviorselected);
 
 % get names of seg files corresponding to this behavior file
 segnames = cell(1,nbehaviors);
@@ -1521,7 +1538,7 @@ end % end isperframe
 % get types 
 ntypes = length(handles.types);
 isall = false(1,ntypes);
-types = nan(nflies,ntypes);
+types = false(nflies,ntypes);
 for i = 1:ntypes,
   % if all is one of the types, then include all flies
   if any(strcmpi('All',handles.types(i).fields)),
@@ -1535,26 +1552,13 @@ for i = 1:ntypes,
     end
   end
 end
-y = nan(nflies,1);
-% break ties
-for fly = 1:nflies,
-  tmp = find(types(fly,:));
-  if length(tmp) == 1,
-    y(fly) = tmp;
-  elseif length(tmp) > 1,
-    if any(~isall(tmp)),
-      i = tmp(find(~isall(tmp),1));
-      y(fly) = i;
-    else
-      y(fly) = tmp(1);
-    end
-  end
-end
+y = double(types);
+y = y ./ repmat(sum(y,2),[1,ntypes]);
 
 % remove flies with no type
-ignoreflies = any(isnan(X),2) | any(isnan(y));
+ignoreflies = any(isnan(X),2) | any(isnan(y),2);
   
-chosenprops = choosediscriminativeprops(X(~ignoreflies,:),y(~ignoreflies),nchoose,...
+chosenprops = choosediscriminativeprops(X(~ignoreflies,:),y(~ignoreflies,:),nchoose,...
                                         'isindependent',handles.autochoose.isindep);
 nchosen = length(chosenprops);
 
@@ -2018,8 +2022,10 @@ propnames = {handles.props.name};
 typenames = {handles.types.name};
 if isfield(handles,'plotstuff'),
   hfig = handles.plotstuff.hfig;
+  hfig2 = handles.plotstuff.hfig2;
 else
   hfig = nan;
+  hfig2 = nan;
 end
 
 handles.plotstuff = plotbehaviormicroarray_fcn(propsperfly,types,...
@@ -2027,7 +2033,7 @@ handles.plotstuff = plotbehaviormicroarray_fcn(propsperfly,types,...
     'plotindivs',handles.plotsettings.plotindivs,...
     'normalize',handles.plotsettings.normalize,...
     'errorbars',handles.plotsettings.errorbars,...
-    'hfig',hfig);
+    'hfig',hfig,'hfig2',hfig2);
 
 guidata(hObject,handles);
 
@@ -2037,7 +2043,21 @@ function exportbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-keyboard;
+if ~isfield(handles,'savename'),
+  [paths,names] = split_path_and_filename(handles.trxnames{end});
+  [savename,savepath] = uiputfile('*.mat','Save microarray as',paths);
+  if ~ischar(savename),
+    return;
+  end
+  handles.savename = [savepath,savename];
+  guidata(hObject,handles);
+end
+fprintf('Exporting current plot properties to file %s\n',handles.savename);
+save(handles.savename,'-struct','handles','microarrays','trxnames','propnamespertrx',...
+  'allpropnames','behaviors','props','autochoose','types','plotsettings','nflies',...
+  'maxnautochoose','alltypes');
+plotstuff = handles.plotstuff;
+save('-append',handles.savename,'-struct','plotstuff','mu_all','sig_all','nflies_all','stderr_all','stderr');
 
 
 % --- Executes on button press in plotindivsbox.
@@ -2173,6 +2193,7 @@ function edittypesbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+fprintf('TO DO\n');
 % to do
 
 % --- Executes on button press in addnewtypebutton.
