@@ -605,14 +605,14 @@ if isempty(handles.types),
   set(handles.typemenu,'string',{'Empty'},'enable','off','value',1);
   set(handles.typenameedit,'string','','enable','off');
   set(handles.typeslist,'string',handles.alltypes,'enable','off');
-  set(handles.edittypesbutton,'enable','off');
+  %set(handles.edittypesbutton,'enable','off');
   set(handles.deletetypebutton,'enable','off');
   set(handles.addnewtypebutton,'enable','on');
 else
   set(handles.typemenu,'enable','on','value',1);
   set(handles.typenameedit,'enable','on');
   set(handles.typeslist,'enable','on');
-  set(handles.edittypesbutton,'enable','on');
+  %set(handles.edittypesbutton,'enable','on');
   set(handles.deletetypebutton,'enable','on');
   set(handles.addnewtypebutton,'enable','on');
   typecurr = handles.types(handles.typeselected);
