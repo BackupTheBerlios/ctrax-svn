@@ -2,7 +2,7 @@
 isdone = ~isempty(which('ctrax_matlab_misc_check')) &&  ~isempty(which('ctrax_matlab_filehandling_check'));
 if isdone, return; end
 
-dirnamestry = {'.','..','matlab','../matlab','../Ctrax/matlab'};
+dirnamestry = {'.','../matlab','..','matlab','../Ctrax/matlab'};
 
 % try last saved location
 rcfile = which('setuppath');

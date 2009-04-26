@@ -1,13 +1,12 @@
 % set up the paths
-setuppathdir = which('setuppath');
-setuppathdir = strrep(setuppathdir,'setuppath.m','');
-isdone = exist('get_readframe_fcn.m','file') == 2;
+isdone = ~isempty(which('ctrax_matlab_misc_check')) &&  ~isempty(which('ctrax_matlab_filehandling_check'));
 if isdone, return; end
 
-dirnamestry = {setuppathdir,[setuppathdir,'matlab'],[setuppathdir,'../matlab'],[setuppathdir,'../Ctrax/matlab']};
+dirnamestry = {'.','../matlab','..','matlab','../Ctrax/matlab'};
 
 % try last saved location
-rcfile = [setuppathdir,'.setuppathrc.mat'];
+rcfile = which('setuppath');
+rcfile = strrep(rcfile,'setuppath.m','.setuppathrc.mat');
 if exist(rcfile,'file')
   load(rcfile);
   dirnamestry{1} = dirname;
@@ -26,16 +25,13 @@ for i = 1:length(dirnamestry),
     keep = cellfun(@isempty,matches);
     tmp(~keep) = [];
     p1 = sprintf('%s:',tmp{:});
-    oldpath = path;
     addpath(p1);
-    isdone = exist('get_readframe_fcn.m','file') == 2;
-    if isdone,
-      fprintf('Found Ctrax/matlab at %s\n',dirname);
-      save(rcfile,'dirname');
-      return;
-    else
-      path(oldpath);
-    end
+  end
+  isdone = ~isempty(which('get_readframe_fcn'));
+  if isdone, 
+    fprintf('Found Ctrax/matlab at %s\n',dirname);
+    save(rcfile,'dirname');
+    return; 
   end
 end
 
