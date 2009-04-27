@@ -335,7 +335,7 @@ else
       legends{i} = sprintf('Median area %s',sname);
     end
   end
-  legend(h,legends);
+  legend(h(movieorder),legends(movieorder));
   axisalmosttight;
   set(hax,'color','k');
 
