@@ -19,15 +19,16 @@ for i = 1:length(dirnamestry),
         exist([dirname,'/filehandling/get_readframe_fcn.m'],'file'),
     p = genpath(dirname);
     % remove svn
-    tmp = textscan(p,'%s','delimiter',':');
+    delimiter = pathsep;
+    tmp = textscan(p,'%s','delimiter',delimiter);
     tmp = tmp{1};
     matches = strfind(tmp,'.svn');
     keep = cellfun(@isempty,matches);
     tmp(~keep) = [];
-    p1 = sprintf('%s:',tmp{:});
+    p1 = sprintf(['%s',delimiter],tmp{:});
     addpath(p1);
   end
-  isdone = ~isempty(which('get_readframe_fcn'));
+  isdone = ~isempty(which('ctrax_matlab_misc_check')) &&  ~isempty(which('ctrax_matlab_filehandling_check'));
   if isdone, 
     fprintf('Found Ctrax/matlab at %s\n',dirname);
     save(rcfile,'dirname');
@@ -41,7 +42,7 @@ dirname = dirnamestry{1};
 fprintf('Where is the "matlab" directory of your Ctrax code?\n');
 dirname = uigetdir(dirname,'Select Ctrax/matlab');
 if isnumeric(dirname) && dirname == 0,
-  error('Error setting up path.\n');
+  error('Error setting up path.');
   return;
 end
 p = genpath(dirname);
