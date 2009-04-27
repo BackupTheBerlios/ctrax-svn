@@ -130,7 +130,7 @@ for behi = behdo,
     % compute per-frame property stuff
     bw_during = set_interval_ends(seg(fly).t1,seg(fly).t2-1,trx(fly).nframes-1);
     bw_invert = ~bw_during;
-    seg_invert = invertseg(seg(fly));
+    seg_invert = invertseg(seg(fly),trx(fly).nframes-1);
     for propi = 1:nprops,
       prop = props{propi};
       isangle = any(strcmpi(trx(fly).units.(prop).num,'rad'));

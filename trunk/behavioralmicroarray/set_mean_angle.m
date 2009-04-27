@@ -1,5 +1,6 @@
 function mu = set_mean_angle(x,nsamp)
 
+mu = nan;
 if ~exist('nsamp','var'),
   nsamp = min(length(x),20);
 end

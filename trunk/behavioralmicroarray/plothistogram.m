@@ -10,7 +10,7 @@ function plotstuff = plothistogram(histstuff,varargin)
   'plotindivs',false,'plotstd','standard deviation','logplot',false);
 
 % total count has no single-fly stuff
-if strcmpi(plotmode,'total count'),
+if strcmpi(plotmode,'total count') || strcmpi(plotmode,'total fraction'),
   plotindivs = false;
   plotstd = 'off';
 end
