@@ -180,7 +180,7 @@ else
           end
           hmatnames = {[hmatpath,hmatnames0]};
         end
-        b = questdlg('Are all the flies described by a single mat file of the same type (e.g. all male wild-type in one mat file, all female wild-type in another)');
+        b = questdlg('In the extra mat files to use for normalization, are all the flies described by a single mat file of the same type (e.g. all male wild-type in one mat file, all female wild-type in another)');
         if strcmpi(b,'cancel'),
           return;
         end
@@ -275,6 +275,7 @@ else
   prcts = [prcts,50,100-fliplr(prcts)];
   medprct = ceil(length(prcts)/2);
   areaprcts = zeros(length(prcts),0);
+
   for i = 1:nmovies,
     fprintf('Processing movie %s\n',matnamesall{i});
     [trx,matnamesall{i}] = load_tracks(matnamesall{i});
@@ -290,6 +291,14 @@ else
   [sortedarea,order] = sort(area);
   sortedmoviei = moviei(order);
   sortedareaprcts = areaprcts(:,order);
+
+  meanareapermovie = zeros(1,nmovies);
+  for i = 1:nmovies,
+    meanareapermovie(i) = mean(area(moviei==i));
+  end
+  
+  [tmp,movieorder] = sort(meanareapermovie);
+  [tmp,moviecolororder] = sort(movieorder);
   
   fig = figure;
   clf;
@@ -297,20 +306,18 @@ else
   hax = gca;
 
   hprcts = [];
-  colorprcts = repmat((.5+abs(50-prcts)'/50)/2,[1,3]);
+  colorprcts = 1-repmat((.5+abs(50-prcts)'/50)/2,[1,3]);
   colorsprcts = flipud(gray(ceil(length(prcts)/2)));
   for i = 1:length(prcts),
     if i == medprct, continue; end
     hprcts(end+1) = plot(sortedareaprcts(i,:),'-','color',colorprcts(i,:));
-    text(length(area)+1,sortedareaprcts(i,end),sprintf('%d%%',prcts(i)),'horizontalalignment','left');
+    text(length(area)+1,sortedareaprcts(i,end),sprintf('%d%%',prcts(i)),'horizontalalignment','left','color','w');
   end
 
   h = zeros(1,nmovies);
-  if nmovies <= 7,
-    colors = lines(nmovies);
-  else
-    colors = [lines(7);jet(nmovies-7)];
-  end
+  % sort movies by 
+  colors = jet(nmovies);
+  colors = colors(moviecolororder,:);
 
   for i = nmovies:-1:1,
     idx = sortedmoviei == i;
@@ -330,6 +337,7 @@ else
   end
   legend(h,legends);
   axisalmosttight;
+  set(hax,'color','k');
 
   if exist('imline','file'),
   
@@ -351,14 +359,14 @@ else
     addNewPositionCallback(hthresh,@(x) hthreshCallback(x,sortedarea,hareathresh,threshx));
     addNewPositionCallback(hareathresh,@(x) hareathreshCallback(x,sortedarea,hthresh,threshy));
     
-    realclosereq = get(1,'closeRequestFcn');
-    set(1,'closerequestfcn','');
+    realclosereq = get(fig,'closeRequestFcn');
+    set(fig,'closerequestfcn','');
     input('Drag around the red lines to set the area threshold. Hit ENTER when done: ');
     
     x = getPosition(hareathresh);
     areathresh = mean(x(:,2));
     
-    set(1,'closerequestfcn',realclosereq);
+    set(fig,'closerequestfcn',realclosereq);
 
   else
     
