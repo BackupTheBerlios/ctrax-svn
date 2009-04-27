@@ -337,14 +337,15 @@ for moviei = 1:nmovies,
     t1 = t1tolabel{moviei}(flyi);
     t0 = t0 + trx(fly).firstframe - 1;
     t1 = t1 + trx(fly).firstframe - 1;
-    for i = 1:length(trx),
-      trx(i) = GetPartOfTrack(trx(i),t0,t1);
+    trxcurr = trx;
+    for i = 1:length(trxcurr),
+      trxcurr(i) = GetPartOfTrack(trx(i),t0,t1);
     end
-    bigenoughdist2fly = prctile([trx.mindist2fly],15);
+    bigenoughdist2fly = prctile([trxcurr.mindist2fly],15);
     % starts, ends are relative to movie, not to fly
     [labeledbehavior{moviei}(fly).starts,labeledbehavior{moviei}(fly).ends,...
       labeledbehavior{moviei}(fly).otherfly,labeledbehavior{moviei}(fly).notes] = ...
-      labelbehaviorssocial(trx,fly,movienames{moviei},...
+      labelbehaviorssocial(trxcurr,fly,movienames{moviei},...
       [],[],[],[],sprintf('max(0,%.1f-trk.mindist2fly)',bigenoughdist2fly));
     succeeded = true;
     save('-append',labelmatname,'labeledbehavior');

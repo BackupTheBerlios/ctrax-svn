@@ -5,8 +5,6 @@ function make_mtrax_result_movie(moviename,trx,aviname,varargin)
   'boxradius',20,'taillength',100,'bitrate',20000,'nframesbuffer',2000,'fps',20,...
   'maxnframes',inf,'firstframe',1);
 
-addpath /home/kristin/FLIES/code/exploremtraxresults;
-
 [readframe,nframes,fid] = get_readframe_fcn(moviename);
 endframe = min(nframes,firstframe+maxnframes-1);
 nframes = endframe - firstframe + 1;

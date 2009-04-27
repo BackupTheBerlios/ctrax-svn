@@ -109,7 +109,12 @@ for i = 1:nmovies,
     [labelscurr] = pairwise2unarylabels(labeledbehavior{i}(fly),pairtrx);
     % we want firstframe to be 1 for use in learn_params
     for fly2 = 1:length(pairtrx),
-      pairtrx(fly2).endframe = pairtrx(fly2).endframe - pairtrx(fly2).firstframe + 1;
+      if pairtrx(fly2).firstframe > pairtrx(fly2).endframe,
+        pairtrx(fly2).endframe = 0;
+        pairtrx(fly2).nframes = 0;
+      else
+        pairtrx(fly2).endframe = pairtrx(fly2).endframe - pairtrx(fly2).firstframe + 1;
+      end
       pairtrx(fly2).firstframe = 1;
       pairtrx(fly2).f2i = @(f) f;
       
@@ -123,11 +128,11 @@ for i = 1:nmovies,
       end
     end
     if i == 1 && j == 1,
-      datalearn = pairtrx;
+      datalearn = pairtrx(:)';
       labels = labelscurr;
     else
-      datalearn = [datalearn,pairtrx];
-      labels = [labels,labelcurr];
+      datalearn = [datalearn,pairtrx(:)'];
+      labels = [labels,labelscurr];
     end
   end
 end
@@ -391,10 +396,10 @@ for pair = 1:npairs,
     for i = 1:length(seg.t1),
       hdetect = plot(datalearn(pair).x_mm(seg.t1(i):seg.t2(i)),...
         datalearn(pair).y_mm(seg.t1(i):seg.t2(i)),'c.-');
-      plot(datalearn(fly).x_mm(seg.t1(i)),...
-        datalearn(fly).y_mm(seg.t1(i)),'go','markerfacecolor','g');
-      plot(datalearn(fly).x_mm(seg.t2(i)),...
-        datalearn(fly).y_mm(seg.t2(i)),'ro','markerfacecolor','r');
+      plot(datalearn(pair).x_mm(seg.t1(i)),...
+        datalearn(pair).y_mm(seg.t1(i)),'go','markerfacecolor','g');
+      plot(datalearn(pair).x_mm(seg.t2(i)),...
+        datalearn(pair).y_mm(seg.t2(i)),'ro','markerfacecolor','r');
     end
     
     axisalmosttight;

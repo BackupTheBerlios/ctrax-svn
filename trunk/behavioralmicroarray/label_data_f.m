@@ -1,5 +1,8 @@
 function [succeeded,labelmatname] = label_data_f()
 
+succeeded = false;
+labelmatname = '';
+
 setuppath;
 
 % user preferences

@@ -26,7 +26,7 @@ for i = 1:nsumxfns,
   sumxfnisabs(i) = ~isempty(strfind(fn,'abs'));
 end
 nclose = 0;
-se = strel(ones(1,2*r+1));
+se = ones(1,2*r+1);
 sumx = struct;
 score = 0;
 dobreak = false;
