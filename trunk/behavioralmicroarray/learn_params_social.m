@@ -337,8 +337,8 @@ for pair = 1:npairs,
   hold on;
     
   % compute and plot the other fly's position
-  x = datalearn(pair).x_mm + datalearn(pair).dcenter.*cos(datalearn(pair).theta+datalearn(pair).anglefrom2to1);
-  y = datalearn(pair).y_mm + datalearn(pair).dcenter.*sin(datalearn(pair).theta+datalearn(pair).anglefrom2to1);
+  x = datalearn(pair).x_mm + datalearn(pair).dcenter.*cos(datalearn(pair).theta+datalearn(pair).anglefrom1to2);
+  y = datalearn(pair).y_mm + datalearn(pair).dcenter.*sin(datalearn(pair).theta+datalearn(pair).anglefrom1to2);
 
   % get labeled and detected behaviors for this fly
   idxlabel = false(1,datalearn(pair).nframes);
@@ -359,7 +359,7 @@ for pair = 1:npairs,
   end
   
   % plot in and around detected and labeled frames
-  idxplotother = imdilate(idxdetect | idxlabel,ones(1,5));
+  idxplotother = oned_binary_imdilate(idxdetect | idxlabel,ones(1,5));
   if ~any(idxplotother),
     ax = axis;  
     text(mean(ax(1:2)),mean(ax(3:4)),'No detected or labeled sequences','horizontalalignment','center');

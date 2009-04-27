@@ -361,7 +361,7 @@ for fly = 1:nflies,
   end
   
   % plot in and around detected and labeled frames
-  idxplotother = imdilate(idxdetect | idxlabel,ones(1,5));
+  idxplotother = oned_binary_imdilate(idxdetect | idxlabel,ones(1,5));
   if ~any(idxplotother),
     ax = axis;  
     text(mean(ax(1:2)),mean(ax(3:4)),'No detected or labeled sequences','horizontalalignment','center');

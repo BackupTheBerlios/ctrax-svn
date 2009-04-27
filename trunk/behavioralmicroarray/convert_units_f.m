@@ -134,15 +134,21 @@ else
   % get moviename
   
   if ~ISMOVIENAME,
-    
+  
   fprintf('Choose the movie corresponding to the mat file %s\n',matname);
-  moviename = strrep(matname,'.mat','.fmf');
-  if ~exist(moviename,'file'),
-    moviename = strrep(matname,'.mat','.sbfmf');
+  moviename = '';
+  if isfield(trx,'moviename'),
+    moviename = trx(1).moviename;
+  end
+  if isempty(moviename) || ~exist(moviename,'file'),
+    moviename = strrep(matname,'.mat','.fmf');
     if ~exist(moviename,'file'),
-      moviename = strrep(matname,'.mat','.avi');
+      moviename = strrep(matname,'.mat','.sbfmf');
       if ~exist(moviename,'file'),
-        moviename = matpath;
+        moviename = strrep(matname,'.mat','.avi');
+        if ~exist(moviename,'file'),
+          moviename = matpath;
+        end
       end
     end
   end
@@ -160,9 +166,23 @@ else
   % make a draggable line
   title('Click to set endpoints of line.');
   fprintf('Draw a line on Figure 1\n');
-  hline = imline(hax);
-  title({'Drag around line to set landmark distance in pixels.','Double-click on line when done.'});
-  position = wait(hline);
+  % allow users who don't have imline (image processing toolbox)
+  if exist('imline','file'),
+    title({'Drag around line to set landmark distance in pixels.','Double-click on line when done.'});
+    try
+      hline = imline(hax);
+    catch
+      % seems that in some releases imline does not accept just one input
+      [position,hline] = get2ptline(hax);
+      delete(hline);
+      hline = imline(hax,position(:,1),position(:,2));
+    end      
+    position = wait(hline);
+  else
+    title('Click on two landmarks which you know the distance between');
+    [position,hline] = get2ptline(hax);
+  end
+  
   d = sqrt(sum(diff(position).^2));
   delete(hline);
   plot(position(:,1),position(:,2),'r.-');
@@ -198,7 +218,7 @@ pxfns = {'xpred','ypred','dx','dy','v'};
 pxcpfns = {'x','y','a','b'};
 okfns = {'x','y','theta','a','b','id','moviename','firstframe','arena',...
   'f2i','nframes','endframe','xpred','ypred','thetapred','dx','dy','v'};
-unknownfns = setdiff(fieldnames(trx),okfns);
+unknownfns = setdiff(getperframepropnames(trx),okfns);
 if ~isempty(unknownfns),
   b = questdlg({'Do not know how to convert the following variables: ',...
     sprintf('%s, ',unknownfns{:}),'Ignore these variables and continue?'},...

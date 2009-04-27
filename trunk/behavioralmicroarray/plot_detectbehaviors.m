@@ -107,9 +107,9 @@ for fly = 1:nflies,
     for i = 1:length(seg(fly).t1),
       idxdetect(seg(fly).t1(i):seg(fly).t2(i)) = true;
     end
-    idxplotother = imdilate(idxdetect,ones(1,5));    
-    x = trx(fly).x_mm + trx(fly).dcenter.*cos(trx(fly).theta+trx(fly).anglefrom2to1);
-    y = trx(fly).y_mm + trx(fly).dcenter.*sin(trx(fly).theta+trx(fly).anglefrom2to1);
+    idxplotother = oned_binary_imdilate(idxdetect,ones(1,5));    
+    x = trx(fly).x_mm + trx(fly).dcenter.*cos(trx(fly).theta+trx(fly).anglefrom1to2);
+    y = trx(fly).y_mm + trx(fly).dcenter.*sin(trx(fly).theta+trx(fly).anglefrom1to2);
     
     [idxstarts,idxends] = get_interval_ends(idxplotother);
     idxplotconnector = false(1,trx(fly).nframes);

@@ -59,8 +59,12 @@ units.phidiff = struct('num',{{'rad'}},'den',{{}});
 units.absphidiff = struct('num',{{'rad'}},'den',{{}});
 units.minvelmag = struct('num',{{'mm'}},'den',{{'s'}});
 units.maxvelmag = struct('num',{{'mm'}},'den',{{'s'}});
-units.anglefrom2to1 = struct('num',{{'rad'}},'den',{{}});
-units.absanglefrom2to1 = struct('num',{{'rad'}},'den',{{}});
+units.anglefrom1to2 = struct('num',{{'rad'}},'den',{{}});
+units.absanglefrom1to2 = struct('num',{{'rad'}},'den',{{}});
+units.anglesub = struct('num',{{'rad'}},'den',{{}});
+units.minabsanglefrom1to2 = struct('num',{{'rad'}},'den',{{}});
+units.danglefrom1to2 = struct('num',{{'rad'}},'den',{{'s'}});
+units.danglesub = struct('num',{{'rad'}},'den',{{'s'}});
 
 for fly2 = 1:nflies,
   
@@ -117,12 +121,29 @@ for fly2 = 1:nflies,
   pairtrx(fly2).maxvelmag = max(trx(fly1).velmag(i0:i1-1),trx(fly2).velmag(j0:j1-1));
   
   % direction to fly2 from fly1
-  pairtrx(fly2).anglefrom2to1 = modrange(atan2(dy,dx)-trx(fly1).theta(i0:i1),-pi,pi);
-  pairtrx(fly2).absanglefrom2to1 = abs(pairtrx(fly2).anglefrom2to1);
+  pairtrx(fly2).anglefrom1to2 = modrange(atan2(dy,dx)-trx(fly1).theta(i0:i1),-pi,pi);
+  pairtrx(fly2).absanglefrom1to2 = abs(pairtrx(fly2).anglefrom1to2);
   
-  % location of fly2
-%   pairtrx(fly2).otherfly_x_mm = trx(fly2).x_mm(j0:j1);
-%   pairtrx(fly2).otherfly_y_mm = trx(fly2).y_mm(j0:j1);
-%   pairtrx(fly2).otherfly_theta = trx(fly2).theta(j0:j1);
+  % angle subtended and minimum angle from fly1 to some point on fly2
+  pairtrx(fly2).minabsanglefrom1to2 = zeros(1,pairtrx(fly2).nframes);
+  pairtrx(fly2).anglesub = zeros(1,pairtrx(fly2).nframes);
+  for t = pairtrx(fly2).firstframe:pairtrx(fly2).endframe,
+    i_pair = pairtrx(fly2).f2i(t);
+    i1 = trx(fly1).f2i(t);
+    i2 = trx(fly2).f2i(t);
+    % compute angles to fly2
+    [pairtrx(fly2).anglesub(i_pair),psi1,psi2] = tangentangles(trx(fly1).x(i1),trx(fly1).y(i1),...
+      trx(fly1).a(i1)*2,trx(fly1).b(i1)*2,trx(fly1).theta(i1),...
+      trx(fly2).x(i2),trx(fly2).y(i2),trx(fly2).a(i2)*2,...
+      trx(fly2).b(i2)*2,trx(fly2).theta(i2));
+    if sign(psi1) ~= sign(psi2),
+      pairtrx(fly2).minabsanglefrom1to2(i_pair) = 0;
+    else
+      pairtrx(fly2).minabsanglefrom1to2(i_pair) = min(abs(psi1),abs(psi2));
+    end
+  end
+  
+  pairtrx(fly2).danglesub = diff(pairtrx(fly2).anglesub) * trx(fly1).fps;
+  pairtrx(fly2).danglefrom1to2 = modrange(diff(pairtrx(fly2).anglefrom1to2),-pi,pi) * trx(fly1).fps;
   
 end

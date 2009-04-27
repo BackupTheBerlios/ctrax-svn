@@ -2205,7 +2205,7 @@ function addnewtypebutton_Callback(hObject, eventdata, handles)
 handles.typeselected = length(handles.types)+1;
 names = {handles.types.name};
 for i = 1:inf,
-  handles.types(handles.typeselected).name = sprintf('Type %d',i);
+  handles.types(handles.typeselected).name = sprintf('Population %d',i);
   if ~ismember(handles.types(handles.typeselected).name,names),
     break;
   end

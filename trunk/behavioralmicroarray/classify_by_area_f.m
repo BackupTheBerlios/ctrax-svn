@@ -2,6 +2,7 @@ function [succeeded,savematnames,classifiermatname,areathresh] = classify_by_are
 
 setuppath;
 succeeded = false;
+savematnames = {};
 
 % parse inputs
 [matnames,donormalize,normalizematname,classifiermatname] = ...
@@ -328,33 +329,58 @@ else
   legend(h,legends);
   axisalmosttight;
 
-  % cluster the areas into two groups to initialize threshold
-  [mu,cost,idx,areathresh] = onedimkmeans(sortedarea,2,'issorted',true);
-  areathresh = areathresh(2);
-  flythresh = find(idx ~= idx(1),1,'first');
-  flythresh = flythresh - .5;
+  if exist('imline','file'),
+  
+    % cluster the areas into two groups to initialize threshold
+    [mu,cost,idx,areathresh] = onedimkmeans(sortedarea,2,'issorted',true);
+    areathresh = areathresh(2);
+    flythresh = find(idx ~= idx(1),1,'first');
+    flythresh = flythresh - .5;
 
-  ax = axis;
-  threshy = ax(3:4)+100*[-1,1];
-  threshx = ax(1:2)+100*[-1,1];
-  hthresh = imline(hax,flythresh+[0,0],threshy);
-  setColor(hthresh,'r');
-  hareathresh = imline(hax,threshx,areathresh+[0,0]);
-  setColor(hareathresh,'r');
-  setPositionConstraintFcn(hthresh,@(x) [mean(x(1:2,1))+[0;0],threshy']);
-  setPositionConstraintFcn(hareathresh,@(x) [threshx',mean(x(1:2,2))+[0;0]]);
-  addNewPositionCallback(hthresh,@(x) hthreshCallback(x,sortedarea,hareathresh,threshx));
-  addNewPositionCallback(hareathresh,@(x) hareathreshCallback(x,sortedarea,hthresh,threshy));
+    ax = axis;
+    threshy = ax(3:4)+100*[-1,1];
+    threshx = ax(1:2)+100*[-1,1];
+    hthresh = imline(hax,flythresh+[0,0],threshy);
+    setColor(hthresh,'r');
+    hareathresh = imline(hax,threshx,areathresh+[0,0]);
+    setColor(hareathresh,'r');
+    setPositionConstraintFcn(hthresh,@(x) [mean(x(1:2,1))+[0;0],threshy']);
+    setPositionConstraintFcn(hareathresh,@(x) [threshx',mean(x(1:2,2))+[0;0]]);
+    addNewPositionCallback(hthresh,@(x) hthreshCallback(x,sortedarea,hareathresh,threshx));
+    addNewPositionCallback(hareathresh,@(x) hareathreshCallback(x,sortedarea,hthresh,threshy));
+    
+    realclosereq = get(1,'closeRequestFcn');
+    set(1,'closerequestfcn','');
+    input('Drag around the red lines to set the area threshold. Hit ENTER when done: ');
+    
+    x = getPosition(hareathresh);
+    areathresh = mean(x(:,2));
+    
+    set(1,'closerequestfcn',realclosereq);
 
-  realclosereq = get(1,'closeRequestFcn');
-  set(1,'closerequestfcn','');
-  input('Drag around the red lines to set the area threshold. Hit ENTER when done: ');
-
-  x = getPosition(hareathresh);
-  areathresh = mean(x(:,2));
-
-  set(1,'closerequestfcn',realclosereq);
-
+  else
+    
+    % no imline function
+    ax = axis;
+    tmpx = [ax(1),1:length(sortedarea),ax(2)];
+    if length(sortedarea) > 1,
+      tmpy = [2*sortedarea(1) - sortedarea(2), sortedarea, 2*sortedarea(end)-sortedarea(end-1)];
+    else
+      tmpy = [sortedarea(1)-1,sortedarea,sortedarea(end)+1];
+    end
+    plot(tmpx,tmpy,'r-');
+    title('Click on the red line to set the area threshold. Note that only the y-position of the clicked point is used.');
+    while true,
+      [x,areathresh] = ginput(1);
+      hthresh = plot(ax(1:2),areathresh+[0,0],'m-','linewidth',2);
+      b = questdlg('Use area threshold shown in magenta?','Okay?','Use','Redo','Use');
+      if strcmpi(b,'use'),
+        break;
+      end
+      delete(hthresh);
+    end
+  end
+    
   while true,
     v = inputdlg({'Name of fly type classification (e.g. "sex")',...
       'Name of smaller type (e.g. "M" for male)',...
@@ -412,6 +438,7 @@ end
 
 if ~doloadclassifier,
   % save the classifier
+  fprintf('Choose mat file to save classifier parameters to.\n');
   [classifiermatname,savepath] = uiputfile('*.mat','Save area-based classifier');
   if ischar(classifiermatname),
     classifiermatname = [savepath,classifiermatname];

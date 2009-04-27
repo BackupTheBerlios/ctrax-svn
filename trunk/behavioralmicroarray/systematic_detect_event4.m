@@ -69,7 +69,7 @@ for fn1 = maxxclosefns,
 end
 
 isinsmallcube = ~isnotinsmallcube;
-dilateisinsmallcube = imdilate(~isnotinsmallcube,se);
+dilateisinsmallcube = oned_binary_imdilate(~isnotinsmallcube,se);
 
 % compute cumulative sums
 cumsumx = struct;

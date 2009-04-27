@@ -133,7 +133,7 @@ for fly = 1:nflies,
   data(fly).units.absd2theta = parseunits('rad/s/s');
   
   % smoothed orientation
-  data(fly).smooththeta = imfilter(unwrap(data(fly).theta),thetafil);
+  data(fly).smooththeta = myconv(unwrap(data(fly).theta),thetafil,'replicate','same');
   data(fly).units.smooththeta = parseunits('rad');
   data(fly).smoothdtheta = diff(data(fly).smooththeta)*data(fly).fps;
   data(fly).units.smoothdtheta = parseunits('rad/s');
