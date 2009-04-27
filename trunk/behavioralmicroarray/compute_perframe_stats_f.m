@@ -208,7 +208,7 @@ save('-append',savedsettingsfile,'docomputeclosest');
 
 %% Get name of file to save to 
 % 
-fprintf('Enter results filename\n');
+fprintf('Choose file to save single-fly per-frame statistics for trx loaded from %s\n',matnameonly);
 savename = [matpath,'perframestats_',matnameonly];
 [savename, savepath] = uiputfile('*.mat', 'Save results mat name', savename);
 

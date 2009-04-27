@@ -3,6 +3,8 @@ function [succeeded,savematnames,classifiermatname,areathresh] = classify_by_are
 setuppath;
 succeeded = false;
 savematnames = {};
+classifiermatname = '';
+areathresh = nan;
 
 % parse inputs
 [matnames,donormalize,normalizematname,classifiermatname] = ...

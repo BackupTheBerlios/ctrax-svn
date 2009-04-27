@@ -98,9 +98,10 @@ end
 %% compute per-frame stats if necessary
 
 if ~has_perframe_props(fieldnames(trx)),
+  fprintf('Computing non-social per-frame properties\n');
   % check to see that process_data has been called
   [computeperframe_succeeded,newmatname,trx] = ...
-    compute_perframe_stats_f('matname',matnameonly,'matpath',matpath);
+    compute_perframe_stats_f('matname',matnameonly,'matpath',matpath,'docomputeclosest',false);
   if ~computeperframe_succeeded,
     return;
   end
