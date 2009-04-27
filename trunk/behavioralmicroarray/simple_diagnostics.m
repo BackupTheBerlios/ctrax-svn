@@ -42,7 +42,7 @@ matnameonly = matname;
 
 %% load in the data
 
-[matname,trx,loadsucceeded] = load_tracks(matname);
+[trx,matname,loadsucceeded] = load_tracks(matname);
 if ~loadsucceeded,
   msgbox('Could not load trx from file %s\n',matname);
   return;

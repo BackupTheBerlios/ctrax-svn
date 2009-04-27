@@ -13,6 +13,7 @@ ISMATNAME = ischar(matname);
 
 if ~ISMATNAME,
   matname = '';
+  matpath = '';
 end
 
 %% load settings
@@ -22,7 +23,10 @@ savedsettingsfile = strrep(pathtocomputeperframestats,'compute_perframe_stats_so
 if exist(savedsettingsfile,'file')
   defaultparams = load(savedsettingsfile);
   if ~ISMATNAME,
-    matname = defaultparams.matname;
+    if isfield(defaultparams,'matname') && isfield(defaultparams,'matpath'),
+      matname = defaultparams.matname;
+      matpath = defaultparams.matpath;
+    end
   end
 end
 
@@ -96,7 +100,7 @@ end
 if ~has_perframe_props(fieldnames(trx)),
   % check to see that process_data has been called
   [computeperframe_succeeded,newmatname,trx] = ...
-    compute_perframe_stats_f('matname',matnameonly,'matpath',matpat);
+    compute_perframe_stats_f('matname',matnameonly,'matpath',matpath);
   if ~computeperframe_succeeded,
     return;
   end

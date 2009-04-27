@@ -46,15 +46,21 @@ savedsettingsfile = strrep(pathtocomputeperframestats,'compute_perframe_stats_f.
 if exist(savedsettingsfile,'file')
   defaultparams = load(savedsettingsfile);
   if ~ISMATNAME,
-    matname = defaultparams.matname;
-    matpath = defaultparams.matpath;
+    if isfield(defaultparams,'matname') && isfield(defaultparams,'matpath'),
+      matname = defaultparams.matname;
+      matpath = defaultparams.matpath;
+    end
   end
   %fps = defaultparams.fps;
   if ~ISDOCOMPUTEARENA,
-    docomputearena = defaultparams.docomputearena;
+    if isfield(defaultparams,'docomputearena'),
+      docomputearena = defaultparams.docomputearena;
+    end
   end
   if ~ISDOCOMPUTECLOSEST,
-    docomputeclosest = defaultparams.docomputeclosest;
+    if isfield(defaultparams,'docomputeclosest'),
+      docomputeclosest = defaultparams.docomputeclosest;
+    end
   end
   %ppm = defaultparams.ppm;
 end

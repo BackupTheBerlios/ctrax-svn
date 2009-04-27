@@ -194,7 +194,7 @@ for fly = 1:handles.nflies,
     end
   end
 end
-
+updatepropvalue(handles);
 if get(handles.zoombutton,'value'),
   ZoomInOnFlies(handles);
 end
