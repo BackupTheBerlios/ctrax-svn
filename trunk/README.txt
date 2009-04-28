@@ -1,14 +1,34 @@
 Ctrax: The Caltech Multiple Fly Tracker
 
-(c) 2007-2008 The Caltech Ethomics Project
+(c) 2007-2009 The Caltech Ethomics Project
 http://www.dickinson.caltech.edu/ctrax
 branson@caltech.edu
 
-Ctrax is an open-source, freely available, machine vision program for estimating the positions and orientations of many walking flies, maintaining their individual identities over long periods of time. It was designed to allow high-throughput, quantitative analysis of behavior in freely moving flies. Our primary goal in this project is to provide quantitative behavior analysis tools to the neuroethology community, thus we've endeavored to make the system adaptable to other lab's setups. We have assessed the quality of the tracking results for our setup, and found that it can maintain fly identities indefinitely with minimal supervision, and on average for 1.5 fly-hours automatically.
+Ctrax is an open-source, freely available, machine vision program for
+estimating the positions and orientations of many walking flies,
+maintaining their individual identities over long periods of time. It
+was designed to allow high-throughput, quantitative analysis of
+behavior in freely moving flies. Our primary goal in this project is
+to provide quantitative behavior analysis tools to the neuroethology
+community, thus we've endeavored to make the system adaptable to other
+lab's setups. We have assessed the quality of the tracking results for
+our setup, and found that it can maintain fly identities indefinitely
+with minimal supervision, and on average for 1.5 fly-hours
+automatically.
 
-Ctrax is a joint effort of the Dickinson and Perona labs at the California Institute of Technology, Pasadena, CA, funded by the U.S. NIH under grant R01 DA022777-01 from the National Institute on Drug Abuse.
+***********************************************************************
 
-Please visit http://www.dickinson.caltech.edu/ctrax for installation instructions and documentation.
+Documentation and up-to-date versions of the software are available on
+our project homepage:
+
+          http://www.dickinson.caltech.edu/ctrax
+
+***********************************************************************
+
+Ctrax is a joint effort of the Dickinson and Perona labs at the
+California Institute of Technology, Pasadena, CA, funded by the
+U.S. NIH under grant R01 DA022777-01 from the National Institute on
+Drug Abuse.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
