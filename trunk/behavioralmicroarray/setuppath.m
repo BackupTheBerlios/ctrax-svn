@@ -1,4 +1,19 @@
 % set up the paths
+
+global CTRAXBEHAVIORALMICROARRAYSETUPPATHHASBEENCALLED;
+if isempty(CTRAXBEHAVIORALMICROARRAYSETUPPATHHASBEENCALLED) || ~CTRAXBEHAVIORALMICROARRAYSETUPPATHHASBEENCALLED,
+  fprintf('\n\n\n\n********************************************************\n');
+  fprintf('     The Ctrax BehavioralMicroarray Matlab Toolbox\n\n');
+  fprintf('       (c) The Caltech Ethomics Project 2009\n');
+  fprintf('       http://www.dickinson.caltech.edu/ctrax\n');
+  fprintf('              branson@caltech.edu\n\n');
+  fprintf('Documentation and up-to-date versions of the software\n');
+  fprintf('are available on our project homepage:\n\n');
+  fprintf('    http://www.dickinson.caltech.edu/ctrax\n\n');
+  fprintf('*********************************************************\n\n\n\n');
+  CTRAXBEHAVIORALMICROARRAYSETUPPATHHASBEENCALLED = true;
+end
+
 isdone = ~isempty(which('ctrax_matlab_misc_check')) &&  ~isempty(which('ctrax_matlab_filehandling_check'));
 if isdone, return; end
 
