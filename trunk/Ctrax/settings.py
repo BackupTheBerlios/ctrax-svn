@@ -431,12 +431,9 @@ class AppWithSettings( wx.App ):
 
     def OnQuitTrackingSettings(self, evt):
 
-        print 'in OnQuitTrackingSettings'
         self.tracking_settings.frame.Destroy()
-        print 'destroyed frame'
         delattr( self, 'tracking_settings' )
         self.tracking_settings_window_open = False
-        print 'done'
 
     def OnQuitChooseOrientations(self, evt):
         self.choose_orientations.frame.Destroy()

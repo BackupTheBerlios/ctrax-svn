@@ -132,7 +132,7 @@ class BackgroundCalculator:
         params.npixels = params.movie_size[0] * params.movie_size[1]
 
         self.show_img_type = params.SHOW_THRESH
-        params.bg_type = params.BG_TYPE_LIGHTONDARK
+        params.bg_type = params.BG_TYPE_OTHER
         params.bg_norm_type = params.BG_NORM_STD
 
         self.hf = HomoFilt(params.movie_size)
