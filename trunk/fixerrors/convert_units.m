@@ -157,7 +157,14 @@ else
   % make a draggable line
   title('Click to set endpoints of line.');
   fprintf('Draw a line on Figure 1\n');
-  hline = imline(hax);
+  try
+    hline = imline(hax);
+  catch
+    % seems that in some releases imline does not accept just one input
+    [position,hline] = get2ptline(hax);
+    delete(hline);
+    hline = imline(hax,position(:,1),position(:,2));
+  end
   title({'Drag around line to set landmark distance in pixels.','Double-click on line when done.'});
   position = wait(hline);
   d = sqrt(sum(diff(position).^2));

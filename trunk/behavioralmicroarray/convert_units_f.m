@@ -174,7 +174,6 @@ if ~alreadyconverted,
     fprintf('Draw a line on Figure 1\n');
     % allow users who don't have imline (image processing toolbox)
     if exist('imline','file'),
-      title({'Drag around line to set landmark distance in pixels.','Double-click on line when done.'});
       try
         hline = imline(hax);
       catch
@@ -183,6 +182,7 @@ if ~alreadyconverted,
         delete(hline);
         hline = imline(hax,position(:,1),position(:,2));
       end
+      title({'Drag around line to set landmark distance in pixels.','Double-click on line when done.'});
       position = wait(hline);
     else
       title('Click on two landmarks which you know the distance between');
