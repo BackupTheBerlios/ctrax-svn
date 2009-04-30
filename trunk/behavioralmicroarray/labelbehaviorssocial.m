@@ -31,7 +31,7 @@ function labelbehaviorssocial_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for labelbehaviorssocial
 if length(varargin) < 3 || length(varargin) == 4 || length(varargin) > 8,
-  error('Usage: [starts,ends] = labelbehaviorssocial(maintrk,trx,fly,moviename, <starts,ends,otherfly>,<labels>,<scattercommand>)');
+  error('Usage: [starts,ends] = labelbehaviorssocial(trx,fly,moviename, <starts,ends,otherfly>,<labels>,<scattercommand>)');
 end
 handles.output = hObject;
 handles.trx = varargin{1};
@@ -71,8 +71,25 @@ s = strrep(handles.scattercommand,'trk','handles.trx(handles.fly)');
 try
   handles.c = eval(s);
 catch
-  handles.scattercommand = '1';
-  handles.c = 1;
+  if ~isfield(handles.trx,'velmag'),
+    isunits = isfield(handles.trx,'pxpermm') && isfield(handles.trx,'fps');
+    for i = 1:length(handles.trx),
+      handles.trx(i).velmag = sqrt(diff(handles.trx(i).x).^2 + diff(handles.trx(i).y).^2);
+      if isunits,
+        handles.trx(i).velmag = handles.trx(i).velmag / handles.trx(i).pxpermm * handles.trx(i).fps;
+      end
+    end
+    maxv = prctile([handles.trx.velmag],95);
+    s = sprintf('min(handles.trx(handles.fly).velmag,%.1f)',maxv);
+    handles.scattercommand = sprintf('min(trk.velmag,%.1f)',maxv);
+    try
+      handles.c = eval(s);
+    catch
+      handles.scattercommand = '1';
+      handles.c = 1;
+    end
+    set(handles.scatteredit,'string',handles.scattercommand);
+  end  
 end
 
 [handles.readframe,nframes,handles.fid] = get_readframe_fcn(handles.moviename);
@@ -130,7 +147,11 @@ axes(handles.mainaxes);
 handles.bd = get(handles.mainaxes,'buttondownfcn');
 im = handles.readframe(handles.f);
 [handles.nr,handles.nc] = size(im);
-handles.him = image(uint8(repmat(im,[1,1,3])));
+if size(im,3) == 1,
+  handles.him = image(uint8(repmat(im,[1,1,3])));
+else
+  handles.him = image(uint8(im));
+end
 set(handles.him,'hittest','off');
 axis image; hold on;
 zoom reset;
@@ -200,7 +221,12 @@ for i = 1:length(handles.labels),
   end
 end
 axes(handles.zoomlocaxes);
-image(uint8(repmat(im,[1,1,3]))); axis image; axis off;
+if size(im,3) == 1,
+  image(uint8(repmat(im,[1,1,3])));
+else
+  image(uint8(im));
+end
+axis image; axis off;
 hold on;
 handles.hzoombox = plot(ax([1,1,2,2,1]),ax([3,4,4,3,3]),'r','linewidth',2);
 
@@ -214,7 +240,11 @@ guidata(handles.figure1,handles);
 function handles = UpdatePlot(handles)
 
 im = handles.readframe(handles.f);
-set(handles.him,'cdata',uint8(repmat(im,[1,1,3])));
+if size(im,3) == 1,
+  set(handles.him,'cdata',uint8(repmat(im,[1,1,3])));
+else
+  set(handles.him,'cdata',uint8(im));
+end
 
 fly = handles.fly;
 i = handles.trx(fly).f2i(handles.f);
@@ -319,13 +349,15 @@ if handles.f >= handles.trx(handles.fly).endframe,
   set(handles.corfrac_text,'string',sprintf('cor: nan'));
 else
   i = handles.trx(handles.fly).f2i(handles.f);
-  set(handles.scattervaltext,'string',sprintf('%f',handles.c(i)));
-  set(handles.ductr_text,'string',sprintf('du_ctr: %f',handles.trx(handles.fly).du_ctr(i)));
-  set(handles.dvctr_text,'string',sprintf('dv_ctr: %f',handles.trx(handles.fly).dv_ctr(i)));
-  set(handles.dtheta_text,'string',sprintf('dtheta: %f',180/pi*handles.trx(handles.fly).dtheta(i)));
-  set(handles.ducor_text,'string',sprintf('du_cor: %f',handles.trx(handles.fly).du_cor(i)));
-  set(handles.dvcor_text,'string',sprintf('dv_cor: %f',handles.trx(handles.fly).dv_cor(i)));
-  set(handles.corfrac_text,'string',sprintf('cor: %f',handles.trx(handles.fly).corfrac_maj(i)));
+  if isfield(handles.trx,'du_ctr'),
+    set(handles.scattervaltext,'string',sprintf('%f',handles.c(i)));
+    set(handles.ductr_text,'string',sprintf('du_ctr: %f',handles.trx(handles.fly).du_ctr(i)));
+    set(handles.dvctr_text,'string',sprintf('dv_ctr: %f',handles.trx(handles.fly).dv_ctr(i)));
+    set(handles.dtheta_text,'string',sprintf('dtheta: %f',180/pi*handles.trx(handles.fly).dtheta(i)));
+    set(handles.ducor_text,'string',sprintf('du_cor: %f',handles.trx(handles.fly).du_cor(i)));
+    set(handles.dvcor_text,'string',sprintf('dv_cor: %f',handles.trx(handles.fly).dv_cor(i)));
+    set(handles.corfrac_text,'string',sprintf('cor: %f',handles.trx(handles.fly).corfrac_maj(i)));
+  end
 end
 function v = isalive(track,f)
 

@@ -3,10 +3,7 @@
 function [readframe,nframes,fid] = get_readframe_fcn(filename)
 
 % allow videoio library to be used if it is installed and on the path
-persistent CTRAX_ISVIDEOIO;
-if isempty(CTRAX_ISVIDEOIO),
-  CTRAX_ISVIDEOIO = exist('videoReader','file');
-end
+CTRAX_ISVIDEOIO = exist('videoReader','file');
 
 [base,ext] = splitext(filename);
 if strcmpi(ext,'.fmf'),
@@ -20,10 +17,11 @@ elseif strcmpi(ext,'.sbfmf'),
 else
   fid = -1;
   if CTRAX_ISVIDEOIO,
-    readerobj = videoReader(filename,'preciseFrames',-1,'frameTimeoutMS',5000);
+    readerobj = videoReader(filename,'preciseFrames',30,'frameTimeoutMS',5000);
     info = getinfo(readerobj);
     nframes = info.numFrames;
     seek(readerobj,0);
+    seek(readerobj,1);
     readframe = @(f) videoioreadframe(readerobj,f);
   else
     readerobj = mmreader(filename);
