@@ -153,6 +153,13 @@ class BackgroundCalculator:
             self.mean.shape = params.movie.h_mov.framesize
             self.std = params.movie.h_mov.bgstd.copy()
             self.std.shape = params.movie.h_mov.framesize
+            
+            # approximate homomorphic filtering
+            tmp = self.center.copy()
+            issmall = tmp<1.
+            tmp[issmall] = 1.
+            self.hfnorm = self.hf.apply(self.center) / tmp
+            self.hfnorm[issmall & (self.hfnorm<1.)] = 1.        
 
         # morphology stuff
         #print "creating morphology structures, with radii %d, %d"%(params.opening_radius,params.closing_radius)

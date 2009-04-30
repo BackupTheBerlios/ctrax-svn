@@ -43,8 +43,8 @@ end
 
 % get trajectory file names
 if ~ismatnames,
-  fprintf('Choose trajectory mat file(s) for which to classify flies based on area.\n');
-  [matname0s,matpath] = uigetfile('*.mat','Choose trajectory mat file(s)',matnames{end},'multiselect','on');
+  helpmsg = 'Choose trajectory mat file(s) for which to classify flies based on area.';
+  [matname0s,matpath] = uigetfilehelp('*.mat','Choose trajectory mat file(s)',matnames{end},'multiselect','on','helpmsg',helpmsg);
   if iscell(matname0s),
     matnames = cell(size(matname0s));
     for i = 1:length(matname0s),
@@ -74,8 +74,11 @@ if doloadclassifier,
 
   while true,
 
-    fprintf('Choose mat file containing area-based classifier\n');
-    [classifiermatname,classifiermatpath] = uigetfile('*.mat','Choose classifier mat file',classifiermatname);
+    helpmsg = {};
+    helpmsg{1} = 'Choose mat file containing area-based classifier.';
+    helpmsg{2} = 'This classifier will be used to classify trajectories in the following matfiles:';
+    helpmsg(3:2+length(matnames)) = matnames;
+    [classifiermatname,classifiermatpath] = uigetfilehelp('*.mat','Choose classifier mat file',classifiermatname,'helpmsg',helpmsg);
 
     if ~ischar(classifiermatname),
       return;
@@ -133,7 +136,12 @@ else
     % load normalization data from a mat file
     if doload,
       while true,
-        [normalizematname0,normalizematpath] = uigetfile('*.mat','Load Normalization Terms',normalizematname);
+        helpmsg = {};
+        helpmsg{1} = 'Choose mat file containing normalization function.';
+        helpmsg{2} = 'This classifier will be used to classify trajectories in the following matfiles:';
+        helpmsg(3:2+length(matnames)) = matnames;
+        
+        [normalizematname0,normalizematpath] = uigetfilehelp('*.mat','Load Normalization Terms',normalizematname,'helpmsg',helpmsg);
         if ~ischar(normalizematname0),
           return;
         end
@@ -166,9 +174,12 @@ else
         return;
       end
       if strcmpi(b,'yes'),
-        fprintf('Choose mat file(s) of trajectories for use in normalization.\n');
+        helpmsg = {};
+        helpmsg{1} = 'Choose mat file(s) containing trajectories to use to learn the normalization function.';
+        helpmsg{2} = 'The area-based classifier will be used to classify trajectories in the following matfiles:';
+        helpmsg(3:2+length(matnames)) = matnames;
         % load in homogeneious matnames
-        [hmatnames0,hmatpath] = uigetfile('*.mat','Choose trajectory mat file(s)',matname,'multiselect','on');
+        [hmatnames0,hmatpath] = uigetfilehelp('*.mat','Choose trajectory mat file(s)',matname,'multiselect','on','helpmsg',helpmsg);
         if iscell(hmatnames0),
           hmatnames = cell(size(hmatnames0));
           for i = 1:length(hmatnames0),
@@ -229,8 +240,16 @@ else
       miny = min(Y);
       maxy = max(Y);
       
-      fprintf('Choose file to save area normalization function to.\n');
-      [savenormname,savenormpath] = uiputfile('*.mat','Save area normalization function','');
+      % message describing what we are saving
+      helpmsg = {};
+      helpmsg{1} = 'Choose file to which to save normalization function for area-based classification.';
+      helpmsg{2} = 'This normalization function was used to classify trajectories in the following files:';
+      helpmsg(3:2+length(matnames)) = matnames;
+      if ~isempty(hmatnames),
+        helpmsg{3+length(matnames)} = 'It was also trained using trajectories in the following files:';
+        helpmsg(4+length(matnames):3+length(matnames)+length(hmatnames)) = hmatnames;
+      end
+      [savenormname,savenormpath] = uiputfilehelp('*.mat','Save area normalization function','','helpmsg',helpmsg);
       if ischar(savenormname),
         savenormname = [savenormpath,savenormname];
         save(savenormname,'area_coeffs','minx','maxx','miny','maxy','matnamesnorm');
@@ -429,11 +448,13 @@ for i = 1:length(matnames),
   end
 
   % save the results
-  fprintf('Choose output mat file for classified trajectories\n');
+
+  % message describing what we are saving
+  helpmsg = sprintf('Choose file to save trajectories from %s augmented with classification results.',matnames{i});
   [tmp,savematname] = split_path_and_filename(matnames{i});
-  [savematnames{i},savematpath] = uiputfile('*.mat',...
+  [savematnames{i},savematpath] = uiputfilehelp('*.mat',...
     sprintf('Save classified trajectories for %s',savematname),...
-    [savematpath,savematname]);
+    [savematpath,savematname],'helpmsg',helpmsg);
   if ~ischar(savematnames{i}),
     savematnames{i} = '';
     continue;
@@ -448,8 +469,17 @@ end
 
 if ~doloadclassifier,
   % save the classifier
+  helpmsg = {};
+  helpmsg{1} = 'Choose file to save area-based classifier parameters to.';
+  helpmsg{2} = 'This classifier was created to classify trajectories in the following files:';
+  helpmsg(3:2+length(matnames)) = matnames;
+  if ~isempty(hmatnames),
+    helpmsg{3+length(matnames)} = 'Classifier was also trained using trajectories in the following files:';
+    helpmsg(4+length(matnames):3+length(matnames)+length(hmatnames)) = hmatnames;
+  end
+
   fprintf('Choose mat file to save classifier parameters to.\n');
-  [classifiermatname,savepath] = uiputfile('*.mat','Save area-based classifier');
+  [classifiermatname,savepath] = uiputfilehelp('*.mat','Save area-based classifier','helpmsg',helpmsg);
   if ischar(classifiermatname),
     classifiermatname = [savepath,classifiermatname];
     save(classifiermatname,'areathresh','area_coeffs','normalize_area','typename','type0','type1');

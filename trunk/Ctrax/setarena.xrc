@@ -124,8 +124,8 @@
       </object>
       <object class="sizeritem">
         <object class="wxStaticText" name="directions_text">
-          <label>* Drag the WHITE point to the arena center. 
-* Drag the BLACK point to a point on the arena boundary.
+          <label>* Drag the GREEN point to the arena center. 
+* Drag the YELLOW point to a point on the arena boundary.
 * Click the up and down arrows to set the edge threshold. Choose the highest threshold in which the arena boundary is visible. 
 * Click &quot;Detect Arena&quot; to automatically search for the arena in the edge image.
 * Click &quot;Refine Estimate&quot; to automatically search around the current estimate of the arena. </label>
