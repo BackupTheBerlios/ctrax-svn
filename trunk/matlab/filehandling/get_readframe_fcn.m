@@ -2,6 +2,12 @@
 
 function [readframe,nframes,fid] = get_readframe_fcn(filename)
 
+% allow videoio library to be used if it is installed and on the path
+persistent CTRAX_ISVIDEOIO;
+if isempty(CTRAX_ISVIDEOIO),
+  CTRAX_ISVIDEOIO = exist('videoReader','file');
+end
+
 [base,ext] = splitext(filename);
 if strcmpi(ext,'.fmf'),
   [header_size,version,nr,nc,bytes_per_chunk,nframes,data_format] = fmf_read_header(filename);
@@ -11,11 +17,21 @@ elseif strcmpi(ext,'.sbfmf'),
   [nr,nc,nframes,bgcenter,bgstd,frame2file] = sbfmf_read_header(filename);
   fid = fopen(filename);
   readframe = @(f) sbfmfreadframe(f,fid,frame2file,bgcenter);
-elseif strcmpi(ext,'avi'),
-  fid = -1;
-  readerobj = mmreader(filename);
-  nframes = get(readerobj,'NumberOfFrames');
-  readframe = @(f) read(readerobj,f);
 else
-  error(['Unrecognized file extension ',ext]);
+  fid = -1;
+  if CTRAX_ISVIDEOIO,
+    readerobj = videoReader(filename,'preciseFrames',-1,'frameTimeoutMS',5000);
+    info = getinfo(readerobj);
+    nframes = info.numFrames;
+    seek(readerobj,0);
+    readframe = @(f) videoioreadframe(readerobj,f);
+  else
+    readerobj = mmreader(filename);
+    nframes = get(readerobj,'NumberOfFrames');
+    if isempty(nframes),
+      % approximate nframes from duration
+      nframes = get(readerobj,'Duration')*get(readerobj,'FrameRate');
+    end
+    readframe = @(f) read(readerobj,f);
+  end
 end

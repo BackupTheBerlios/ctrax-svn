@@ -165,12 +165,19 @@ axes(handles.mainaxes);
 handles.hzoom = zoom(handles.figure1);
 set(handles.hzoom,'ActionPostCallback',@UpdateZoomBox);
 
-UpdatePlot(handles);
+UpdatePlot(handles,handles.figure1);
 
-function UpdatePlot(handles)
+function UpdatePlot(handles,hObject)
 
-im = handles.readframe(handles.f);
-set(handles.him,'cdata',im);
+try
+  oldv = get(hObject,'interruptible');
+  set(hObject,'interruptible','on');
+  im = handles.readframe(handles.f);
+  set(hObject,'interruptible',oldv);
+  set(handles.him,'cdata',im);
+catch
+  fprintf('Failed to read frame %d, not updating image\n',handles.f);
+end
 for fly = 1:handles.nflies,
   if ~isalive(handles.trx(fly),handles.f)
     set(handles.hpath(fly),'visible','off');
@@ -272,9 +279,13 @@ function updatepropvalue(handles)
 
 v = get(handles.lastclickedprop,'value');
 fn = handles.propnames{v};
-i = handles.trx(handles.lastflyselected).f2i(handles.f);
-j = min(i,length(handles.trx(handles.lastflyselected).(fn)));
-x = handles.trx(handles.lastflyselected).(fn)(j);
+if handles.f < handles.trx(handles.lastflyselected).firstframe,
+  x = nan;
+else
+  i = handles.trx(handles.lastflyselected).f2i(handles.f);
+  j = min(i,length(handles.trx(handles.lastflyselected).(fn)));
+  x = handles.trx(handles.lastflyselected).(fn)(j);
+end
 if ischar(x),
   set(handles.lastclickedpropvalue,'string',x);
 else
@@ -294,7 +305,7 @@ if ~handles.isplaying,
   for f = handles.f+1:handles.nframes,
     tic;
     handles.f = f;    
-    UpdatePlot(handles);
+    UpdatePlot(handles,hObject);
     SetFrameNumber(handles);
     spf = 1 / handles.fps;
     t = toc;
@@ -326,7 +337,7 @@ end
 
 guidata(hObject,handles);
 SetFrameNumber(handles,hObject);
-UpdatePlot(handles);
+UpdatePlot(handles,hObject);
 
 % --- Executes during object creation, after setting all properties.
 function frameslider_CreateFcn(hObject, eventdata, handles)
@@ -358,7 +369,7 @@ if handles.f ~= f,
   set(hObject,'string',num2str(handles.f));
 end
 SetFrameNumber(handles,hObject);
-UpdatePlot(handles);
+UpdatePlot(handles,hObject);
 guidata(hObject,handles);
 
 % --- Executes during object creation, after setting all properties.
@@ -412,7 +423,7 @@ handles.pathlength = round(v);
 if v ~= handles.pathlength
   set(hObject,'string',num2str(handles.pathlength));
 end
-UpdatePlot(handles);
+UpdatePlot(handles,hObject);
 guidata(hObject,handles);
 
 % --- Executes during object creation, after setting all properties.
@@ -497,7 +508,7 @@ function zoombutton_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 if get(handles.zoombutton,'value'),
-  UpdatePlot(handles);
+  UpdatePlot(handles,hObject);
 end
 guidata(hObject,handles);
 
@@ -510,7 +521,7 @@ function plotselectedbutton_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of plotselectedbutton
 
-UpdatePlot(handles);
+UpdatePlot(handles,hObject);
 
 
 % --- Executes on button press in upzoomwidthbutton.
@@ -522,7 +533,7 @@ function upzoomwidthbutton_Callback(hObject, eventdata, handles)
 handles.zoomwidth = max(round(handles.zoomwidth*1.1),1);
 set(handles.zoomwidthtext,'string',sprintf('Zoom Width: %d px',handles.zoomwidth));
 guidata(hObject,handles);
-UpdatePlot(handles);
+UpdatePlot(handles,hObject);
 
 % --- Executes on button press in downzoomwidthbutton.
 function downzoomwidthbutton_Callback(hObject, eventdata, handles)
@@ -533,7 +544,7 @@ function downzoomwidthbutton_Callback(hObject, eventdata, handles)
 handles.zoomwidth = max(round(handles.zoomwidth/1.1),1);
 set(handles.zoomwidthtext,'string',sprintf('Zoom Width: %d px',handles.zoomwidth));
 guidata(hObject,handles);
-UpdatePlot(handles);
+UpdatePlot(handles,hObject);
 
 
 % --- Executes on button press in quitbutton.
