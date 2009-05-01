@@ -44,8 +44,9 @@ handles.moviename = varargin{2};
 handles.trx = varargin{3};
 handles.annname = varargin{4};
 handles.params = varargin{5};
-if length(varargin) > 5,
-  handles.savename = varargin{6};
+handles.matname = varargin{6};
+if length(varargin) > 6,
+  handles.savename = varargin{7};
   didload = false;
 else
   didload = false;
@@ -915,7 +916,8 @@ doneseqs = handles.doneseqs;
 moviename = handles.moviename;
 seqi = handles.seqi;
 params = handles.params;
-save(handles.savename,'trx','seqs','doneseqs','moviename','seqi','params');
+matname = handles.matname;
+save(handles.savename,'trx','seqs','doneseqs','moviename','seqi','params','matname');
 
 guidata(hObject,handles);
 

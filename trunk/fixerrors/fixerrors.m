@@ -20,13 +20,14 @@ end
 fprintf('Choose a movie to fix errors in\n');
 movieexts = {'*.fmf','*.sbfmf','*.avi'}';
 helpmsg = 'Choose movie file for which to fix tracking errors';
-[moviename,moviepath,filterindex] = uigetfilehelp(movieexts,'Choose movie file',moviename,'helpmsg',helpmsg);
+[moviename,moviepath] = uigetfilehelp(movieexts,'Choose movie file',moviename,'helpmsg',helpmsg);
 if isnumeric(moviename) && moviename == 0, 
   return;
 end
+[movietag,movieext] = splitext(moviename);
 
 helpmsg = sprintf('Choose the mat file containing the trajectories corresponding to movie %s.',[moviepath,moviename]);
-matname = [moviepath,strrep(moviename,movieexts{filterindex}(2:end),'.mat')];
+matname = [moviepath,strrep(moviename,movieext,'.mat')];
 [matname,matpath] = uigetfilehelp({'*.mat'},'Choose mat file',matname,'helpmsg',helpmsg);
 if isnumeric(matname) && matname == 0, 
   return;
@@ -66,17 +67,31 @@ load(matname);
 
 %% see if we should restart
 
-tag = moviename(length(moviepath)+1:end-length(movieexts{filterindex})+1);
+tag = movietag;
 loadname = sprintf('tmpfixed_%s.mat',tag);
 DORESTART = false;
   
 if exist(loadname,'file'),
   tmp = dir(loadname);
-  prompt = ['An old file saved by fixerrors was found for movie ',...
-    sprintf('%s.%s, last modified %s. ',...
-    tag,movieexts{filterindex}(2:end),tmp(1).date),...
-    'Would you like to load the saved results and restart?'];
-  button = questdlg(prompt,'Restart?');
+  tmp2 = load(loadname,'matname','moviename');
+  if isfield(tmp2,'moviename'),
+    oldmoviename = tmp2.moviename;
+  else
+    oldmoviename = 'unknown movie';
+  end
+  if isfield(tmp2,'matname'),
+    oldmatname = tmp2.matname;
+  else
+    oldmatname = 'unknown trx file';
+  end
+  prompt = {};
+  prompt{1} = sprintf('A restart file saved by fixerrors was found with tag %s ',tag);
+  prompt{2} = sprintf('Original movie: %s, selected movie %s. ',oldmoviename,moviename);
+  prompt{3} = sprintf('Original trx file: %s, selected trx file %s. ',oldmatname,matname);
+  prompt{4} = 'It is only recommended that you load these partial results if you are certain the trx files match. ';
+  prompt{5} = 'Would you like to load the saved results and restart? ';
+
+  button = questdlg(cell2mat(prompt),'Restart?');
   if strcmpi(button,'yes'),
     DORESTART = true;
   elseif strcmpi(button,'cancel'),
@@ -206,14 +221,16 @@ fprintf('Annname: %s\n',annname);
 fprintf('Temporary file created at: %s\n',loadname);
 
 if ~DORESTART,
-  trx = fixerrorsgui(seqs,moviename,trx0,annname,params,loadname);
+  trx = fixerrorsgui(seqs,moviename,trx0,annname,params,matname,loadname);
 else
+  realmatname = matname;
   load(loadname);
+  matname = realmatname;
   trx0 = trx;
   for i = 1:length(trx0),
     trx0(i).f2i = @(f) f - trx0(i).firstframe + 1;
   end
-  trx = fixerrorsgui(seqs,moviename,trx0,annname,params,loadname);
+  trx = fixerrorsgui(seqs,moviename,trx0,annname,params,matname,loadname);
 end
 
 %% save
