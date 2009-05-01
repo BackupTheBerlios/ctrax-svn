@@ -19,21 +19,25 @@ end
 
 fprintf('Choose a movie to fix errors in\n');
 movieexts = {'*.fmf','*.sbfmf','*.avi'}';
-[moviename,moviepath,filterindex] = uigetfile(movieexts,'Choose movie file',moviename);
+helpmsg = 'Choose movie file for which to fix tracking errors';
+[moviename,moviepath,filterindex] = uigetfilehelp(movieexts,'Choose movie file',moviename,'helpmsg',helpmsg);
 if isnumeric(moviename) && moviename == 0, 
   return;
 end
 
-fprintf('Choose the corresponding mat file containing the trajectories.\n');
+helpmsg = sprintf('Choose the mat file containing the trajectories corresponding to movie %s.',[moviepath,moviename]);
 matname = [moviepath,strrep(moviename,movieexts{filterindex}(2:end),'.mat')];
-[matname,matpath] = uigetfile({'*.mat'},'Choose mat file',matname);
+[matname,matpath] = uigetfilehelp({'*.mat'},'Choose mat file',matname,'helpmsg',helpmsg);
 if isnumeric(matname) && matname == 0, 
   return;
 end
 
 annname = [matpath,moviename,'.ann'];
-fprintf('Choose the corresponding annotation file containing the trajectories.\n');
-[annname,annpath] = uigetfile({'*.ann'},'Choose ann file',annname);
+helpmsg = {};
+helpmsg{1} = 'Choose the Ctrax annotation file corresponding to:';
+helpmsg{2} = sprintf('Movie: %s',[moviepath,moviename]);
+helpmsg{3} = sprintf('Trajectory mat file: %s',[matpath,matname]);
+[annname,annpath] = uigetfilehelp({'*.ann'},'Choose ann file',annname,'helpmsg',helpmsg);
 if isnumeric(annname) && annname == 0,
   return;
 end
@@ -52,19 +56,13 @@ end
 
 %% convert to px, seconds
 
-ISAUTOMATIC = true;
-ISMATNAME = true;
-ISMOVIENAME= true;
-savedsettingsfile0 = savedsettingsfile;
-convert_units;
-if ~alreadyconverted,
-  if ~ischar(savename),
-    error('Savename not set in convert_units');
-    return;
-  end
-  matname = savename;
+[matpathtmp,matnametmp] = split_path_and_filename(matname);
+[convertsucceeded,convertmatname] = convert_units_f('matname',matnametmp,'matpath',matpathtmp,'moviename',moviename);
+if ~convertsucceeded,
+  return;
 end
-savedsettingsfile = savedsettingsfile0;
+matname = convertmatname;
+load(matname);
 
 %% see if we should restart
 
@@ -96,7 +94,7 @@ if ~DORESTART,
 meanmajor = meanmajor * 4;
 maxmajor = maxmajor * 4;
 
-px2mm = pxpermm;
+px2mm = trx(1).pxpermm;
 save('-append',savedsettingsfile,'px2mm');
 
 max_jump = max_jump / px2mm;
@@ -220,15 +218,16 @@ end
 
 %% save
 
-for i = 1:length(trx),
-  trx(i).pxpermm = pxpermm;
-  trx(i).fps = fps;
-end
-
 while true,
-  fprintf('Save fixed tracks to a file\n');
-  savename = sprintf('fixed_%s.mat',tag);
-  [savename, savepath] = uiputfile('*.mat', 'Save results?', savename);
+  helpmsg = {};
+  helpmsg{1} = 'Choose the mat file to which to save the fixed trajectories corresponding to:';
+  helpmsg{2} = sprintf('Movie: %s',moviename);
+  helpmsg{3} = sprintf('Trajectory mat file: %s',matname);
+  helpmsg{4} = sprintf('Ctrax annotation file: %s',annname);
+
+  [tmpmatpath,tmpmatname] = split_path_and_filename(matname);
+  savename = [tmpmatpath,'fixed_',tmpmatname];
+  [savename, savepath] = uiputfilehelp('*.mat', 'Save results?', savename,'helpmsg',helpmsg);
   if isnumeric(savename) && savename == 0,
     fprintf('missed\n');
   else
@@ -236,7 +235,8 @@ while true,
   end
 end
 savename = [savepath,savename];
-trx = rmfield(trx,{'xpred','ypred','thetapred','dx','dy','v','f2i'});
+rmfns = intersect({'xpred','ypred','thetapred','dx','dy','v','f2i'},fieldnames(trx));
+trx = rmfield(trx,rmfns);
 if ~isempty(savename),
   save(savename,'trx');
 else

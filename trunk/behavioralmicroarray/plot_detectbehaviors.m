@@ -4,7 +4,8 @@ succeeded = false;
 figs = [];
 
 if ~exist('trx','var'),
-  [matname,matpath] = uigetfile('*.mat','Choose trx mat file to load in','');
+  helpmsg = 'Choose trx file to load in';
+  [matname,matpath] = uigetfilehelp('*.mat','Choose trx mat file to load in','','helpmsg',helpmsg);
   if ~ischar(matname),
     return;
   end
@@ -14,17 +15,21 @@ if ~exist('trx','var'),
     msgbox(sprintf('Could not load trx from %s',matname));
     return;
   end
+else
+  if isfield(trx,'matname'),
+    matname = trx(1).matname;
+    [matpath,tmp] = split_path_and_filename(matname);
+  else
+    matname = '';
+    matpath = '';
+  end
 end
 
 nflies = length(trx);
 
 if ~exist('seg','var'),
-  if exist('matpath','var'),
-    fprintf('Choose seg file corresponding to trx file %s\n',matname);
-  else
-    matpath = '';
-  end
-  [segname,segpath] = uigetfile('*.mat','Choose trx mat file to load in',matpath);
+  helpmsg = sprintf('Choose seg file corresponding to trx file %s\n',matname);
+  [segname,segpath] = uigetfilehelp('*.mat','Choose trx mat file to load in',matpath,'helpmsg',helpmsg);
   if ~ischar(segname),
     return;
   end

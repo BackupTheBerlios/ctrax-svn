@@ -15,7 +15,27 @@ succeeded = false;
 if ~exist('outmatname','var'),
   outmatname = '';
 end
+trx = [];
 
+if ~exist('featname','var'),
+  helpmsg = 'Choose CADABRA feat mat file';
+  [featname,featpath] = uigetfilehelp('*.mat','Choose feat file','','helpmsg',helpmsg);
+  if ~ischar(featname),
+    return;
+  end
+  featname = fullfile(featpath,featname);
+end
+
+if ~exist('roiname','var'),
+  helpmsg = sprintf('Choose CADABRA roi mat file corresponding to feat file %s',featname);
+  roiname = strrep(featname,'feat','roi');
+  [roiname,roipath] = uigetfilehelp('*.mat','Choose feat file',roiname,'helpmsg',helpmsg);
+  if ~ischar(roiname),
+    return;
+  end
+  roiname = fullfile(roipath,roiname);
+end
+  
 % load in data
 feat = load(featname);
 roi = load(roiname);
@@ -100,7 +120,11 @@ if isempty(outmatname),
   [pathstr,name] = fileparts(featname);
   outname = strrep(name,'_feat','');
   outmatname = fullfile(pathstr,[outname,'_trx.mat']);
-  [outmatname,outmatpath] = uiputfile('*.mat',sprintf('Save ctrax version of %s',name),outmatname);
+  helpmsg = {};
+  helpmsg{1} = 'Choose mat file to save Ctrax version of trajectories loaded from:';
+  helpmsg{2} = sprintf('CADABRA feat file: %s',featname);
+  helpmsg{3} = sprintf('CADABRA roi file: %s',roiname);
+  [outmatname,outmatpath] = uiputfilehelp('*.mat',sprintf('Save ctrax version of %s',name),outmatname,'helpmsg',helpmsg);
   if ~ischar(outmatname),
     outmatname = '';
     return;

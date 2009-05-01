@@ -674,7 +674,8 @@ while true,
   if exist(handles.segfile{handles.datashow},'file'),
     matname = handles.segfile{handles.datashow};
   else
-    [matname,matpath] = uigetfile('.mat','Choose segmentation file',handles.segfile{handles.datashow});
+    helpmsg = sprintf('Choose a segmentation file corresponding to trx file %s',handles.matname);
+    [matname,matpath] = uigetfilehelp('.mat','Choose segmentation file',handles.segfile{handles.datashow},'helpmsg',helpmsg);
     if isnumeric(matname) && matname == 0,
       return;
     end
@@ -1027,8 +1028,8 @@ function exportbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-fprintf('Enter name of mat file to save histogrammed data to.\n');
-[savename,savepath] = uiputfile('*.mat','Save histogrammed results',handles.savename);
+helpmsg = sprintf('Choose file to save the histogram results for trx file %s',handles.matname);
+[savename,savepath] = uiputfilehelp('*.mat','Save histogrammed results',handles.savename,'helpmsg',helpmsg);
 if ~ischar(savename),
   return;
 end
@@ -1535,7 +1536,8 @@ function segfile1edit_ButtonDownFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-[matname,matpath] = uigetfile('*.mat','Choose behavior segmentation mat file',handles.segfile{handles.datashow});
+helpmsg = sprintf('Choose a segmentation file corresponding to trx file %s',handles.matname);
+[matname,matpath] = uigetfilehelp('*.mat','Choose behavior segmentation mat file',handles.segfile{handles.datashow},'helpmsg',helpmsg);
 if ~ischar(matname),
   return;
 end
@@ -1574,7 +1576,8 @@ function changesegfilebutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-[matname,matpath] = uigetfile('*.mat','Choose behavior segmentation mat file',handles.segfile{handles.datashow});
+helpmsg = sprintf('Choose a segmentation file corresponding to trx file %s',handles.matname);
+[matname,matpath] = uigetfilehelp('*.mat','Choose behavior segmentation mat file',handles.segfile{handles.datashow},'helpmsg',helpmsg);
 if ~ischar(matname),
   return;
 end

@@ -28,9 +28,9 @@ if strcmpi(labelmode,'cancel'),
 end
 
 if strcmpi(labelmode,'load'),
-  fprintf('Choose a mat file with the labeled data\n');
+  helpmsg = 'Choose a mat file containing the pre-labeled data to load.';
   labelmatname = [labelmatpath,labelmatname];
-  [labelmatname,labelmatpath,filterindex] = uigetfile('.mat','Choose labeled data file',labelmatname);
+  [labelmatname,labelmatpath,filterindex] = uigetfilehelp('.mat','Choose labeled data file',labelmatname,'helpmsg',helpmsg);
   if isnumeric(labelmatname) && labelmatname == 0,
     return;
   end
@@ -145,7 +145,8 @@ if ~exist('ds','var')
 end
 paramsmatname = sprintf('learnedsocialparams_%s.mat',ds);
 paramsmatname = [labelmatpath,paramsmatname];
-[paramsmatname,paramsmatpath] = uiputfile('.mat','Choose file to save parameters to',paramsmatname);
+helpmsg = 'Choose mat file to save the learned behavior classifier parameters to';
+[paramsmatname,paramsmatpath] = uiputfilehelp('.mat','Choose file to save parameters to',paramsmatname,'helpmsg',helpmsg);
 if isnumeric(paramsmatname) && paramsmatname == 0,
   return;
 end

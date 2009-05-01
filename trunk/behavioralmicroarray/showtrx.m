@@ -42,13 +42,14 @@ handles.output = hObject;
 if length(varargin) >= 1,
   handles.moviename = varargin{1};
 else
+  helpmsg = 'Choose movie to show';
   if ~isempty(showtrxlastmovie),
     [handles.moviename, handles.pathname] = ...
-      uigetfile({'*.fmf';'*.sbfmf';'*.*'},'Choose Movie Name',...
-      showtrxlastmovie);
+      uigetfilehelp({'*.fmf';'*.sbfmf';'*.*'},'Choose Movie Name',...
+      showtrxlastmovie,'helpmsg',helpmsg);
   else
     [handles.moviename, handles.pathname] = ...
-      uigetfile({'*.fmf';'*.sbfmf';'*.*'},'Choose Movie Name');
+      uigetfilehelp({'*.fmf';'*.sbfmf';'*.*'},'Choose Movie Name','helpmsg',helpmsg);
   end
   if ~ischar(handles.moviename),
     return;
@@ -61,7 +62,8 @@ if length(varargin) >= 2,
 else
   [handles.matname,tmp] = splitext(handles.moviename);
   handles.matname = [handles.matname,'.mat'];
-  [handles.matname,pathname] = uigetfile({'*.mat';'*.*'},'Choose Mat File Name',handles.matname);
+  helpmsg = sprintf('Choose trx file with which to annotate movie %s',handles.moviename);
+  [handles.matname,pathname] = uigetfilehelp({'*.mat';'*.*'},'Choose Mat File Name',handles.matname,'helpmsg',helpmsg);
   if ~ischar(handles.matname),
     return;
   end

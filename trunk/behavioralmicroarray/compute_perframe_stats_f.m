@@ -69,9 +69,9 @@ end
 if ~ISTRX,
 
   if ~ISMATNAME,
-    fprintf('Choose mat file to analyze.\n');
+    helpmsg = 'Choose file containing trajectories for which to compute per-frame statistics';
     matname = [matpath,matname];
-    [matname,matpath] = uigetfile('*.mat','Choose mat file to analyze',matname);
+    [matname,matpath] = uigetfilehelp('*.mat','Choose mat file to analyze',matname,'helpmsg',helpmsg);
     if isnumeric(matname) && matname == 0,
       return;
     end
@@ -153,7 +153,9 @@ if docomputearena;
       end
     end
   end
-  [annname,annpath] = uigetfile('*.ann',sprintf('Annotation file corresponding to %s',matnameonly),annname);
+  helpmsg = {'We will read in the location of the arena from the Ctrax annotation file.',...
+    sprintf('Choose the annotation file corresponding to trx file %s',matname)};
+  [annname,annpath] = uigetfilehelp('*.ann',sprintf('Annotation file corresponding to %s',matnameonly),annname,'helpmsg',helpmsg);
   annname = [annpath,annname];
   if ~exist(annname,'file'),
     fprintf('Annotation file %s does not exist, not computing dist2wall\n',annname);
@@ -208,9 +210,9 @@ save('-append',savedsettingsfile,'docomputeclosest');
 
 %% Get name of file to save to 
 % 
-fprintf('Choose file to save single-fly per-frame statistics for trx loaded from %s\n',matnameonly);
+helpmsg = sprintf('Choose file to save single-fly per-frame statistics for trx loaded from %s',matname);
 savename = [matpath,'perframestats_',matnameonly];
-[savename, savepath] = uiputfile('*.mat', 'Save results mat name', savename);
+[savename, savepath] = uiputfilehelp('*.mat', 'Save results mat name', savename,'helpmsg',helpmsg);
 
 savename = [savepath,savename];
 

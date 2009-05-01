@@ -21,9 +21,9 @@ if exist(savedsettingsfile,'file')
 end
 
 %% choose a mat file to analyze
-fprintf('Choose mat file to analyze.\n');
+helpmsg = 'Choose mat file for which to compute and plot a few simple statistics.';
 matname = [matpath,matname];
-[matname,matpath] = uigetfile('*.mat','Choose mat file to analyze',matname);
+[matname,matpath] = uigetfilehelp('*.mat','Choose mat file to analyze',matname,'helpmsg',helpmsg);
 if isnumeric(matname) && matname == 0,
   return;
 end

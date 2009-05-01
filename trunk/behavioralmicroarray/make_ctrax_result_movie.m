@@ -41,7 +41,8 @@ end
 
 fprintf('Choose raw movie to annotate\n');
 if ~ischar(moviename) || isempty(moviename) || ~exist(moviename,'file'),
-  [movienameonly,moviepath] = uigetfile({'*.fmf';'*.sbfmf';'*.avi'},'Choose raw movie to annotate','');
+  helpmsg = 'Choose raw movie to annotate';
+  [movienameonly,moviepath] = uigetfilehelp({'*.fmf';'*.sbfmf';'*.avi'},'Choose raw movie to annotate','','helpmsg',helpmsg);
   if ~ischar(movienameonly),
     return;
   end
@@ -62,7 +63,8 @@ else
     fprintf('Choose mat file containing flies'' trajectories corresponding to movie %s\n',moviename);
     [base,ext] = splitext(moviename);
     trxname = [moviename(1:end-length(ext)+1),'mat'];
-    [trxnameonly,trxpath] = uigetfile('*.mat',sprintf('Choose trx file for %s',movienameonly),trxname);
+    helpmsg = sprintf('Choose trx file to annotate the movie %s with',moviename);
+    [trxnameonly,trxpath] = uigetfilehelp('*.mat',sprintf('Choose trx file for %s',movienameonly),trxname,'helpmsg',helpmsg);
     if ~ischar(trxnameonly),
       return;
     end
@@ -86,7 +88,11 @@ if ~haveaviname,
   fprintf('Choose avi file to output annotated version of %s\n',moviename);
   [base,ext] = splitext(movienameonly);
   aviname = [moviepath,'ctraxresults_',base,'.avi'];
-  [avinameonly,avipath] = uiputfile('*.mat',sprintf('Choose output avi for %s',movienameonly),aviname);
+  helpmsg = {};
+  helpmsg{1} = 'Choose avi file to write annotated movie to.';
+  helpmsg{2} = sprintf('Raw movie input: %s',moviename);
+  helpmsg{3} = sprintf('Trx file name input: %s',trxname);
+  [avinameonly,avipath] = uiputfilehelp('*.mat',sprintf('Choose output avi for %s',movienameonly),aviname,'helpmsg',helpmsg);
   if ~ischar(avinameonly),
     return;
   end

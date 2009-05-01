@@ -221,9 +221,8 @@ function handles = initializetrxnames_empty(handles)
 handles.behaviors = struct('name',cell(1,0),'segnames',cell(1,0));
 handles.behaviorselected = 1;
 
-fprintf('Choose mat file(s) containing trajectories and per-frame properties\n');
-
-[matnames,matpath] = uigetfile('*.mat','Choose per-frame properties file',handles.lasttrxname,'MultiSelect','on');
+helpmsg = 'Choose mat file(s) containing trajectories with per-frame properties';
+[matnames,matpath] = uigetfilehelp('*.mat','Choose per-frame properties file',handles.lasttrxname,'MultiSelect','on','helpmsg',helpmsg);
 
 if isnumeric(matnames) && matnames == 0,
   % cancel
@@ -730,9 +729,11 @@ function addtrxbutton_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % get name of trx file
-fprintf('Choose mat files containg trajectories and per-frame properties\n');
+helpmsg = {};
+helpmsg{1} = 'Choose mat file(s) containing trajectories with per-frame properties. Mat files loaded in so far:';
+helpmsg(2:1+length(handles.trxnames)) = handles.trxnames;
 while true,
-  [matname,matpath] = uigetfile('*.mat','Choose per-frame properties file',handles.lasttrxname);
+  [matname,matpath] = uigetfilehelp('*.mat','Choose per-frame properties file',handles.lasttrxname,'helpmsg',helpmsg);
   if isnumeric(matname) && matname == 0,
     return;
   end
@@ -751,9 +752,10 @@ segnames = cell(1,nbehaviors);
 for i = 1:nbehaviors,
   s = sprintf('Choose seg file for behavior %s and trx file %s',...
               handles.behaviors(i).name,getbasename(trxname));
+  helpmsg = sprintf('Choose seg file for behavior %s and trx file %s',...
+    handles.behaviors(i).name,trxname);
   while true
-    fprintf([s,'\n']);
-    [matname,matpath] = uigetfile('*.mat',s,handles.lastsegname);
+    [matname,matpath] = uigetfilehelp('*.mat',s,handles.lastsegname,'helpmsg',helpmsg);
     if isnumeric(matname) && matname == 0,
       return;
     end
@@ -1033,9 +1035,12 @@ end
 s = sprintf('Choose seg file for trx file %s and behavior "%s"',...
             getbasename(handles.trxnames{segi}),...
             handles.behaviors(behi).name);
+helpmsg = sprintf('Choose seg file for trx file %s and behavior "%s"',...
+  handles.trxnames{segi},...
+  handles.behaviors(behi).name);
 while true
   fprintf([s,'\n']);
-  [matname,matpath] = uigetfile('*.mat',s,segnames{segi});
+  [matname,matpath] = uigetfilehelp('*.mat',s,segnames{segi},'helpmsg',helpmsg);
   if isnumeric(matname) && matname == 0,
     return;
   end
@@ -1098,9 +1103,10 @@ end
 segnames = cell(1,ntrx);
 for i = 1:ntrx,
   s = sprintf('Choose seg file for trx file %s',getbasename(handles.trxnames{i}));
+  helpmsg = sprintf('Choose seg file for trx file %s',handles.trxnames{i});
   while true
     fprintf([s,'\n']);
-    [matname,matpath] = uigetfile('*.mat',s,handles.lastsegname);
+    [matname,matpath] = uigetfilehelp('*.mat',s,handles.lastsegname,'helpmsg',helpmsg);
     if isnumeric(matname) && matname == 0,
       return;
     end
@@ -2044,8 +2050,9 @@ function exportbutton_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 if ~isfield(handles,'savename'),
+  helpmsg = 'Choose file to save microarray statistics to.';
   [paths,names] = split_path_and_filename(handles.trxnames{end});
-  [savename,savepath] = uiputfile('*.mat','Save microarray as',paths);
+  [savename,savepath] = uiputfilehelp('*.mat','Save microarray as',paths,'helpmsg',helpmsg);
   if ~ischar(savename),
     return;
   end

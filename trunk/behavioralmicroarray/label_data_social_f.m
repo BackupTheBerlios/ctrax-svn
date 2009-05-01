@@ -26,16 +26,25 @@ moviepaths = {};
 matnames = {};
 matpaths = {};
 while true,
-  fprintf('Choose a movie to label\n');
+  if isempty(movienames),
+    helpmsg = 'Choose a movie to label.';
+  else
+    helpmsg = {};
+    helpmsg{1} = 'Choose a movie to label. Movies already set to be labeled:';
+    for tmpi = 1:length(movienames),
+      helpmsg{tmpi+1} = [moviepaths{tmpi},movienames{tmpi}];
+    end
+  end
   lastmoviename = [lastmoviepath,lastmoviename];
-  [lastmoviename,lastmoviepath,filterindex] = uigetfile(movieexts,'Choose movie file',lastmoviename);
+  [lastmoviename,lastmoviepath,filterindex] = uigetfilehelp(movieexts,'Choose movie file',lastmoviename,'helpmsg',helpmsg);
   if isnumeric(lastmoviename) && lastmoviename == 0,
     break;
   end
   movienames{end+1} = lastmoviename;
   moviepaths{end+1} = lastmoviepath;
+  helpmsg = sprintf('Choose per-frame stats mat file for movie %s%s',moviepaths{end},movienames{end});
   lastmatname = [lastmoviepath,strrep(lastmoviename,movieexts{filterindex}(2:end),'.mat')];
-  [lastmatname,lastmatpath] = uigetfile('*.mat',sprintf('Choose per-frame stats mat file for movie %s',lastmoviename),lastmatname);
+  [lastmatname,lastmatpath] = uigetfilehelp('*.mat',sprintf('Choose per-frame stats mat file for movie %s',lastmoviename),lastmatname,'helpmsg',helpmsg);
   if isnumeric(lastmatname) && lastmatname == 0,
     break;
   end
@@ -311,8 +320,11 @@ end
 
 % save file name
 
+helpmsg = {};
+helpmsg{1} = 'Choose mat file to which to save labels. Movies labeled:';
+helpmsg(2:1+length(matnames)) = matnames;
 labelmatname = sprintf('%slabeleddata%s.mat',labelmatpath,ds);
-[labelmatname,labelmatpath] = uiputfile('*.mat','Save labels to...',labelmatname);
+[labelmatname,labelmatpath] = uiputfilehelp('*.mat','Save labels to...',labelmatname,'helpmsg',helpmsg);
 save('-append',savedsettingsfile,'labelmatname','labelmatpath');
 
 labelmatname = [labelmatpath,labelmatname];

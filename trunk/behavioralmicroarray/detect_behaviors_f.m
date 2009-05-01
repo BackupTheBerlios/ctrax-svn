@@ -7,8 +7,8 @@ ds = datestr(now,30);
 
 % trajectory files
 if isempty(trxnames),
-  fprintf('Choose mat files containing trajectories with per-frame properties to segment.\n');
-  [trxnames,trxpath] = uigetfile('*.mat','Choose trajectory mat file(s)','','MultiSelect','on');
+  helpmsg = 'Choose mat file(s) containing trajectories with per-frame properties to segment.';
+  [trxnames,trxpath] = uigetfilehelp('*.mat','Choose trajectory mat file(s)','','MultiSelect','on','helpmsg',helpmsg);
   if isnumeric(trxnames),
     return;
   end
@@ -27,8 +27,11 @@ end
 
 % behavior classifier parameters
 if isempty(behmatname),
-  fprintf('Choose mat file containing parameters of behavior classifier.\n');
-  [behmatname,behpath] = uigetfile('*.mat','Choose behavior parameters mat file',trxpath);
+  helpmsg = {};
+  helpmsg{1} = 'Choose mat file containing parameters of behavior classifier.';
+  helpmsg{2} = 'This classifier will be used with the following trx files:';
+  helpmsg(3:2+length(trxnames)) = trxnames;
+  [behmatname,behpath] = uigetfilehelp('*.mat','Choose behavior parameters mat file',trxpath,'helpmsg',helpmsg);
   if isnumeric(behmatname),
     return;
   end
@@ -188,7 +191,8 @@ for i = 1:nmovies,
   savenamecurr = strrep(trxnames{i},'.mat',sprintf('_seg_%s.mat',ds));
   fprintf('Choose mat file to export segmentation results for trx file %s\n',trxnames{i});
   while true,
-    [savename,savepath] = uiputfile('*.mat',sprintf('Save segmentations for %s',trxnames{i}),savenamecurr);
+    helpmsg = sprintf('Choose file to save segmentations for trx file %s and behavior classifier %s',trxnames{i},behmatname);
+    [savename,savepath] = uiputfilehelp('*.mat',sprintf('Save segmentations for %s',trxnames{i}),savenamecurr,'helpmsg',helpmsg);
     if ~ischar(savename),
       b = questdlg('Are you sure you don''t want to save the results? Computation will be lost.','Really cancel?','Yes','No','No');
       if strcmpi(b,'yes'),

@@ -32,9 +32,9 @@ end
 
 %% choose a mat file to analyze
 if ~ISMATNAME,
-  fprintf('Choose mat file to analyze.\n');
+  helpmsg = 'Choose file containing trajectories for which to compute per-frame statistics';
   matname = [matpath,matname];
-  [matname,matpath] = uigetfile('*.mat','Choose mat file to analyze',matname);
+  [matname,matpath] = uigetfilehelp('*.mat','Choose mat file to analyze',matname,'helpmsg',helpmsg);
   if isnumeric(matname) && matname == 0,
     return;
   end
