@@ -59,6 +59,7 @@ n1 = round(sqrt(nflies));
 n2 = ceil(nflies/n1);
 hax = createsubplots(n1,n2,[[.05,.01];[.05,.05]]);
 hax = reshape(hax,[n1,n2])'; % column major
+hax = hax(:)';
 if n1*n2 > nflies,
   delete(hax(nflies+1:end));
   hax = hax(1:nflies);
