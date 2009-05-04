@@ -772,6 +772,21 @@ instead, where <basename> is the base name of the movie.\n")
         if isshapemodel == False:
             return
 
+        # will data be lost?
+        if len(self.ann_data) > 0:
+           if evt.GetId() == xrc.XRCID("menu_track_start"): 
+               msgtxt = 'Frames %d to %d have been tracked.\nErase these results and start tracking over?'%(params.start_frame,params.start_frame+len(self.ann_data)-1)
+               if wx.MessageBox( msgtxt, "Erase trajectories and start tracking?", wx.OK|wx.CANCEL ) == wx.CANCEL:
+                   return
+           elif evt.GetId() == xrc.XRCID("menu_track_resume_here"):
+               last_tracked = params.start_frame + len(self.ann_data) - 1
+               if last_tracked > self.start_frame:
+                   msgtxt = 'Frames %d to %d have been tracked.\nRestarting tracking at frame %d will cause old trajectories from %d to %d to be erased.\nErase these results and restart tracking in the current frame?'%(params.start_frame,last_tracked,self.start_frame,self.start_frame,last_tracked)
+               if wx.MessageBox( msgtxt, "Erase trajectories and start tracking?", wx.OK|wx.CANCEL ) == wx.CANCEL:
+                   return
+        # end check for trajectory erasure
+                   
+
         # set tracking flag
         self.tracking = True
 

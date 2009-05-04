@@ -94,12 +94,16 @@ class TrackingSettings:
         self.manual_shape_input = self.control('manual_bounds')
         self.manual_panel = self.control('manual_panel')
         self.min_area_input = self.control('min_area')
+        self.mean_area_input = self.control('mean_area')
         self.max_area_input = self.control('max_area')
         self.min_major_input = self.control('min_major')
+        self.mean_major_input = self.control('mean_major')
         self.max_major_input = self.control('max_major')
         self.min_minor_input = self.control('min_minor')
+        self.mean_minor_input = self.control('mean_minor')
         self.max_minor_input = self.control('max_minor')
         self.min_ecc_input = self.control('min_ecc')
+        self.mean_ecc_input = self.control('mean_ecc')
         self.max_ecc_input = self.control('max_ecc')
         self.angle_weight_input = self.control('angle_weight')
         self.max_jump_input = self.control('max_jump')
@@ -162,6 +166,10 @@ class TrackingSettings:
         self.min_major_input.SetValue(str(params.params.minshape.major))
         self.min_minor_input.SetValue(str(params.params.minshape.minor))
         self.min_ecc_input.SetValue(str(params.params.minshape.ecc))
+        self.mean_area_input.SetValue(str(params.params.meanshape.area))
+        self.mean_major_input.SetValue(str(params.params.meanshape.major))
+        self.mean_minor_input.SetValue(str(params.params.meanshape.minor))
+        self.mean_ecc_input.SetValue(str(params.params.meanshape.ecc))
         self.max_area_input.SetValue(str(params.params.maxshape.area))
         self.max_major_input.SetValue(str(params.params.maxshape.major))
         self.max_minor_input.SetValue(str(params.params.maxshape.minor))
@@ -218,10 +226,14 @@ class TrackingSettings:
         self.frame.Bind(wx.EVT_BUTTON,self.ComputeShapeNow,self.compute_shape_input)
 
         # manual shape
-        self.bindctrl(('min_area','max_area','min_major','max_major',
-                       'min_minor','max_minor','min_ecc','max_ecc'),
-                      ('float','float','float','float',
-                       'float','float','float','float'),
+        self.bindctrl(('min_area','mean_area','max_area',
+                       'min_major','mean_major','max_major',
+                       'min_minor','mean_minor','max_minor',
+                       'min_ecc','mean_ecc','max_ecc'),
+                      ('float','float','float',
+                       'float','float','float',
+                       'float','float','float',
+                       'float','float','float'),
                       self.SetManual)
 
         # motion
@@ -410,6 +422,10 @@ class TrackingSettings:
         self.min_major_input.SetValue(str(params.params.minshape.major))
         self.min_minor_input.SetValue(str(params.params.minshape.minor))
         self.min_ecc_input.SetValue(str(params.params.minshape.ecc))
+        self.mean_area_input.SetValue(str(params.params.meanshape.area))
+        self.mean_major_input.SetValue(str(params.params.meanshape.major))
+        self.mean_minor_input.SetValue(str(params.params.meanshape.minor))
+        self.mean_ecc_input.SetValue(str(params.params.meanshape.ecc))
         self.max_area_input.SetValue(str(params.params.maxshape.area))
         self.max_major_input.SetValue(str(params.params.maxshape.major))
         self.max_minor_input.SetValue(str(params.params.maxshape.minor))
@@ -418,40 +434,56 @@ class TrackingSettings:
     def SetManual(self,evt):
 
         minarea = float(self.min_area_input.GetValue())
+        meanarea = float(self.mean_area_input.GetValue())
         maxarea = float(self.max_area_input.GetValue())
-        if (minarea < maxarea) and (maxarea > 0):
+        if (minarea <= meanarea) and (meanarea <= maxarea) and \
+              (minarea >= 0):
             params.params.minshape.area = minarea
+            params.params.meanshape.area = meanarea
             params.params.maxshape.area = maxarea
         else:
             self.min_area_input.SetValue(str(params.params.minshape.area))
+            self.mean_area_input.SetValue(str(params.params.meanshape.area))
             self.max_area_input.SetValue(str(params.params.maxshape.area))
         minmajor = float(self.min_major_input.GetValue())
+        meanmajor = float(self.mean_major_input.GetValue())
         maxmajor = float(self.max_major_input.GetValue())
-        if (minmajor < maxmajor) and (maxmajor > 0):
+        if (minmajor <= meanmajor) and (meanmajor <= maxmajor) and \
+              (minmajor >= 0):
             params.params.minshape.major = minmajor
+            params.params.meanshape.major = meanmajor
             params.params.maxshape.major = maxmajor
         else:
             self.min_major_input.SetValue(str(params.params.minshape.major))
+            self.mean_major_input.SetValue(str(params.params.meanshape.major))
             self.max_major_input.SetValue(str(params.params.maxshape.major))
         minminor = float(self.min_minor_input.GetValue())
+        meanminor = float(self.mean_minor_input.GetValue())
         maxminor = float(self.max_minor_input.GetValue())
-        if (minminor < maxminor) and (maxminor > 0):
+        if (minminor <= meanminor) and (meanminor <= maxminor) and \
+              (minminor >= 0):
             params.params.minshape.minor = minminor
+            params.params.meanshape.minor = meanminor
             params.params.maxshape.minor = maxminor
         else:
             self.min_minor_input.SetValue(str(params.params.minshape.minor))
+            self.mean_minor_input.SetValue(str(params.params.meanshape.minor))
             self.max_minor_input.SetValue(str(params.params.maxshape.minor))
         minecc = float(self.min_ecc_input.GetValue())
+        meanecc = float(self.mean_ecc_input.GetValue())
         maxecc = float(self.max_ecc_input.GetValue())
-        if (minecc < maxecc) and (maxecc > 0) and (minecc < 1):
+        if (minecc <= meanecc) and (meanecc <= maxecc) and \
+              (minecc >= 0) and (maxecc <= 1):
             params.params.minshape.ecc = minecc
+            params.params.meanshape.ecc = meanecc
             params.params.maxshape.ecc = maxecc
         else:
             self.min_ecc_input.SetValue(str(params.params.minshape.ecc))
+            self.mean_ecc_input.SetValue(str(params.params.meanshape.ecc))
             self.max_ecc_input.SetValue(str(params.params.maxshape.ecc))
 
-        params.params.meanshape = params.averageshape(params.params.minshape,
-                                                      params.params.maxshape)
+        #params.params.meanshape = params.averageshape(params.params.minshape,
+        #                                              params.params.maxshape)
 
         self.ShowImage()
 
