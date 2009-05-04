@@ -79,8 +79,8 @@ for fly = 1:nflies,
   axes(hax(fly));
   plot(trx(fly).x_mm,trx(fly).y_mm,'k.-','markersize',3,'linewidth',.5);
   title(sprintf('Fly %d, frames %d to %d',fly,trx(fly).firstframe,trx(fly).endframe));
-  axis([minx-.025*dx,maxx+.025*dx,miny-.025*dy,maxy+.025*dy]);
   axis equal;
+  axis([minx-.025*dx,maxx+.025*dx,miny-.025*dy,maxy+.025*dy]);
   
   % onlt put an x-axis on the lowest plots
   [c,r] = ind2sub([n2,n1],fly);
@@ -112,12 +112,14 @@ hax = createsubplots(1,2,.05);
 axes(hax(1));
 imagesc([centersx(1),centersx(end)],[centersy(1),centersy(end)],freq_position');
 axis image;
+axis xy;
 title('Position heat map, frequency');
 colorbar;
 axes(hax(2));
 imagesc([centersx(1),centersx(end)],[centersy(1),centersy(end)],log(freq_position'));
 title('Position heat map, log frequency');
 axis image;
+axis xy
 colorbar;
 
 %% histogram speed

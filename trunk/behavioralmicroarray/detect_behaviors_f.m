@@ -7,8 +7,8 @@ ds = datestr(now,30);
 
 % trajectory files
 if isempty(trxnames),
-  helpmsg = 'Choose mat file(s) containing trajectories with per-frame properties to segment.';
-  [trxnames,trxpath] = uigetfilehelp('*.mat','Choose trajectory mat file(s)','','MultiSelect','on','helpmsg',helpmsg);
+  helpmsg = 'Choose mat file(s) containing trajectories augmented with per-frame properties to segment.';
+  [trxnames,trxpath] = uigetfilehelp('*.mat','Choose trajectory mat file(s)','perframestats.mat','MultiSelect','on','helpmsg',helpmsg);
   if isnumeric(trxnames),
     return;
   end
