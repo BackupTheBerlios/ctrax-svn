@@ -231,7 +231,7 @@ pxfns = {'xpred','ypred','dx','dy','v'};
 pxcpfns = {'x','y','a','b'};
 okfns = {'x','y','theta','a','b','id','moviename','firstframe','arena',...
   'f2i','nframes','endframe','xpred','ypred','thetapred','dx','dy','v',...
-  'a_mm','b_mm','x_mm','y_mm','matname'};
+  'a_mm','b_mm','x_mm','y_mm','matname','sex','type'};
 unknownfns = setdiff(getperframepropnames(trx),okfns);
 
 if ~alreadyconverted,

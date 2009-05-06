@@ -62,6 +62,8 @@ handles.output = hObject;
 if length(varargin) < 1,
   fprintf('Select mat file containing trajectories with per-frame properties\n');
   [handles.trx,handles.matname,loadsucceeded] = load_tracks();
+  % ignore flies without at least two frames of trajectory
+  handles.trx = prune_short_trajectories(handles.trx,3);
   if ~loadsucceeded,
     error('Could not load tracks');
   end

@@ -121,11 +121,11 @@ for behi = behdo,
     nbeh = length(seg(fly).t1);
     nframesbeh = sum(seg(fly).t2 - seg(fly).t1);
     % mean duration in seconds
-    microarray(fly).duration(behi) = (nframesbeh / nbeh) / trx(fly).fps;
+    microarray(fly).duration(behi) = (nframesbeh ./ nbeh) ./ trx(fly).fps;
     % fractime is unitless
-    microarray(fly).fractime(behi) = nframesbeh / trx(fly).nframes;
+    microarray(fly).fractime(behi) = nframesbeh ./ trx(fly).nframes;
     % frequency in nbeh / second
-    microarray(fly).frequency(behi) = nbeh / trx(fly).nframes * trx(fly).fps;
+    microarray(fly).frequency(behi) = nbeh / trx(fly).nframes .* trx(fly).fps;
     
     % compute per-frame property stuff
     bw_during = set_interval_ends(seg(fly).t1,seg(fly).t2-1,trx(fly).nframes-1);
@@ -136,7 +136,7 @@ for behi = behdo,
       isangle = any(strcmpi(trx(fly).units.(prop).num,'rad'));
       if isangle,
         ns = nnz(strcmpi(trx(fly).units.(prop).den,'s'));
-        perframedata = trx(fly).(prop) / trx(fly).fps^ns;
+        perframedata = trx(fly).(prop) ./ trx(fly).fps^ns;
       else
         perframedata = trx(fly).(prop);
       end
@@ -154,7 +154,7 @@ for behi = behdo,
         % perframedata is converted to per-frame
         mu = set_mean_angle(perframedata(bw_during));
         % convert back to per-second
-        microarray(fly).(s)(behi) = mu * trx(fly).fps^ns;
+        microarray(fly).(s)(behi) = mu .* trx(fly).fps^ns;
       else
         microarray(fly).(s)(behi) = mean(perframedata(bw_during));
       end
@@ -168,7 +168,7 @@ for behi = behdo,
         % compute mean of means
         mu = set_mean_angle(mus);
         % convert back to per-second
-        microarray(fly).(s)(behi) = mu * trx(fly).fps^ns;
+        microarray(fly).(s)(behi) = mu .* trx(fly).fps^ns;
       else
         % compute mean of each interval
         mus = interval_mean(perframedata',seg(fly).t1,seg(fly).t2-1);
@@ -185,7 +185,7 @@ for behi = behdo,
         % compute mean of medians
         mu = set_mean_angle(mus);
         % convert back to per-second
-        microarray(fly).(s)(behi) = mu * trx(fly).fps^ns;
+        microarray(fly).(s)(behi) = mu .* trx(fly).fps^ns;
       else
         % compute median of each interval
         mus = interval_median(perframedata',seg(fly).t1,seg(fly).t2-1);
