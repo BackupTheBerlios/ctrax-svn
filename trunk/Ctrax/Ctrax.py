@@ -612,7 +612,12 @@ instead, where <basename> is the base name of the movie.\n")
             frame, self.last_timestamp = self.movie.get_frame( framenumber )
             if num.isnan(self.last_timestamp):
                 self.last_timestamp = float(framenumber) / float(params.DEFAULT_FRAME_RATE)
-        except (IndexError, movies.NoMoreFramesException): # framenumber out of range
+        except movies.NoMoreFramesException:
+            self.n_frames = self.movie.get_n_frames()
+            self.start_frame = min(self.start_frame,self.n_frames-1)
+            self.slider.SetScrollbar( self.start_frame,1,self.n_frames-1,100 )
+            return
+        except IndexError: # framenumber out of range
             return
 
 	# set frame number display
@@ -773,7 +778,7 @@ instead, where <basename> is the base name of the movie.\n")
             return
 
         # will data be lost?
-        if len(self.ann_data) > 0:
+        if params.interactive and (self.ann_data is not None) and (len(self.ann_data) > 0):
            if evt.GetId() == xrc.XRCID("menu_track_start"): 
                msgtxt = 'Frames %d to %d have been tracked.\nErase these results and start tracking over?'%(params.start_frame,params.start_frame+len(self.ann_data)-1)
                if wx.MessageBox( msgtxt, "Erase trajectories and start tracking?", wx.OK|wx.CANCEL ) == wx.CANCEL:

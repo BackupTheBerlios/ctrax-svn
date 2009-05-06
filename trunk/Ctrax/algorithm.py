@@ -71,7 +71,10 @@ class CtraxAlgorithm (settings.AppWithSettings):
             last_time = time.time()
 
             # perform background subtraction
-            (self.dfore,self.isfore) = self.bg_imgs.sub_bg( self.start_frame )
+            try:
+                (self.dfore,self.isfore) = self.bg_imgs.sub_bg( self.start_frame )
+            except:
+                break
 
             # write to sbfmf
             if self.dowritesbfmf:

@@ -372,7 +372,10 @@ def est_shape( bg ):
 
     for frame in framelist:
         # get background-subtracted image
-        (dfore,bw) = bg.sub_bg( frame )
+        try:
+            (dfore,bw) = bg.sub_bg( frame )
+        except:
+            continue
         (L,ncc) = meas.label(bw)
         ellipsescurr = est.weightedregionprops(L,ncc,dfore)
         ellipses += ellipsescurr

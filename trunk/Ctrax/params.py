@@ -327,6 +327,8 @@ class Parameters:
     def copy(self):
         v = Parameters()
         for i,j in self.__dict__.iteritems():
+            if i == 'movie':
+                continue
             try:
                 v.__dict__[i] = copy.deepcopy(j)
             except:

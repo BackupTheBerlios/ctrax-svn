@@ -40,7 +40,9 @@ class StoredObservations:
 
         self.obs = obs
         self.frame = frame
-        self.params = params.params.copy()
+        #self.params = params.params.copy()
+        #self.params = None
+        self.isvalid = True
         self.issmall = issmall
         self.islarge = islarge
         self.didlowerthresh = didlowerthresh
@@ -48,8 +50,12 @@ class StoredObservations:
         self.diddelete = diddelete
         self.didsplit = didsplit
 
+
+    def SetInvalid(self):
+      self.isvalid = False
+
     def issame(self,frame):
-        return ((self.params == params.params) and (self.frame == frame))
+        return (self.isvalid and (self.frame == frame))
 
 class TrackingSettings:
 
@@ -80,6 +86,14 @@ class TrackingSettings:
         self.BindCallbacks()
         self.OnResize()
         self.ShowImage()
+
+    def RegisterParamChange(self):
+      if hasattr(self,'obs_filtered'):
+        self.obs_filtered.SetInvalid()
+      if hasattr(self,'obs_unfiltered'):
+        self.obs_unfiltered.SetInvalid()
+      if hasattr(self,'obs_prev'):
+        self.obs_prev.SetInvalid()
 
     def InitControlHandles(self):
 
@@ -331,6 +345,7 @@ class TrackingSettings:
                 params.params.maxshape = self.automatic_maxshape.copy()
                 params.params.meanshape = self.automatic_meanshape.copy()
                 self.PrintShape()
+                self.RegisterParamChange()
                 self.ShowImage()
         else:
             self.automatic_panel.Enable(False)
@@ -413,6 +428,7 @@ class TrackingSettings:
         # set up to date
         self.shape_uptodate = True
         self.automatic_shape_text.SetLabel('')
+        self.RegisterParamChange()
 
         self.ShowImage()
 
@@ -485,6 +501,7 @@ class TrackingSettings:
         #params.params.meanshape = params.averageshape(params.params.minshape,
         #                                              params.params.maxshape)
 
+        self.RegisterParamChange()
         self.ShowImage()
 
     def SetMotion(self,evt):
@@ -513,6 +530,7 @@ class TrackingSettings:
         else:
             self.angle_dampen_input.SetValue(str(params.params.angle_dampen))
 
+        self.RegisterParamChange()
         self.ShowImage()
 
     def SetObservation(self,evt):
@@ -526,6 +544,7 @@ class TrackingSettings:
         else:
             self.lower_thresh_input.GetValue(params.params.minbackthresh)
 
+        self.RegisterParamChange()
         self.ShowImage()
 
     def FrameScrollbarMoved(self,evt):
@@ -545,7 +564,7 @@ class TrackingSettings:
         windowsize = [self.img_panel.GetRect().GetHeight(),self.img_panel.GetRect().GetWidth()]
 
         self.GetBgImage()
-            
+        
         if self.img_chosen == SHOW_UNFILTERED_OBSERVATIONS:
             obs_unfiltered = self.GetObsUnfiltered()
             plot_linesegs = ell.draw_ellipses(obs_unfiltered)
@@ -931,11 +950,6 @@ class TrackingSettings:
 
     def GetTargetMotion(self):
 
-        # if it has already been computed, then just grab and return
-        if hasattr(self,'targetmotion') and self.targetmotion[3] == self.show_frame \
-           and self.targetmotion[4] == params.params:
-            return self.targetmotion[0:3]
-        
         # get current positions
         obs_curr = self.GetObsFiltered()
         # get previous positions
@@ -963,6 +977,6 @@ class TrackingSettings:
         # compute predicted positions
         target_pred = cvpred(target_prev,target_curr)
         # store
-        self.targetmotion = (target_prev,target_curr,target_pred,self.show_frame,params.params.copy())
+        targetmotion = (target_prev,target_curr,target_pred)
         # return
-        return self.targetmotion[0:3]
+        return targetmotion
