@@ -48,6 +48,10 @@ if ~loadsucceeded,
   return;
 end
 
+% remove flies with less than 2 frames of data
+minnframes = 2;
+trx = prune_short_trajectories(trx,minnframes);
+
 %% plot all the trajectories
 
 figure(1);
@@ -136,7 +140,7 @@ for fly = 1:nflies,
 end
 
 % choose bins
-nbins = min(100,length(speed)/20);
+nbins = max(1,min(100,round(length(speed)/20)));
 prctlastbin = 1;
 edges = [linspace(0,prctile(speed,100-prctlastbin),nbins),max(speed)];
 centers = (edges(1:end-1)+edges(2:end))/2;
@@ -231,7 +235,7 @@ for fly = 1:nflies,
 end
 
 % choose bins
-nbins = min(100,length(speed)/20);
+nbins = max(1,min(100,round(length(speed)/20)));
 prctlastbin = 1;
 edges = [linspace(0,prctile(speed,100-prctlastbin),nbins),max(speed)];
 centers = (edges(1:end-1)+edges(2:end))/2;

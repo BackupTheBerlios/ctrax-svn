@@ -84,18 +84,22 @@ for fly1 = 1:nflies,
     % velocity difference
     magveldiff(fly2,i0:i1-1) = ...
       sqrt( (diff(trx(fly1).x_mm(i0:i1))-diff(trx(fly2).x_mm(j0:j1))).^2 + ...
-      (diff(trx(fly1).y_mm(i0:i1))-diff(trx(fly2).y_mm(j0:j1))).^2 )*trx(fly1).fps;
-    if i1 < trx(fly1).nframes,
+      (diff(trx(fly1).y_mm(i0:i1))-diff(trx(fly2).y_mm(j0:j1))).^2 ).*trx(fly1).fps;
+    if i1 < trx(fly1).nframes && i1 -1 >= i0,
       magveldiff(fly2,i1) = magveldiff(fly2,i1-1);
     end
     
     % velocity in direction of other fly
     if i1 < trx(fly1).nframes,
-      veltoward(fly2,i0:i1) = (dx(1:end).*diff(trx(fly1).x_mm(i0:i1+1)) + ...
-          dy(1:end).*diff(trx(fly1).y_mm(i0:i1+1)))*trx(fly1).fps;
+      if i1 - i0 + 1 > 0,
+        veltoward(fly2,i0:i1) = (dx(1:end).*diff(trx(fly1).x_mm(i0:i1+1)) + ...
+          dy(1:end).*diff(trx(fly1).y_mm(i0:i1+1))).*trx(fly1).fps;
+      end
     else
-      veltoward(fly2,i0:i1-1) = (dx(1:end-1).*diff(trx(fly1).x_mm(i0:i1)) + ...
-          dy(1:end-1).*diff(trx(fly1).y_mm(i0:i1)))*trx(fly1).fps;
+      if i1 - i0 > 0,
+        veltoward(fly2,i0:i1-1) = (dx(1:end-1).*diff(trx(fly1).x_mm(i0:i1)) + ...
+          dy(1:end-1).*diff(trx(fly1).y_mm(i0:i1))).*trx(fly1).fps;
+      end
     end
     
     % orientation of fly2 relative to orientation of fly1
@@ -103,7 +107,7 @@ for fly1 = 1:nflies,
 
     % velocity direction of fly2 relative to fly1's velocity direction
     absphidiff(fly2,i0:i1-1) = abs(modrange(trx(fly2).phi(j0:j1-1)-trx(fly1).phi(i0:i1-1),-pi,pi));
-    if i1 < trx(fly1).nframes,
+    if i1 < trx(fly1).nframes && i1 -1 >= i0,
       absphidiff(fly2,i1) = absphidiff(fly2,i1-1);
     end
   
@@ -189,11 +193,11 @@ for fly1 = 1:nflies,
 
   % change in various parameters
   trx(fly1).units.ddcenter = parseunits('mm/s');
-  trx(fly1).ddnose2ell = diff(trx(fly1).dnose2ell)*trx(fly1).fps;
+  trx(fly1).ddnose2ell = diff(trx(fly1).dnose2ell).*trx(fly1).fps;
   trx(fly1).units.ddnose2ell = parseunits('mm/s');
-  trx(fly1).ddell2nose = diff(trx(fly1).dell2nose)*trx(fly1).fps;
+  trx(fly1).ddell2nose = diff(trx(fly1).dell2nose).*trx(fly1).fps;
   trx(fly1).units.ddell2nose = parseunits('mm/s');
-  trx(fly1).danglesub = diff(trx(fly1).anglesub)*trx(fly1).fps;
+  trx(fly1).danglesub = diff(trx(fly1).anglesub).*trx(fly1).fps;
   trx(fly1).units.danglesub = parseunits('rad/s');
   
 end

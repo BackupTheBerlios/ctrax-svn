@@ -168,13 +168,21 @@ if docomputearena;
       fprintf('Could not read annotation file %s, not computing dist2wall\n',annname);
       docomputearena = false;
     end
-    for fly = 1:length(trx),
-      trx(fly).arena.x = arena_center_x;
-      trx(fly).arena.y = arena_center_y;
-      trx(fly).arena.r = arena_radius;
+    if isempty(arena_center_x) || isempty(arena_center_y) || isempty(arena_radius),
+      fprintf('Circular arena is not defined in annotation file %s\n',annname);
+      docomputearena = false;
+    else
+      for fly = 1:length(trx),
+        trx(fly).arena.x = arena_center_x;
+        trx(fly).arena.y = arena_center_y;
+        trx(fly).arena.r = arena_radius;
+      end
     end
   end
-  trx = process_data_arena(trx);
+  
+  if docomputearena,
+    trx = process_data_arena(trx);
+  end
   
 end
 

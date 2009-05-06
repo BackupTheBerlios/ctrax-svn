@@ -105,8 +105,12 @@ for fly2 = 1:nflies,
   % velocity in direction of other fly 
   dx = dx ./ z;
   dy = dy ./ z;
-  pairtrx(fly2).veltoward = (dx(1:end-1).*diff(trx(fly1).x_mm(i0:i1)) + ...
-    dy(1:end-1).*diff(trx(fly2).y_mm(j0:j1))).*trx(fly1).fps;
+  if pairtrx(fly2).nframes < 2,
+    pairtrx(fly2).veltoward = [];
+  else
+    pairtrx(fly2).veltoward = (dx(1:end-1).*diff(trx(fly1).x_mm(i0:i1)) + ...
+      dy(1:end-1).*diff(trx(fly2).y_mm(j0:j1))).*trx(fly1).fps;
+  end
   
   % orientation of fly2 relative to orientation of fly1
   pairtrx(fly2).thetadiff = modrange(trx(fly2).theta(j0:j1) - trx(fly1).theta(i0:i1),-pi,pi);

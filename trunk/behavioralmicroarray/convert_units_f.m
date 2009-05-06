@@ -231,17 +231,18 @@ pxfns = {'xpred','ypred','dx','dy','v'};
 pxcpfns = {'x','y','a','b'};
 okfns = {'x','y','theta','a','b','id','moviename','firstframe','arena',...
   'f2i','nframes','endframe','xpred','ypred','thetapred','dx','dy','v',...
-  'a_mm','b_mm','x_mm','y_mm'};
+  'a_mm','b_mm','x_mm','y_mm','matname'};
 unknownfns = setdiff(getperframepropnames(trx),okfns);
-if ~isempty(unknownfns),
-  b = questdlg({'Do not know how to convert the following variables: ',...
-    sprintf('%s, ',unknownfns{:}),'Ignore these variables and continue?'},...
-    'Unknown Variables','Continue','Abort','Abort');
-  if strcmpi(b,'abort'),
-    return;
-  end
-end
+
 if ~alreadyconverted,
+  if ~isempty(unknownfns),
+    b = questdlg({'Do not know how to convert the following variables: ',...
+      sprintf('%s, ',unknownfns{:}),'Ignore these variables and continue?'},...
+      'Unknown Variables','Continue','Abort','Abort');
+    if strcmpi(b,'abort'),
+      return;
+    end
+  end
   for ii = 1:length(pxfns),
     fn = pxfns{ii};
     if isfield(trx,fn),
