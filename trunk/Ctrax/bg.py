@@ -523,7 +523,7 @@ class BackgroundCalculator:
                             delattr(self,'med')
                             delattr(self,'mad')
 
-                    return False
+                        return False
 
                 # seek to the desired part of the movie; 
                 # skip bytesperchunk - the amount we read in in the last frame 
