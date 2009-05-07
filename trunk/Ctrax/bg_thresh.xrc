@@ -538,6 +538,19 @@ foreground.</tooltip>
               </object>
             </object>
           </object>
+          <object class="sizeritem">
+            <object class="wxStaticLine">
+              <size>400,10</size>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxButton" name="fixbg_button">
+              <label>Fix Background Model ...</label>
+              <tooltip>Fix errors in background model estimation by filling selected regions of the model through interpolation.</tooltip>
+              <help>Fix errors in background model estimation by filling selected regions of the model through interpolation.</help>
+            </object>
+            <flag>wxALIGN_CENTRE</flag>
+          </object>
         </object>
       </object>
     </object>

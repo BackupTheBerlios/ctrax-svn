@@ -20,6 +20,7 @@ from ellipsesk import draw_ellipses
 import imagesk
 from params import params
 import setarena
+import fixbg
 
 import motmot.wxvideo.wxvideo as wxvideo
 #import motmot.wxglvideo.simple_overlay as wxvideo # part of Motmot
@@ -708,14 +709,13 @@ class BackgroundCalculator:
 
         # morphology
         self.morphology_checkbox = xrc.XRCCTRL(self.frame,"morphology_checkbox")
-        self.detect_arena_button.Enable(params.do_use_morphology)
-        self.detect_arena_checkbox.SetValue(params.do_use_morphology)
+        self.morphology_checkbox.SetValue(params.do_use_morphology)
         self.frame.Bind(wx.EVT_CHECKBOX,self.OnMorphologyCheck,self.morphology_checkbox)
         self.opening_radius_textinput = xrc.XRCCTRL(self.frame,"opening_radius")
         wxvt.setup_validated_integer_callback( self.opening_radius_textinput,
                                                xrc.XRCID("opening_radius"),
-                                             self.OnOpeningRadiusTextEnter,
-                                             pending_color=params.wxvt_bg )
+                                               self.OnOpeningRadiusTextEnter,
+                                               pending_color=params.wxvt_bg )
         self.opening_radius_textinput.SetValue( '%d'%params.opening_radius )
         self.opening_radius_textinput.Enable(params.do_use_morphology)
         self.closing_radius_textinput = xrc.XRCCTRL(self.frame,"closing_radius")
@@ -727,6 +727,10 @@ class BackgroundCalculator:
         self.closing_radius_textinput.SetValue( '%d'%params.closing_radius )
         self.closing_radius_textinput.Enable(params.do_use_morphology)
         self.closing_struct = self.create_morph_struct(params.closing_radius)
+
+        self.fixbg_button = xrc.XRCCTRL(self.frame,"fixbg_button")
+        self.frame.Bind(wx.EVT_BUTTON,self.OnFixBgClick,self.fixbg_button)
+        self.fixbg_window_open = False
 
         # make image window
         self.img_panel = xrc.XRCCTRL( self.frame, "panel_img" )
@@ -946,6 +950,48 @@ class BackgroundCalculator:
 
         # redraw
         self.DoSub()
+
+    def OnFixBgClick( self, evt ):
+        if self.fixbg_window_open:
+            self.fixbg.frame.Raise()
+            return
+        self.fixbg_window_open = True
+        self.fixbg = fixbg.FixBG(self.frame,self)
+        self.fixbg.frame.Bind( wx.EVT_BUTTON, self.OnQuitFixBg, id=xrc.XRCID("quit_button") )
+        self.fixbg.frame.Bind( wx.EVT_CLOSE, self.OnQuitFixBg )
+        self.fixbg.frame.Show()
+
+    def OnQuitFixBg( self, evt ):
+
+        # close frame
+        reallyquit = self.fixbg.CheckSave()
+
+        if not reallyquit:
+            return
+
+        self.fixbg_window_open = False
+        self.fixbg.frame.Destroy()
+        delattr(self,'fixbg')
+
+        # redraw
+        self.DoSub()
+
+    def SetCenter(self,newcenter):
+        self.center = newcenter.copy()
+        if params.use_median:
+            self.med = newcenter.copy()
+        else:
+            self.mean = newcenter.copy()
+
+    def SetDev(self,newdev):
+        self.dev = newdev.copy()
+        if params.use_median:
+            self.mad = newdev.copy()
+        else:
+            self.std = newdev.copy()
+
+    def SetFixBgPolygons(self,polygons):
+        self.fixbg_polygons = polygons[:]
 
     def OnQuitHF(self, evt ):
         self.hf_window_open = False

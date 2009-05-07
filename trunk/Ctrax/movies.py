@@ -66,11 +66,11 @@ class Movie:
             try:
                 self.h_mov = Avi( filename, fmfmode=True )
                 self.type = 'avi'
-            except (TypeError, ValueError, AssertionError):
+            except:
                 try:
                     self.h_mov = CompressedAvi( filename )
                     self.type = 'avbin'
-                except (TypeError, ValueError, AssertionError):
+                except:
                     if self.interactive:
                         wx.MessageBox( "Failed opening file \"%s\"."%(filename), "Error", wx.ICON_ERROR )
                     raise
