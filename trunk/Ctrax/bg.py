@@ -191,12 +191,28 @@ class BackgroundCalculator:
 
         self.UpdateIsNotArena()
 
-    def meanstd( self ):
+    def meanstd( self, parent=None ):
 
         # shortcut names for oft-used values
         bg_lastframe = min(params.bg_lastframe,params.n_frames-1)
-        nframes = params.bg_lastframe - bg_lastframe + 1
+        nframes = bg_lastframe - params.bg_firstframe + 1
         n_bg_frames = min(nframes,params.n_bg_frames)
+
+        if params.interactive:
+
+            # be prepared to cancel
+            isbackup = False
+            if hasattr(self,'mean'):
+                mean0 = self.mean.copy()
+                std0 = self.std.copy()
+                isbackup = True
+
+            progressbar = \
+                wx.ProgressDialog('Computing Background Model',
+                                  'Computing mean, standard deviation of %d frames to estimate background model'%n_bg_frames,
+                                  n_bg_frames,
+                                  parent,
+                                  wx.PD_APP_MODAL|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.PD_REMAINING_TIME)
 
         nr = params.movie_size[0]
         nc = params.movie_size[1]
@@ -210,6 +226,21 @@ class BackgroundCalculator:
         # main computation
         nframesused = 0
         for i in range(params.bg_firstframe,bg_lastframe+1,nframesskip):
+
+            if params.interactive:
+                (keepgoing,skip) = progressbar.Update(value=nframesused+1,newmsg='Reading in frame %d (%d / %d)'%(i+1,nframesused,n_bg_frames))
+                if not keepgoing:
+                    progressbar.Destroy()
+
+                    if isbackup:
+                        self.mean = mean0
+                        self.std = std0
+                    else:
+                        delattr(self,'mean')
+                        delattr(self,'std')
+                    
+                    return False
+
             # read in the data
             im, stamp = params.movie.get_frame( int(i) )
             im = im.astype( num.float )
@@ -224,8 +255,13 @@ class BackgroundCalculator:
         self.std /= num.double(nframesused)
         # actually compute variance, std
         self.std = num.sqrt(self.std - self.mean**2)
+        
+        if params.interactive:
+            progressbar.Destroy()
 
-    def flexmedmad( self ):
+        return True
+
+    def flexmedmad( self, parent=None ):
         bg_lastframe = min(params.bg_lastframe,params.n_frames-1)
         nframesmovie = bg_lastframe - params.bg_firstframe + 1
 
@@ -258,9 +294,29 @@ class BackgroundCalculator:
         # it holds nrsmall*nc pixels for each frame of nframes 
         buffersize = nrsmall*nc*nframes
 
+        # prepare for cancel
+        if params.interactive:
+            isbackup = False
+            if hasattr(self,'med'):
+                med0 = self.med.copy()
+                mad0 = self.mad.copy()
+                isbackup = True
+
+            noffsets = num.ceil(float(nr) / float(nrsmall))
+
+            progressbar = \
+                wx.ProgressDialog('Computing Background Model',
+                                  'Computing median, median absolute deviation of %d frames to estimate background model'%nframes,
+                                  nframes*noffsets,
+                                  parent,
+                                  wx.PD_APP_MODAL|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.PD_REMAINING_TIME)
+
+
         # allocate memory for median and mad
         self.med = num.zeros((nr,nc))
         self.mad = num.zeros((nr,nc))
+
+        offseti = 0
 
         for rowoffset in range(0,nr,nrsmall):
             print "row offset = %d."%rowoffset
@@ -279,6 +335,18 @@ class BackgroundCalculator:
             # loop through frames
             frame = params.bg_firstframe
             for i in range(nframes):
+
+                if params.interactive:
+                    (keepgoing,skip) = progressbar.Update(value=offseti*nframes + i,newmsg='Reading in piece of frame %d (%d / %d), offset = %d (%d / %d)'%(frame,i+1,nframes,rowoffset,offseti+1,noffsets))
+                    if not keepgoing:
+                        progressbar.Destroy()
+                        if isbackup:
+                            self.med = med0
+                            self.mad = mad0
+                        else:
+                            delattr(self,'med')
+                            delattr(self,'mad')
+                        return False
 
                 # read in the entire frame
                 data,stamp = params.movie.get_frame(frame)
@@ -314,13 +382,19 @@ class BackgroundCalculator:
                 self.mad[rowoffset:rowoffsetnext,:] += buf[:,:,middle2]
                 self.mad[rowoffset:rowoffsetnext,:] /= 2.
 
+            offseti += 1
+
         # estimate standard deviation assuming a Gaussian distribution
         # from the fact that half the data falls within mad
         # MADTOSTDFACTOR = 1./norminv(.75)
         MADTOSTDFACTOR = 1.482602
         self.mad *= MADTOSTDFACTOR
+
+        if params.interactive:
+            progressbar.Destroy()
+        return True
         
-    def medmad( self ):
+    def medmad( self, parent=None ):
 
         # shortcut names for oft-used values
         fp = params.movie.h_mov.file
@@ -389,10 +463,28 @@ class BackgroundCalculator:
         # need to seek forward more
         seekperframelast = bytesperchunk*nframesskip-nbytessmalllast
 
+        if params.interactive:
+            # be prepared to cancel
+            isbackup = False
+            if hasattr(self,'med'):
+                med0 = self.med.copy()
+                mad0 = self.mad.copy()
+                isbackup = True
+
+            noffsets = num.ceil(float(nbytes) / float(nbytessmall))
+
+            progressbar = \
+                wx.ProgressDialog('Computing Background Model',
+                                  'Computing median, median absolute deviation of %d frames to estimate background model'%nframes,
+                                  nframes*noffsets,
+                                  parent,
+                                  wx.PD_APP_MODAL|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.PD_REMAINING_TIME)
+
         # allocate memory for median and mad
         self.med = num.zeros(framesize)
         self.mad = num.zeros(framesize)
 
+        offseti = 0
         for imageoffset in range(0,nbytes,nbytessmall):
             print "image offset = %d."%imageoffset
 
@@ -419,6 +511,20 @@ class BackgroundCalculator:
             # loop through frames
             for i in range(nframes):
 
+                if params.interactive:
+                    (keepgoing,skip) = progressbar.Update(value=offseti*nframes + i,newmsg='Reading in piece of frame %d / %d, offset = %d (%d / %d)'%(i+1,nframes,imageoffset,offseti+1,noffsets))
+                    if not keepgoing:
+                        progressbar.Destroy()
+
+                        if isbackup:
+                            self.med = med0
+                            self.mad = mad0
+                        else:
+                            delattr(self,'med')
+                            delattr(self,'mad')
+
+                    return False
+
                 # seek to the desired part of the movie; 
                 # skip bytesperchunk - the amount we read in in the last frame 
                 if i > 0:
@@ -429,6 +535,7 @@ class BackgroundCalculator:
                 if data == '':
                     raise NoMoreFramesException('EOF')
                 buf[i,:] = num.fromstring(data,num.uint8)
+                
 
             # compute the median and median absolute difference at each 
             # pixel location
@@ -458,6 +565,7 @@ class BackgroundCalculator:
 
             #self.mad[imageoffset:imageoffsetnext] = buf[:,madorder1]*madweight1 + \
             #                                        buf[:,madorder2]*madweight2
+            offseti += 1
 
         # estimate standard deviation assuming a Gaussian distribution
         # from the fact that half the data falls within mad
@@ -468,7 +576,12 @@ class BackgroundCalculator:
         self.mad.shape = params.movie_size
         self.med.shape = params.movie_size
 
-    def est_bg( self ):
+        if params.interactive:
+            progressbar.Destroy()
+
+        return True
+
+    def est_bg( self, parent=None ):
         
         # make sure number of background frames is at most number of frames in movie
         if params.n_bg_frames > params.n_frames:
@@ -481,7 +594,9 @@ class BackgroundCalculator:
             if params.movie.type == 'fmf' or \
                     (params.movie.type == 'avi' and \
                          params.movie.h_mov.bits_per_pixel == 8):
-                self.medmad()
+                succeeded = self.medmad(parent)
+                if not succeeded:
+                    return
                 #(self.med,self.mad) = medmad(params.movie.filename,params.n_bg_frames,
                 #                             params.movie_size[0],params.movie_size[1],
                 #                             nframesskip,params.movie.h_mov.bytes_per_chunk,
@@ -497,14 +612,19 @@ class BackgroundCalculator:
                 print 'center.shape = ' + str(self.center.shape)
                 print 'dev.shape = ' + str(self.dev.shape)
             else:
-                self.flexmedmad()
+                succeeded = self.flexmedmad(parent)
+                if not succeeded:
+                    return
                 self.center = self.med.copy()
                 self.dev = self.mad.copy()
                 #wx.MessageBox( "Only FMFs are supported for background estimation so far.",
                 #               "Error", wx.ICON_ERROR )
         else:
-            if params.movie.type == 'fmf' or params.movie.type == 'avi':
-                self.meanstd()
+            if params.movie.type == 'fmf' or params.movie.type == 'avi' \
+                    or params.movie.type == 'avbin':
+                succeeded = self.meanstd(parent)
+                if not succeeded:
+                    return
                 #(self.mean,self.std) = meanstd(params.movie.filename,params.n_bg_frames,
                 #                               params.movie_size[0],params.movie_size[1],
                 #                               nframesskip,params.movie.h_mov.bytes_per_chunk,
@@ -592,19 +712,20 @@ class BackgroundCalculator:
         return s
 
     def ShowBG( self, parent, framenumber, old_thresh ):
-
-        # calculate background image, if not already done
-        if not hasattr( self, 'center' ):
-            wx.BeginBusyCursor()
-            wx.Yield()
-            self.est_bg()
-            wx.EndBusyCursor()
         
         self.old_thresh = params.n_bg_std_thresh
         self.show_frame = framenumber
 
         rsrc = xrc.XmlResource( THRESH_RSRC_FILE )
         self.frame = rsrc.LoadFrame( parent, "frame_Ctrax_bg" )
+
+        # calculate background image, if not already done
+        if not hasattr( self, 'center' ):
+            wx.BeginBusyCursor()
+            wx.Yield()
+            self.est_bg(self.frame)
+            wx.EndBusyCursor()
+
         self.hf.SetFrame(self.frame)
         self.hf.frame.Bind( wx.EVT_BUTTON, self.OnQuitHF, id=xrc.XRCID("hm_done_button") )
         self.hf.frame.Bind( wx.EVT_CLOSE, self.OnQuitHF )
@@ -1197,7 +1318,7 @@ class BgSettingsDialog:
     def OnCalculate(self,evt):
         wx.BeginBusyCursor()
         wx.Yield()
-        self.bg.est_bg()
+        self.bg.est_bg(self.frame)
         wx.EndBusyCursor()
 
     def OnTextValidated(self,evt):

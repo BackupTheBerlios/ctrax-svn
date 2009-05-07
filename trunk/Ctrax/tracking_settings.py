@@ -414,9 +414,12 @@ class TrackingSettings:
         # estimate shape now
         wx.BeginBusyCursor()
         wx.Yield()
-        ell.est_shape( self.bg_imgs )
+        succeeded = ell.est_shape( self.bg_imgs,self.frame )
         wx.EndBusyCursor()
         
+        if not succeeded:
+          return
+
         # copy to temporary variable
         self.automatic_minshape = params.params.minshape.copy()
         self.automatic_maxshape = params.params.maxshape.copy()

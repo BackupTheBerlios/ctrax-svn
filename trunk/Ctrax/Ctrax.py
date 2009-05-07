@@ -10,6 +10,11 @@
 #if wxversion.checkInstalled(WXVER):
 #    wxversion.select(WXVER)
 
+# we need to import pyglet.media before scipy.linalg.decomp is 
+# imported by kcluster, as this seems to cause have_avbin to be false
+# on windows
+import pyglet.media as media
+
 import os # use os for manipulating path names
 import sys # use sys for parsing command line
 import time # use time for setting playback rate
@@ -943,7 +948,7 @@ instead, where <basename> is the base name of the movie.\n")
         self.status.SetStatusText( "calculating background", params.status_box )
         wx.BeginBusyCursor()
         wx.Yield()
-        self.bg_imgs.est_bg()
+        self.bg_imgs.est_bg(self.frame)
         wx.EndBusyCursor()
         self.status.SetBackgroundColour( start_color )
         self.status.SetStatusText( "", params.status_box )
@@ -966,13 +971,13 @@ instead, where <basename> is the base name of the movie.\n")
                 self.status.SetBackgroundColour( params.status_green )
                 self.status.SetStatusText( "calculating background", params.status_box )
                 wx.Yield()
-                self.bg_imgs.est_bg()
+                self.bg_imgs.est_bg(self.frame)
 
         self.status.SetBackgroundColour( params.status_red )
         self.status.SetStatusText( "calculating shape", params.status_box )
         wx.BeginBusyCursor()
         wx.Yield()
-        ell.est_shape( self.bg_imgs )
+        ell.est_shape( self.bg_imgs, self.frame )
         wx.EndBusyCursor()
         self.status.SetBackgroundColour( start_color )
         self.status.SetStatusText( "", params.status_box )
