@@ -201,7 +201,7 @@ class CtraxAlgorithm (settings.AppWithSettings):
         else:
             print "Not detecting arena"
 
-        self.bg_imgs.UpdateIsNotArena()
+        self.bg_imgs.UpdateIsArena()
 
         # estimate the shape
         if params.batch_autodetect_shape:

@@ -140,11 +140,7 @@ class BackgroundCalculator:
         self.hf = HomoFilt(params.movie_size)
 
         # image of which parts flies are not able to walk in
-        self.isnotarena = num.zeros(params.movie_size,num.bool)
-
-        # image of which parts flies are able to walk in, set using roi
-        self.roi = roi.point_inside_polygons(params.movie_size[0],params.movie_size[1],
-                                             params.roipolygons)
+        self.isarena = num.ones(params.movie_size,num.bool)
 
         if params.movie.type == 'sbfmf':
             self.center = params.movie.h_mov.bgcenter.copy()
@@ -194,7 +190,11 @@ class BackgroundCalculator:
         
         self.hf = HomoFilt(params.movie_size)
 
-        self.UpdateIsNotArena()
+        # image of which parts flies are able to walk in, set using roi
+        self.roi = roi.point_inside_polygons(params.movie_size[0],params.movie_size[1],
+                                             params.roipolygons)
+
+        self.UpdateIsArena()
 
     def meanstd( self, parent=None ):
 
@@ -653,7 +653,7 @@ class BackgroundCalculator:
         self.thresh_low = self.dev*params.n_bg_std_thresh_low
 
         # image of which parts flies are not able to walk in
-        self.UpdateIsNotArena()
+        self.UpdateIsArena()
 
         # approximate homomorphic filtering
         tmp = self.center.copy()
@@ -670,32 +670,33 @@ class BackgroundCalculator:
         im = self.curr_im.astype( num.float )
         self.curr_stamp = stamp
 
+        dfore = num.zeros(im.shape)
         if params.bg_type == params.BG_TYPE_LIGHTONDARK:
             # if white flies on a dark background, then we only care about differences
             # im - bgmodel.center > bgmodel.thresh
-            dfore = im - self.center
-            dfore[dfore < 0] = 0
+            dfore[self.isarena] = num.maximum(0,im[self.isarena] - self.center[self.isarena])
             
         elif params.bg_type == params.BG_TYPE_DARKONLIGHT:
             # if dark flies on a white background, then we only care about differences
             # bgmodel.center - im > bgmodel.thresh
-            dfore = self.center - im
-            dfore[dfore < 0] = 0
+            dfore[self.isarena] = num.maximum(0,self.center[self.isarena] - im[self.isarena])
             
         else:
             # otherwise, we care about both directions
-            dfore = num.abs(im - self.center)
+            dfore[self.isarena] = num.abs(im[self.isarena] - self.center[self.isarena])
 
-        dfore[self.isnotarena] = 0.
-        dfore /= self.dev
+        dfore[self.isarena] /= self.dev[self.isarena]
         if params.n_bg_std_thresh > params.n_bg_std_thresh_low:
-            bwhigh = dfore > params.n_bg_std_thresh
-            bwlow = dfore > params.n_bg_std_thresh_low
+            bwhigh = num.zeros(im.shape,dtype=bool)
+            bwlow = num.zeros(im.shape,dtype=bool)
+            bwhigh[self.isarena] = dfore[self.isarena] > params.n_bg_std_thresh
+            bwlow[self.isarena] = dfore[self.isarena] > params.n_bg_std_thresh_low
             
             # do hysteresis
             bw = morph.binary_propagation(bwhigh,mask=bwlow)
         else:
-            bw = dfore > params.n_bg_std_thresh
+            bw = num.zeros(im,shape,dtype=bool)
+            bw[self.isarena] = dfore[self.isarena] > params.n_bg_std_thresh
 
         # do morphology
         if params.do_use_morphology:
@@ -818,14 +819,14 @@ class BackgroundCalculator:
         self.frame.Bind(wx.EVT_CHECKBOX,self.OnDetectArenaCheck,self.detect_arena_checkbox)
         self.detect_arena_window_open = False
         
-        # min value for isnotarena
+        # min value for isarena
         self.min_nonarena_textinput = xrc.XRCCTRL(self.frame,"min_nonfore_intensity_input")
         wxvt.setup_validated_float_callback( self.min_nonarena_textinput,
                                              xrc.XRCID("min_nonfore_intensity_input"),
                                              self.OnMinNonArenaTextEnter,
                                              pending_color=params.wxvt_bg )
         self.min_nonarena_textinput.SetValue( '%.1f'%params.min_nonarena )
-        # min value for isnotarena
+        # min value for isarena
         self.max_nonarena_textinput = xrc.XRCCTRL(self.frame,"max_nonfore_intensity_input")
         wxvt.setup_validated_float_callback( self.max_nonarena_textinput,
                                              xrc.XRCID("max_nonfore_intensity_input"),
@@ -1003,7 +1004,7 @@ class BackgroundCalculator:
             return
         params.do_set_circular_arena = self.detect_arena_checkbox.GetValue()
         self.detect_arena_button.Enable(params.do_set_circular_arena)
-        self.UpdateIsNotArena()
+        self.UpdateIsArena()
         self.DoSub()
 
     def OnMorphologyCheck( self, evt ):
@@ -1041,19 +1042,19 @@ class BackgroundCalculator:
         if evt is not None:
             self.DoSub()
 
-    def UpdateIsNotArena(self):
-        # update isnotarena
-        self.isnotarena = num.zeros(params.movie_size,num.bool)
+    def UpdateIsArena(self):
+        # update isarena
+        self.isarena = num.ones(params.movie_size,num.bool)
         if hasattr(params,'max_nonarena'):
-            self.isnotarena = self.center <= params.max_nonarena
+            self.isarena = self.center > params.max_nonarena
         if hasattr(params,'min_nonarena'):
-            self.isnotarena = self.isnotarena | \
-                              (self.center >= params.min_nonarena)
+            self.isarena = self.isarena & \
+                              (self.center < params.min_nonarena)
         if params.do_set_circular_arena and \
            hasattr(params,'arena_center_x') and \
            (params.arena_center_x is not None):
-            self.isnotarena = self.isnotarena | ( ((params.GRID.X - params.arena_center_x)**2. + (params.GRID.Y - params.arena_center_y)**2) > params.arena_radius**2. )
-        self.isnotarena = self.isnotarena | (self.roi == False)
+            self.isarena = self.isarena & ( ((params.GRID.X - params.arena_center_x)**2. + (params.GRID.Y - params.arena_center_y)**2) <= params.arena_radius**2. )
+        self.isarena = self.isarena & self.roi
 
     def OnDetectArenaClick( self, evt ):
         if self.detect_arena_window_open:
@@ -1071,8 +1072,8 @@ class BackgroundCalculator:
         [params.arena_center_x,params.arena_center_y,
          params.arena_radius] = self.detect_arena.GetArenaParameters()
 
-        # update isnotarena
-        self.UpdateIsNotArena()
+        # update isarena
+        self.UpdateIsArena()
 
         # close frame
         self.detect_arena_window_open = False
@@ -1151,7 +1152,7 @@ class BackgroundCalculator:
 
     def SetROI(self,roi):
         self.roi = roi.copy()
-        self.UpdateIsNotArena()
+        self.UpdateIsArena()
 
     def OnQuitHF(self, evt ):
         self.hf_window_open = False
@@ -1239,7 +1240,7 @@ class BackgroundCalculator:
             self.min_nonarena_textinput.SetValue('%.1f'%params.min_nonarena)
             return
         if evt is not None:
-            self.UpdateIsNotArena()
+            self.UpdateIsArena()
             self.DoSub()
 
     def OnMaxNonArenaTextEnter( self, evt ):
@@ -1253,7 +1254,7 @@ class BackgroundCalculator:
             self.max_nonarena_textinput.SetValue('%.1f'%params.max_nonarena)
             return
         if evt is not None:
-            self.UpdateIsNotArena()
+            self.UpdateIsArena()
             self.DoSub()
 
 
@@ -1281,7 +1282,8 @@ class BackgroundCalculator:
             img_8 = imagesk.double2mono8(self.bw.astype(float))
             self.img_wind.update_image_and_drawings('bg',img_8,format='MONO8')
         elif self.show_img_type == params.SHOW_NONFORE:
-            img_8 = imagesk.double2mono8(self.isnotarena.astype(float))
+            isnotarena = self.isarena == False
+            img_8 = imagesk.double2mono8(isnotarena.astype(float))
             self.img_wind.update_image_and_drawings('bg',img_8,format='MONO8')
         elif self.show_img_type == params.SHOW_DEV:
             mu = num.mean(self.dev)
