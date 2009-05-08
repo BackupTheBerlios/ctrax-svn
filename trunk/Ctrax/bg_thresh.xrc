@@ -419,6 +419,13 @@ locations will never be classified as foreground. </tooltip>
             </object>
           </object>
           <object class="sizeritem">
+            <object class="wxButton" name="roi_button">
+              <label>Set Regions of Interest ...</label>
+              <tooltip>Select polygonal regions of interest (the only regions where foreground can be detected). </tooltip>
+              <help>Select polygonal regions of interest (the only regions where foreground can be detected). </help>
+            </object>
+          </object>
+          <object class="sizeritem">
             <object class="wxCheckBox" name="detect_arena_checkbox">
               <label>Set Circular Arena Region of Interest</label>
               <checked>1</checked>

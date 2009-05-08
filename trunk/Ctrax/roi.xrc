@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <resource>
-  <object class="wxFrame" name="fixbg_frame">
+  <object class="wxFrame" name="roi_frame">
     <object class="wxBoxSizer">
       <object class="sizeritem">
         <object class="wxPanel" name="img_panel"/>
@@ -16,7 +16,7 @@
                 <object class="wxChoice" name="displaymode_choice">
                   <content>
                     <item>Background Center</item>
-                    <item>Background Deviation</item>
+                    <item>Regions of Interest</item>
                   </content>
                   <selection>0</selection>
                 </object>
@@ -79,11 +79,11 @@
             <object class="wxStaticText">
               <label>Directions: 
 
-1. Click to select a polygonal region of background image to fix. 
+1. Click to select a polygonal region of interest. 
 2. Double click or push the &quot;Close&quot; button to close the polygon.
 3. Push the &quot;Cancel&quot; button to cancel the current polygon. 
-4. Background within polygon will be interpolated from boundaries. 
-5. Push &quot;Save&quot; button to save the current background model.
+4. Regions outside of all polygons will always be classified as background.
+5. Push &quot;Save&quot; button to save the current regions of interest.
 6. Push &quot;Quit&quot; button to exit dialog.</label>
             </object>
           </object>
@@ -93,6 +93,6 @@
       </object>
       <orient>wxVERTICAL</orient>
     </object>
-    <title>Fix Background Model</title>
+    <title>Select Regions of Interest</title>
   </object>
 </resource>

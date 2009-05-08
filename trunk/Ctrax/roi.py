@@ -6,22 +6,20 @@ import imagesk
 import numpy as num
 import pkg_resources # part of setuptools
 import scipy.ndimage.morphology as morph
+from params import params
 
-RSRC_FILE = pkg_resources.resource_filename( __name__, "fixbg.xrc" )
+RSRC_FILE = pkg_resources.resource_filename( __name__, "roi.xrc" )
 
 USEGL = False
 
-class FixBG:
+class ROI:
 
     def __init__(self,parent,bgmodel):
         self.parent = parent
-        self.bgcenter = bgmodel.center.copy()
-        self.bgdev = bgmodel.dev.copy()
-        self.bgcenter0 = self.bgcenter.copy()
-        self.bgdev0 = self.bgdev.copy()
+        self.bgcenter = bgmodel.center
         self.bgmodel = bgmodel
         rsrc = xrc.XmlResource(RSRC_FILE)
-        self.frame = rsrc.LoadFrame(parent,"fixbg_frame")
+        self.frame = rsrc.LoadFrame(parent,"roi_frame")
 
         self.InitControlHandles()
         self.InitializeValues()
@@ -33,7 +31,7 @@ class FixBG:
 
         if not self.issaved:
             
-            msgtxt = 'Some changes to background model may not have been saved. Save now?'
+            msgtxt = 'Some changes to regions of interest may not have been saved. Save now?'
             retval = wx.MessageBox( msgtxt, "Save Changes?", wx.YES_NO|wx.CANCEL )
             if retval == wx.YES:
                 self.OnSave()
@@ -59,9 +57,6 @@ class FixBG:
         self.displaymode_choice = self.control('displaymode_choice')
         self.showpolygons_checkbox = self.control('showpolygons_checkbox')
 
-        self.undo_button.Enable(False)
-        self.close_button.Enable(False)
-
         self.img_panel = self.control('img_panel')
         box = wx.BoxSizer( wx.VERTICAL )
         self.img_panel.SetSizer( box )
@@ -80,21 +75,24 @@ class FixBG:
         self.img_wind.update_image_and_drawings('fixbg',imblank,
                                                 format='MONO8')
         self.img_wind_child = self.img_wind.get_child_canvas('fixbg')
-        self.polygons = []
+        self.polygons = params.roipolygons[:]
         self.currpolygon = num.zeros((0,2))
         (self.nr,self.nc) = self.bgcenter.shape
+        self.roi = self.bgmodel.roi.copy()
 
         # all pixel locations in the image,
         # for checking which pixels are in the polygon
         (self.Y,self.X) = num.mgrid[0:self.nr,0:self.nc]
 
-        # initialize to show center
+        # initialize to show background
         self.displaymode_choice.SetSelection(0) 
 
         # initialize to show polygons
         self.showpolygons_checkbox.SetValue(True)
 
         self.issaved = True
+
+        self.InAddPolygonMode()
 
         wx.EndBusyCursor()
 
@@ -135,8 +133,11 @@ class FixBG:
         wx.Yield()
         self.currpolygon = num.r_[self.currpolygon,num.reshape(self.currpolygon[0,:],(1,2))]
         self.polygons.append(self.currpolygon)
-        isin = self.fix_hole(self.bgcenter,self.bgcenter,self.currpolygon)
-        isin = self.fix_hole(self.bgdev,self.bgdev,self.currpolygon,isin=isin)
+        isin = point_inside_polygon(self.X,self.Y,self.currpolygon)
+        if len(self.polygons) == 1:
+            self.roi = isin
+        else:
+            self.roi = self.roi | isin
         self.issaved = False
         wx.EndBusyCursor()
 
@@ -154,11 +155,11 @@ class FixBG:
 
     def OnSave(self,evt=None):
 
-        self.bgmodel.SetCenter(self.bgcenter)
-        self.bgmodel.SetDev(self.bgdev)
-        self.bgmodel.SetFixBgPolygons(self.polygons)
-        
+        params.roipolygons = self.polygons[:]
+        self.bgmodel.SetROI(self.roi)
         self.issaved = True
+        if params.interactive:
+            self.bgmodel.DoSub()
 
     def OnCancel(self,evt=None):
 
@@ -173,9 +174,13 @@ class FixBG:
         elif len(self.polygons) == 0:
             return
         else:
+            wx.BeginBusyCursor()
+            wx.Yield()
             lastpolygon = self.polygons.pop()
-            self.RemovePolygon(lastpolygon)
-
+            # recompute roi
+            self.roi = point_inside_polygons_helper(self.X,self.Y,self.polygons)
+            self.issaved = False
+            wx.EndBusyCursor()
         self.InAddPolygonMode()
         self.ShowImage()
 
@@ -187,7 +192,7 @@ class FixBG:
         if self.displaymode_choice.GetSelection() == 0:
             self.img_shown = imagesk.double2mono8(self.bgcenter,donormalize=True)
         else:
-            self.img_shown = imagesk.double2mono8(self.bgdev,donormalize=True)
+            self.img_shown = imagesk.double2mono8(self.roi.astype(num.double)*255,donormalize=False)
 
         if self.currpolygon.shape[0] >= 1:
             points = [[self.currpolygon[0,0],self.currpolygon[0,1]]]
@@ -266,46 +271,6 @@ class FixBG:
         self.close_button.Enable(False)
         self.undo_button.Enable(len(self.polygons) > 0)
 
-    def RemovePolygon(self,poly):
-        wx.BeginBusyCursor()
-        wx.Yield()
-        isin = self.undo_fix_hole(self.bgcenter0,self.bgcenter,poly)
-        isin = self.undo_fix_hole(self.bgdev0,self.bgdev,poly,isin=isin)
-        self.issaved = False
-        wx.EndBusyCursor()
-
-    def fix_hole(self,im,out,polygon,isin=None):
-
-        s = num.ones((3,3),bool)        
-
-        # get points on the inside of the polygon
-        if isin is None:
-            isin = point_inside_polygon(self.X,self.Y,polygon)
-        (y_isin,x_isin) = num.nonzero(isin)
-
-        # get points on the outside boundary of the polygon
-        isboundary = num.logical_and(morph.binary_dilation(isin,s),
-                                     ~isin)
-
-        (y_isboundary,x_isboundary) = num.nonzero(isboundary)
-
-        # for each point inside the polygon, get an average from
-        # all the boundary points
-        for i in range(len(y_isin)):
-            x = x_isin[i]
-            y = y_isin[i]
-            d = num.sqrt((y_isboundary-y)**2+(x_isboundary-x)**2)
-            w = num.exp(-d)
-            out[y,x] = num.sum(im[isboundary] * w) / num.sum(w)
-
-        return isin
-
-    def undo_fix_hole(self,im0,im,polygon,isin=None):
-        if isin is None:
-            isin = point_inside_polygon(self.X,self.Y,polygon)
-        im[isin] = im0[isin]    
-        return isin
-
     def OnResize(self,evt=None):
 
         if evt is not None: evt.Skip()
@@ -347,3 +312,28 @@ def point_inside_polygon(x,y,poly):
         p1x,p1y = p2x,p2y
 
     return inside
+
+def point_inside_polygons_helper(X,Y,polys):
+
+
+    if len(polys) == 0:
+        roi = num.ones(X.shape,dtype=bool)
+        return roi
+
+    roi = num.zeros(X.shape,dtype=bool)
+
+    for i in range(len(polys)):
+        roi = roi | point_inside_polygon(X,Y,polys[i])
+    
+    return roi
+
+def point_inside_polygons(nr,nc,polys):
+
+    if len(polys) == 0:
+        roi = num.ones((nr,nc),dtype=bool)
+        return roi
+
+    (Y,X) = num.mgrid[0:nr,0:nc]
+
+    return point_inside_polygons_helper(X,Y,polys)                                 
+

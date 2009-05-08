@@ -20,14 +20,8 @@ value = s(i+1:end);
 
 specialparams = {'background median','background mean',...
                  'background mad','background std',...
-                 'hfnorm'};
-
-isspecial = false;
-for i = 1:length(specialparams),
-  if strcmp(param,specialparams{i}),
-    isspecial = true;
-  end;
-end;
+                 'hfnorm','roipolygons'};
+isspecial = ismember(param,specialparams);
 
 if isspecial,
   sz = str2num(value);

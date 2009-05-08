@@ -134,13 +134,18 @@ value = s(i+1:end);
 specialparams = {'background median','background mean',...
                  'background mad','background std',...
                  'hfnorm'};
+               
+pickledparams = {'roipolygons'};
 
-isspecial = false;
-isspecial = any(strcmp(specialparams,param));
+isspecial = ismember(param,specialparams);
+ispickled = ismember(param,pickledparams);
 
 if isspecial,
   sz = str2num(value);
   value = fread(fid,sz/8,'double');
+elseif ispickled,
+  sz = str2num(value);
+  value = fread(fid,sz,'char');  
 else
   tmp = str2num(value);
   if ~isempty(tmp),

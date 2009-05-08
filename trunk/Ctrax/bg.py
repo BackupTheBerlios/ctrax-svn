@@ -21,6 +21,7 @@ import imagesk
 from params import params
 import setarena
 import fixbg
+import roi
 
 import motmot.wxvideo.wxvideo as wxvideo
 #import motmot.wxglvideo.simple_overlay as wxvideo # part of Motmot
@@ -140,6 +141,10 @@ class BackgroundCalculator:
 
         # image of which parts flies are not able to walk in
         self.isnotarena = num.zeros(params.movie_size,num.bool)
+
+        # image of which parts flies are able to walk in, set using roi
+        self.roi = roi.point_inside_polygons(params.movie_size[0],params.movie_size[1],
+                                             params.roipolygons)
 
         if params.movie.type == 'sbfmf':
             self.center = params.movie.h_mov.bgcenter.copy()
@@ -853,6 +858,10 @@ class BackgroundCalculator:
         self.frame.Bind(wx.EVT_BUTTON,self.OnFixBgClick,self.fixbg_button)
         self.fixbg_window_open = False
 
+        self.roi_button = xrc.XRCCTRL(self.frame,"roi_button")
+        self.frame.Bind(wx.EVT_BUTTON,self.OnROIClick,self.roi_button)
+        self.roi_window_open = False
+
         # make image window
         self.img_panel = xrc.XRCCTRL( self.frame, "panel_img" )
         box = wx.BoxSizer( wx.VERTICAL )
@@ -1044,6 +1053,7 @@ class BackgroundCalculator:
            hasattr(params,'arena_center_x') and \
            (params.arena_center_x is not None):
             self.isnotarena = self.isnotarena | ( ((params.GRID.X - params.arena_center_x)**2. + (params.GRID.Y - params.arena_center_y)**2) > params.arena_radius**2. )
+        self.isnotarena = self.isnotarena | (self.roi == False)
 
     def OnDetectArenaClick( self, evt ):
         if self.detect_arena_window_open:
@@ -1113,6 +1123,35 @@ class BackgroundCalculator:
 
     def SetFixBgPolygons(self,polygons):
         self.fixbg_polygons = polygons[:]
+
+    def OnROIClick( self, evt ):
+        if self.roi_window_open:
+            self.roigui.frame.Raise()
+            return
+        self.roi_window_open = True
+        self.roigui = roi.ROI(self.frame,self)
+        self.roigui.frame.Bind( wx.EVT_BUTTON, self.OnQuitROI, id=xrc.XRCID("quit_button") )
+        self.roigui.frame.Bind( wx.EVT_CLOSE, self.OnQuitROI )
+        self.roigui.frame.Show()
+
+    def OnQuitROI( self, evt ):
+
+        # close frame
+        reallyquit = self.roigui.CheckSave()
+
+        if not reallyquit:
+            return
+
+        self.roi_window_open = False
+        self.roigui.frame.Destroy()
+        delattr(self,'roigui')
+
+        # redraw
+        self.DoSub()
+
+    def SetROI(self,roi):
+        self.roi = roi.copy()
+        self.UpdateIsNotArena()
 
     def OnQuitHF(self, evt ):
         self.hf_window_open = False

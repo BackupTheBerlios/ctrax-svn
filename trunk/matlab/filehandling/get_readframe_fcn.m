@@ -30,6 +30,6 @@ else
       % approximate nframes from duration
       nframes = get(readerobj,'Duration')*get(readerobj,'FrameRate');
     end
-    readframe = @(f) read(readerobj,f);
+    readframe = @(f) flipdim(read(readerobj,f),1);
   end
 end

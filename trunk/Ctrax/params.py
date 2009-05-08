@@ -213,6 +213,10 @@ class Parameters:
         # is not an area flies can be in, so don't allow foreground in
         # these areas
         self.max_nonarena = -1.
+        
+        # regions of interest
+        self.roipolygons = []
+        
         # location of arena
         self.arena_center_x = None
         self.arena_center_y = None

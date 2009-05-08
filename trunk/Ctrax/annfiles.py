@@ -8,6 +8,7 @@ import wx
 from version import DEBUG
 from params import params
 import ellipsesk as ell
+import pickle
 
 class InvalidFileFormatException(Exception):
     pass
@@ -95,6 +96,10 @@ class AnnotationFile:
             sz = background.hfnorm.size*SIZEOFDOUBLE
             self.file.write("hfnorm:%d\n"%sz)
             self.file.write(background.hfnorm)
+        if hasattr(params,'roipolygons'):
+            s = pickle.dumps(params.roipolygons)
+            self.file.write("roipolygons:%d\n"%len(s))
+            self.file.write(s)
         self.file.write('bg_norm_type:%d\n'%params.bg_norm_type)
         self.file.write('hm_cutoff:%.2f\n'%params.hm_cutoff)
         self.file.write('hm_boost:%d\n'%params.hm_boost)
@@ -202,7 +207,7 @@ class AnnotationFile:
                 continue
             if parameter == 'background median' or parameter == 'background mean' or \
                    parameter == 'background mad' or parameter == 'background std' or \
-                   parameter == 'hfnorm':
+                   parameter == 'hfnorm' or parameter == 'roipolygons':
                 sz = int(value)
                 self.file.seek(sz,1)
             elif parameter == 'data format':
@@ -304,6 +309,9 @@ class AnnotationFile:
                 sz = int(value)
                 background.hfnorm = num.fromstring(self.file.read(sz),'<d')
                 background.hfnorm.shape = params.movie_size
+            elif parameter == 'roipolygons':
+                sz = int(value)
+                params.roipolygons = pickle.loads(self.file.read(sz))
             elif parameter == 'hm_cutoff':
                 params.hm_cutoff = float(value)
             elif parameter == 'hm_boost':
@@ -475,6 +483,9 @@ class AnnotationFile:
                 sz = int(value)
                 self.file.seek(sz,1)
             elif parameter == 'hfnorm':
+                sz = int(value)
+                self.file.seek(sz,1)
+            elif parameter == 'roipolygons':
                 sz = int(value)
                 self.file.seek(sz,1)
             elif parameter == 'hm_cutoff':
