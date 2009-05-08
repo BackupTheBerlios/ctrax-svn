@@ -1,0 +1,67 @@
+python setup.py build
+python setup.py install (make sure DISABLE_INSTALL_REQUIRES = True in setup.py)
+
+migrate changes to py2exe using 
+meld py2exe Ctrax
+
+build egg, source, upload to PyPI -- will want to make DISABLE_INSTALL_REQUIRES= False here
+
+sudo python setup.py egg_info -RDb "" sdist bdist_egg register upload
+
+ftp new stuff to berlios:
+ftp ftp.berlios.de
+Name: ftp
+password: branson@caltech.edu
+cd incoming
+put Ctrax-0.1.3-py2.5-linux-i686.egg
+put Ctrax-0.1.3.tar.gz
+quit
+
+Add src and unix releases to berlios page
+
+On the home windows machine, svn update
+
+kristinsprojects/work/berlios/Ctrax
+
+build and install:
+python setup.py build -c mingw32 install
+
+build egg
+python setup.py build -c mingw32 bdist_egg
+
+upload egg manually to pypi
+
+in kristinsprojects/work/berlios/Ctrax/py2exe
+
+change version in setup.py
+
+try to build:
+python setup.py build -c mingw32
+
+Copy compiled extensions to current directory:
+$ cp build/lib.win32-2.5/*pyd .
+
+9) Try it out:
+$ python Ctrax.py
+
+10) Make a dist directory if one does not already exist, and stick anything that might be useful in there:
+$ mkdir dist
+$ cp *.xrc dist
+$ cp *.ico dist
+$ cp *.bmp dist
+
+11) Try to make py2exe
+$ python setup.py build -c mingw32 py2exe
+
+12) Try it out:
+$ cd dist
+$ ./Ctrax.exe
+
+13) Make the Windows installer using NSIS:
+Compile the script setup.nsi in the Ctraxpy2exe directory. (Start > NSIS, Compile NSI Scripts, File > Load > setup.nsi)
+
+14) This makes a file Ctrax-(ver).exe in the current directory that can be distributed. Try it out by double-clicking and installing. 
+
+Upload the installer to PyPI // too big!
+
+Upload the egg and installer to berlios

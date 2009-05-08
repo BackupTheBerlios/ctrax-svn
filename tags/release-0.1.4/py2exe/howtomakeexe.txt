@@ -1,0 +1,76 @@
+
+
+1) Install dependencies in unzipped, non-egg form:
+$ easy_install.exe --always-unzip Ctrax
+[http://www.py2exe.org/index.cgi/ExeWithEggs]
+Remove installed Ctrax (C:\Python25\Lib\site-packages\Ctrax...) to avoid confusion (nec?)
+
+2) Copy all .py, .xrc, .bmp, .ico, .c, .h, .cpp files from Ctrax/Ctrax to the main directory, Ctrax/py2exe. 
+$ cd py2exe
+$ cp ../Ctrax/*.py .
+$ cp ../Ctrax/*.xrc .
+$ cp ../Ctrax/*.ico .
+$ cp ../Ctrax/*.bmp .
+$ cp ../*.ico .
+$ cp ../hungarian/*.cpp .
+$ cp ../hungarian/*.h .
+$ cp ../houghcircles/*.c .
+[Why? We are taking the put-everything-in-one-directory approach so that py2exe can find everything]
+
+3) Copy all the motmot dependencies into this directory
+$ cp C:/Python25/Lib/site-packages/motmot.imops-0.5.2-py2.5-win32/motmot/imops/imops.pyd .
+$ cp C:/Python25/Lib/site-packages/motmot.wxglvideo-0.6.1.dev_r481-py2.5/motmot/wxglvideo/wxglvideo.py .
+$ cp C:/Python25/Lib/site-packages/motmot.wxglvideo-0.6.1.dev_r481-py2.5/motmot/wxglvideo/simple_overlay.py .
+$ cp C:/Python25/Lib/site-packages/motmot.wxvalidatedtext-0.5.1.dev_r480-py2.5/motmot/wxvalidatedtext/wxvalidatedtext.py .
+
+4) Remove all references to setuptools, pkg_resources
+$ python removepkgresources.py
+
+5) Replace import statements for motmot libraries
+python replacemotmotimports.py
+
+* Note that 4 and 5 must occur after 3 *
+
+6) Compare the setup.py and setup_py2exe.py scripts -- see if there are any changes to setup.py that need to manually be added to the old setup_py2exe.py script. Update version numbers in setup_py2exe.py and setup.nsi. Copy setup_py2exe.py to setup.py
+$ cp setup_py2exe.py setup.py
+
+NEW STUFF, as of 05/07/2009:
+
+I updated a lot of the dependencies, and of course things no longer compiled. I needed to make the following changes:
+
+A) cp C:/Python25/Lib/site-packages/pygarrayimage-0.0.5/pygarrayimage/arrayimage.py py2exe/.
+B) change simple_overlay.py to import from arrayimage rather than pygarrayimage.arrayimage
+C) temporarily lose matplotlib so that scipy doesn't try to use it -- i moved the site-packages/matplotlib directory temporarily to another folder. 
+D) Change scipy.interpolate.polyint to import factorial from scipy.misc.common:
+Edit C:/Python25/Lib/site-packages/scipy/interpolate/polyint.py
+change the line:
+from scipy import factorial
+to 
+from scipy.misc.common import factorial
+
+7) Try to build
+$ python setup.py build -c mingw32
+
+8) Copy compiled extensions to current directory:
+$ cp build/lib.win32-2.5/*pyd .
+
+9) Try it out:
+$ python Ctrax.py
+
+10) Make a dist directory if one does not already exist, and stick anything that might be useful in there:
+$ mkdir dist
+$ cp *.xrc dist
+$ cp *.ico dist
+$ cp *.bmp dist
+
+11) Try to make py2exe
+$ python setup.py build -c mingw32 py2exe
+
+12) Try it out:
+$ cd dist
+$ ./Ctrax.exe
+
+13) Make the Windows installer using NSIS:
+Compile the script setup.nsi in the Ctraxpy2exe directory. (Start > NSIS, Compile NSI Scripts, File > Load > setup.nsi)
+
+14) This makes a file Ctrax-(ver).exe in the current directory that can be distributed. Try it out by double-clicking and installing. 
