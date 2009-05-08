@@ -1,0 +1,40 @@
+export SVN_SSH="ssh -l kristinbranson"
+svn import svn+ssh://svn.berlios.de/svnroot/repos/ctrax/trunk
+svn checkout svn+ssh://svn.berlios.de/svnroot/repos/ctrax/trunk
+
+By: helix ( Lutz Henckel )
+ RE: uploading files to berlios [ reply ]
+2004-Jul-01 14:29
+Upload files with anonymous FTP to the incoming directory on
+ftp.berlios.de:
+
+$ ftp ftp.berlios.de
+Connected to snake.berlios.de.
+220 ProFTPD 1.2.9 Server (BerliOS) [snake.berlios.de]
+Name (ftp.berlios.de:nnn): ftp
+331 Anonymous login ok, send your complete email address as your
+password.
+Password: *******
+230-Hello host.domain.com, there are 19 (max 50) users logged in at the
+moment.
+Local time is: Thu Jul 1 14:24:01 2004
+
+Please use your email address as password and NOT silly words
+like "mozilla@"; or "WWWuser@";, as some Web browsers do!
+
+If you have any questions concerning this ftp archive or would
+like to announce your uploads, please send a mail to the ftp-admin
+of this server: berlios-admin-tdrK/OAtAx2ELgA04lAiVw@xxxxxxxxxxxxxxxx
+
+All transfers are logged. If you don't like this, disconnect now.
+230 Anonymous access granted, restrictions apply.
+Remote system type is UNIX.
+Using binary mode to transfer files.
+ftp> cd incoming
+250 CWD command successful.
+ftp>put file.ext
+
+Then visit your project's homepage, click on Admin and "Edit/Add File
+Releases".
+
+The BerliOS Crew
