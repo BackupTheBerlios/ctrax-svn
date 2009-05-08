@@ -4,7 +4,6 @@
 import numpy as num
 from numpy import fft
 from numpy import random
-from scipy.interpolate import interpolate
 from scipy.linalg.basic import eps
 import scipy.io
 import sys
@@ -20,6 +19,8 @@ from ellipsesk import draw_ellipses
 import imagesk
 from params import params
 import setarena
+import fixbg
+import roi
 
 import wxvideo as wxvideo
 #import simple_overlay as wxvideo # part of Motmot
@@ -138,7 +139,7 @@ class BackgroundCalculator:
         self.hf = HomoFilt(params.movie_size)
 
         # image of which parts flies are not able to walk in
-        self.isnotarena = num.zeros(params.movie_size,num.bool)
+        self.isarena = num.ones(params.movie_size,num.bool)
 
         if params.movie.type == 'sbfmf':
             self.center = params.movie.h_mov.bgcenter.copy()
@@ -153,9 +154,16 @@ class BackgroundCalculator:
             self.mean.shape = params.movie.h_mov.framesize
             self.std = params.movie.h_mov.bgstd.copy()
             self.std.shape = params.movie.h_mov.framesize
+            
+            # approximate homomorphic filtering
+            tmp = self.center.copy()
+            issmall = tmp<1.
+            tmp[issmall] = 1.
+            self.hfnorm = self.hf.apply(self.center) / tmp
+            self.hfnorm[issmall & (self.hfnorm<1.)] = 1.        
 
         # morphology stuff
-        print "creating morphology structures, with radii %d, %d"%(params.opening_radius,params.closing_radius)
+        #print "creating morphology structures, with radii %d, %d"%(params.opening_radius,params.closing_radius)
         self.opening_struct = self.create_morph_struct(params.opening_radius)
         self.closing_struct = self.create_morph_struct(params.closing_radius)
 
@@ -181,14 +189,34 @@ class BackgroundCalculator:
         
         self.hf = HomoFilt(params.movie_size)
 
-        self.UpdateIsNotArena()
+        # image of which parts flies are able to walk in, set using roi
+        self.roi = roi.point_inside_polygons(params.movie_size[0],params.movie_size[1],
+                                             params.roipolygons)
 
-    def meanstd( self ):
+        self.UpdateIsArena()
+
+    def meanstd( self, parent=None ):
 
         # shortcut names for oft-used values
         bg_lastframe = min(params.bg_lastframe,params.n_frames-1)
-        nframes = params.bg_lastframe - bg_lastframe + 1
+        nframes = bg_lastframe - params.bg_firstframe + 1
         n_bg_frames = min(nframes,params.n_bg_frames)
+
+        if params.interactive:
+
+            # be prepared to cancel
+            isbackup = False
+            if hasattr(self,'mean'):
+                mean0 = self.mean.copy()
+                std0 = self.std.copy()
+                isbackup = True
+
+            progressbar = \
+                wx.ProgressDialog('Computing Background Model',
+                                  'Computing mean, standard deviation of %d frames to estimate background model'%n_bg_frames,
+                                  n_bg_frames,
+                                  parent,
+                                  wx.PD_APP_MODAL|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.PD_REMAINING_TIME)
 
         nr = params.movie_size[0]
         nc = params.movie_size[1]
@@ -202,6 +230,21 @@ class BackgroundCalculator:
         # main computation
         nframesused = 0
         for i in range(params.bg_firstframe,bg_lastframe+1,nframesskip):
+
+            if params.interactive:
+                (keepgoing,skip) = progressbar.Update(value=nframesused+1,newmsg='Reading in frame %d (%d / %d)'%(i+1,nframesused,n_bg_frames))
+                if not keepgoing:
+                    progressbar.Destroy()
+
+                    if isbackup:
+                        self.mean = mean0
+                        self.std = std0
+                    else:
+                        delattr(self,'mean')
+                        delattr(self,'std')
+                    
+                    return False
+
             # read in the data
             im, stamp = params.movie.get_frame( int(i) )
             im = im.astype( num.float )
@@ -216,8 +259,13 @@ class BackgroundCalculator:
         self.std /= num.double(nframesused)
         # actually compute variance, std
         self.std = num.sqrt(self.std - self.mean**2)
+        
+        if params.interactive:
+            progressbar.Destroy()
 
-    def flexmedmad( self ):
+        return True
+
+    def flexmedmad( self, parent=None ):
         bg_lastframe = min(params.bg_lastframe,params.n_frames-1)
         nframesmovie = bg_lastframe - params.bg_firstframe + 1
 
@@ -250,9 +298,29 @@ class BackgroundCalculator:
         # it holds nrsmall*nc pixels for each frame of nframes 
         buffersize = nrsmall*nc*nframes
 
+        # prepare for cancel
+        if params.interactive:
+            isbackup = False
+            if hasattr(self,'med'):
+                med0 = self.med.copy()
+                mad0 = self.mad.copy()
+                isbackup = True
+
+            noffsets = num.ceil(float(nr) / float(nrsmall))
+
+            progressbar = \
+                wx.ProgressDialog('Computing Background Model',
+                                  'Computing median, median absolute deviation of %d frames to estimate background model'%nframes,
+                                  nframes*noffsets,
+                                  parent,
+                                  wx.PD_APP_MODAL|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.PD_REMAINING_TIME)
+
+
         # allocate memory for median and mad
         self.med = num.zeros((nr,nc))
         self.mad = num.zeros((nr,nc))
+
+        offseti = 0
 
         for rowoffset in range(0,nr,nrsmall):
             print "row offset = %d."%rowoffset
@@ -271,6 +339,18 @@ class BackgroundCalculator:
             # loop through frames
             frame = params.bg_firstframe
             for i in range(nframes):
+
+                if params.interactive:
+                    (keepgoing,skip) = progressbar.Update(value=offseti*nframes + i,newmsg='Reading in piece of frame %d (%d / %d), offset = %d (%d / %d)'%(frame,i+1,nframes,rowoffset,offseti+1,noffsets))
+                    if not keepgoing:
+                        progressbar.Destroy()
+                        if isbackup:
+                            self.med = med0
+                            self.mad = mad0
+                        else:
+                            delattr(self,'med')
+                            delattr(self,'mad')
+                        return False
 
                 # read in the entire frame
                 data,stamp = params.movie.get_frame(frame)
@@ -306,13 +386,19 @@ class BackgroundCalculator:
                 self.mad[rowoffset:rowoffsetnext,:] += buf[:,:,middle2]
                 self.mad[rowoffset:rowoffsetnext,:] /= 2.
 
+            offseti += 1
+
         # estimate standard deviation assuming a Gaussian distribution
         # from the fact that half the data falls within mad
         # MADTOSTDFACTOR = 1./norminv(.75)
         MADTOSTDFACTOR = 1.482602
         self.mad *= MADTOSTDFACTOR
+
+        if params.interactive:
+            progressbar.Destroy()
+        return True
         
-    def medmad( self ):
+    def medmad( self, parent=None ):
 
         # shortcut names for oft-used values
         fp = params.movie.h_mov.file
@@ -381,10 +467,28 @@ class BackgroundCalculator:
         # need to seek forward more
         seekperframelast = bytesperchunk*nframesskip-nbytessmalllast
 
+        if params.interactive:
+            # be prepared to cancel
+            isbackup = False
+            if hasattr(self,'med'):
+                med0 = self.med.copy()
+                mad0 = self.mad.copy()
+                isbackup = True
+
+            noffsets = num.ceil(float(nbytes) / float(nbytessmall))
+
+            progressbar = \
+                wx.ProgressDialog('Computing Background Model',
+                                  'Computing median, median absolute deviation of %d frames to estimate background model'%nframes,
+                                  nframes*noffsets,
+                                  parent,
+                                  wx.PD_APP_MODAL|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.PD_REMAINING_TIME)
+
         # allocate memory for median and mad
         self.med = num.zeros(framesize)
         self.mad = num.zeros(framesize)
 
+        offseti = 0
         for imageoffset in range(0,nbytes,nbytessmall):
             print "image offset = %d."%imageoffset
 
@@ -411,6 +515,20 @@ class BackgroundCalculator:
             # loop through frames
             for i in range(nframes):
 
+                if params.interactive:
+                    (keepgoing,skip) = progressbar.Update(value=offseti*nframes + i,newmsg='Reading in piece of frame %d / %d, offset = %d (%d / %d)'%(i+1,nframes,imageoffset,offseti+1,noffsets))
+                    if not keepgoing:
+                        progressbar.Destroy()
+
+                        if isbackup:
+                            self.med = med0
+                            self.mad = mad0
+                        else:
+                            delattr(self,'med')
+                            delattr(self,'mad')
+
+                        return False
+
                 # seek to the desired part of the movie; 
                 # skip bytesperchunk - the amount we read in in the last frame 
                 if i > 0:
@@ -421,6 +539,7 @@ class BackgroundCalculator:
                 if data == '':
                     raise NoMoreFramesException('EOF')
                 buf[i,:] = num.fromstring(data,num.uint8)
+                
 
             # compute the median and median absolute difference at each 
             # pixel location
@@ -450,6 +569,7 @@ class BackgroundCalculator:
 
             #self.mad[imageoffset:imageoffsetnext] = buf[:,madorder1]*madweight1 + \
             #                                        buf[:,madorder2]*madweight2
+            offseti += 1
 
         # estimate standard deviation assuming a Gaussian distribution
         # from the fact that half the data falls within mad
@@ -460,7 +580,12 @@ class BackgroundCalculator:
         self.mad.shape = params.movie_size
         self.med.shape = params.movie_size
 
-    def est_bg( self ):
+        if params.interactive:
+            progressbar.Destroy()
+
+        return True
+
+    def est_bg( self, parent=None ):
         
         # make sure number of background frames is at most number of frames in movie
         if params.n_bg_frames > params.n_frames:
@@ -473,7 +598,9 @@ class BackgroundCalculator:
             if params.movie.type == 'fmf' or \
                     (params.movie.type == 'avi' and \
                          params.movie.h_mov.bits_per_pixel == 8):
-                self.medmad()
+                succeeded = self.medmad(parent)
+                if not succeeded:
+                    return
                 #(self.med,self.mad) = medmad(params.movie.filename,params.n_bg_frames,
                 #                             params.movie_size[0],params.movie_size[1],
                 #                             nframesskip,params.movie.h_mov.bytes_per_chunk,
@@ -489,14 +616,19 @@ class BackgroundCalculator:
                 print 'center.shape = ' + str(self.center.shape)
                 print 'dev.shape = ' + str(self.dev.shape)
             else:
-                self.flexmedmad()
+                succeeded = self.flexmedmad(parent)
+                if not succeeded:
+                    return
                 self.center = self.med.copy()
                 self.dev = self.mad.copy()
                 #wx.MessageBox( "Only FMFs are supported for background estimation so far.",
                 #               "Error", wx.ICON_ERROR )
         else:
-            if params.movie.type == 'fmf' or params.movie.type == 'avi':
-                self.meanstd()
+            if params.movie.type == 'fmf' or params.movie.type == 'avi' \
+                    or params.movie.type == 'avbin':
+                succeeded = self.meanstd(parent)
+                if not succeeded:
+                    return
                 #(self.mean,self.std) = meanstd(params.movie.filename,params.n_bg_frames,
                 #                               params.movie_size[0],params.movie_size[1],
                 #                               nframesskip,params.movie.h_mov.bytes_per_chunk,
@@ -520,7 +652,7 @@ class BackgroundCalculator:
         self.thresh_low = self.dev*params.n_bg_std_thresh_low
 
         # image of which parts flies are not able to walk in
-        self.UpdateIsNotArena()
+        self.UpdateIsArena()
 
         # approximate homomorphic filtering
         tmp = self.center.copy()
@@ -537,32 +669,33 @@ class BackgroundCalculator:
         im = self.curr_im.astype( num.float )
         self.curr_stamp = stamp
 
+        dfore = num.zeros(im.shape)
         if params.bg_type == params.BG_TYPE_LIGHTONDARK:
             # if white flies on a dark background, then we only care about differences
             # im - bgmodel.center > bgmodel.thresh
-            dfore = im - self.center
-            dfore[dfore < 0] = 0
+            dfore[self.isarena] = num.maximum(0,im[self.isarena] - self.center[self.isarena])
             
         elif params.bg_type == params.BG_TYPE_DARKONLIGHT:
             # if dark flies on a white background, then we only care about differences
             # bgmodel.center - im > bgmodel.thresh
-            dfore = self.center - im
-            dfore[dfore < 0] = 0
+            dfore[self.isarena] = num.maximum(0,self.center[self.isarena] - im[self.isarena])
             
         else:
             # otherwise, we care about both directions
-            dfore = num.abs(im - self.center)
+            dfore[self.isarena] = num.abs(im[self.isarena] - self.center[self.isarena])
 
-        dfore[self.isnotarena] = 0.
-        dfore /= self.dev
+        dfore[self.isarena] /= self.dev[self.isarena]
         if params.n_bg_std_thresh > params.n_bg_std_thresh_low:
-            bwhigh = dfore > params.n_bg_std_thresh
-            bwlow = dfore > params.n_bg_std_thresh_low
+            bwhigh = num.zeros(im.shape,dtype=bool)
+            bwlow = num.zeros(im.shape,dtype=bool)
+            bwhigh[self.isarena] = dfore[self.isarena] > params.n_bg_std_thresh
+            bwlow[self.isarena] = dfore[self.isarena] > params.n_bg_std_thresh_low
             
             # do hysteresis
             bw = morph.binary_propagation(bwhigh,mask=bwlow)
         else:
-            bw = dfore > params.n_bg_std_thresh
+            bw = num.zeros(im,shape,dtype=bool)
+            bw[self.isarena] = dfore[self.isarena] > params.n_bg_std_thresh
 
         # do morphology
         if params.do_use_morphology:
@@ -584,19 +717,20 @@ class BackgroundCalculator:
         return s
 
     def ShowBG( self, parent, framenumber, old_thresh ):
-
-        # calculate background image, if not already done
-        if not hasattr( self, 'center' ):
-            wx.BeginBusyCursor()
-            wx.Yield()
-            self.est_bg()
-            wx.EndBusyCursor()
         
         self.old_thresh = params.n_bg_std_thresh
         self.show_frame = framenumber
 
         rsrc = xrc.XmlResource( THRESH_RSRC_FILE )
         self.frame = rsrc.LoadFrame( parent, "frame_Ctrax_bg" )
+
+        # calculate background image, if not already done
+        if not hasattr( self, 'center' ):
+            wx.BeginBusyCursor()
+            wx.Yield()
+            self.est_bg(self.frame)
+            wx.EndBusyCursor()
+
         self.hf.SetFrame(self.frame)
         self.hf.frame.Bind( wx.EVT_BUTTON, self.OnQuitHF, id=xrc.XRCID("hm_done_button") )
         self.hf.frame.Bind( wx.EVT_CLOSE, self.OnQuitHF )
@@ -684,14 +818,14 @@ class BackgroundCalculator:
         self.frame.Bind(wx.EVT_CHECKBOX,self.OnDetectArenaCheck,self.detect_arena_checkbox)
         self.detect_arena_window_open = False
         
-        # min value for isnotarena
+        # min value for isarena
         self.min_nonarena_textinput = xrc.XRCCTRL(self.frame,"min_nonfore_intensity_input")
         wxvt.setup_validated_float_callback( self.min_nonarena_textinput,
                                              xrc.XRCID("min_nonfore_intensity_input"),
                                              self.OnMinNonArenaTextEnter,
                                              pending_color=params.wxvt_bg )
         self.min_nonarena_textinput.SetValue( '%.1f'%params.min_nonarena )
-        # min value for isnotarena
+        # min value for isarena
         self.max_nonarena_textinput = xrc.XRCCTRL(self.frame,"max_nonfore_intensity_input")
         wxvt.setup_validated_float_callback( self.max_nonarena_textinput,
                                              xrc.XRCID("max_nonfore_intensity_input"),
@@ -701,14 +835,13 @@ class BackgroundCalculator:
 
         # morphology
         self.morphology_checkbox = xrc.XRCCTRL(self.frame,"morphology_checkbox")
-        self.detect_arena_button.Enable(params.do_use_morphology)
-        self.detect_arena_checkbox.SetValue(params.do_use_morphology)
+        self.morphology_checkbox.SetValue(params.do_use_morphology)
         self.frame.Bind(wx.EVT_CHECKBOX,self.OnMorphologyCheck,self.morphology_checkbox)
         self.opening_radius_textinput = xrc.XRCCTRL(self.frame,"opening_radius")
         wxvt.setup_validated_integer_callback( self.opening_radius_textinput,
                                                xrc.XRCID("opening_radius"),
-                                             self.OnOpeningRadiusTextEnter,
-                                             pending_color=params.wxvt_bg )
+                                               self.OnOpeningRadiusTextEnter,
+                                               pending_color=params.wxvt_bg )
         self.opening_radius_textinput.SetValue( '%d'%params.opening_radius )
         self.opening_radius_textinput.Enable(params.do_use_morphology)
         self.closing_radius_textinput = xrc.XRCCTRL(self.frame,"closing_radius")
@@ -720,6 +853,14 @@ class BackgroundCalculator:
         self.closing_radius_textinput.SetValue( '%d'%params.closing_radius )
         self.closing_radius_textinput.Enable(params.do_use_morphology)
         self.closing_struct = self.create_morph_struct(params.closing_radius)
+
+        self.fixbg_button = xrc.XRCCTRL(self.frame,"fixbg_button")
+        self.frame.Bind(wx.EVT_BUTTON,self.OnFixBgClick,self.fixbg_button)
+        self.fixbg_window_open = False
+
+        self.roi_button = xrc.XRCCTRL(self.frame,"roi_button")
+        self.frame.Bind(wx.EVT_BUTTON,self.OnROIClick,self.roi_button)
+        self.roi_window_open = False
 
         # make image window
         self.img_panel = xrc.XRCCTRL( self.frame, "panel_img" )
@@ -862,7 +1003,7 @@ class BackgroundCalculator:
             return
         params.do_set_circular_arena = self.detect_arena_checkbox.GetValue()
         self.detect_arena_button.Enable(params.do_set_circular_arena)
-        self.UpdateIsNotArena()
+        self.UpdateIsArena()
         self.DoSub()
 
     def OnMorphologyCheck( self, evt ):
@@ -900,18 +1041,19 @@ class BackgroundCalculator:
         if evt is not None:
             self.DoSub()
 
-    def UpdateIsNotArena(self):
-        # update isnotarena
-        self.isnotarena = num.zeros(params.movie_size,num.bool)
+    def UpdateIsArena(self):
+        # update isarena
+        self.isarena = num.ones(params.movie_size,num.bool)
         if hasattr(params,'max_nonarena'):
-            self.isnotarena = self.center <= params.max_nonarena
+            self.isarena = self.center > params.max_nonarena
         if hasattr(params,'min_nonarena'):
-            self.isnotarena = self.isnotarena | \
-                              (self.center >= params.min_nonarena)
+            self.isarena = self.isarena & \
+                              (self.center < params.min_nonarena)
         if params.do_set_circular_arena and \
            hasattr(params,'arena_center_x') and \
            (params.arena_center_x is not None):
-            self.isnotarena = self.isnotarena | ( ((params.GRID.X - params.arena_center_x)**2. + (params.GRID.Y - params.arena_center_y)**2) > params.arena_radius**2. )
+            self.isarena = self.isarena & ( ((params.GRID.X - params.arena_center_x)**2. + (params.GRID.Y - params.arena_center_y)**2) <= params.arena_radius**2. )
+        self.isarena = self.isarena & self.roi
 
     def OnDetectArenaClick( self, evt ):
         if self.detect_arena_window_open:
@@ -929,8 +1071,8 @@ class BackgroundCalculator:
         [params.arena_center_x,params.arena_center_y,
          params.arena_radius] = self.detect_arena.GetArenaParameters()
 
-        # update isnotarena
-        self.UpdateIsNotArena()
+        # update isarena
+        self.UpdateIsArena()
 
         # close frame
         self.detect_arena_window_open = False
@@ -939,6 +1081,77 @@ class BackgroundCalculator:
 
         # redraw
         self.DoSub()
+
+    def OnFixBgClick( self, evt ):
+        if self.fixbg_window_open:
+            self.fixbg.frame.Raise()
+            return
+        self.fixbg_window_open = True
+        self.fixbg = fixbg.FixBG(self.frame,self)
+        self.fixbg.frame.Bind( wx.EVT_BUTTON, self.OnQuitFixBg, id=xrc.XRCID("quit_button") )
+        self.fixbg.frame.Bind( wx.EVT_CLOSE, self.OnQuitFixBg )
+        self.fixbg.frame.Show()
+
+    def OnQuitFixBg( self, evt ):
+
+        # close frame
+        reallyquit = self.fixbg.CheckSave()
+
+        if not reallyquit:
+            return
+
+        self.fixbg_window_open = False
+        self.fixbg.frame.Destroy()
+        delattr(self,'fixbg')
+
+        # redraw
+        self.DoSub()
+
+    def SetCenter(self,newcenter):
+        self.center = newcenter.copy()
+        if params.use_median:
+            self.med = newcenter.copy()
+        else:
+            self.mean = newcenter.copy()
+
+    def SetDev(self,newdev):
+        self.dev = newdev.copy()
+        if params.use_median:
+            self.mad = newdev.copy()
+        else:
+            self.std = newdev.copy()
+
+    def SetFixBgPolygons(self,polygons):
+        self.fixbg_polygons = polygons[:]
+
+    def OnROIClick( self, evt ):
+        if self.roi_window_open:
+            self.roigui.frame.Raise()
+            return
+        self.roi_window_open = True
+        self.roigui = roi.ROI(self.frame,self)
+        self.roigui.frame.Bind( wx.EVT_BUTTON, self.OnQuitROI, id=xrc.XRCID("quit_button") )
+        self.roigui.frame.Bind( wx.EVT_CLOSE, self.OnQuitROI )
+        self.roigui.frame.Show()
+
+    def OnQuitROI( self, evt ):
+
+        # close frame
+        reallyquit = self.roigui.CheckSave()
+
+        if not reallyquit:
+            return
+
+        self.roi_window_open = False
+        self.roigui.frame.Destroy()
+        delattr(self,'roigui')
+
+        # redraw
+        self.DoSub()
+
+    def SetROI(self,roi):
+        self.roi = roi.copy()
+        self.UpdateIsArena()
 
     def OnQuitHF(self, evt ):
         self.hf_window_open = False
@@ -1026,7 +1239,7 @@ class BackgroundCalculator:
             self.min_nonarena_textinput.SetValue('%.1f'%params.min_nonarena)
             return
         if evt is not None:
-            self.UpdateIsNotArena()
+            self.UpdateIsArena()
             self.DoSub()
 
     def OnMaxNonArenaTextEnter( self, evt ):
@@ -1040,7 +1253,7 @@ class BackgroundCalculator:
             self.max_nonarena_textinput.SetValue('%.1f'%params.max_nonarena)
             return
         if evt is not None:
-            self.UpdateIsNotArena()
+            self.UpdateIsArena()
             self.DoSub()
 
 
@@ -1068,7 +1281,8 @@ class BackgroundCalculator:
             img_8 = imagesk.double2mono8(self.bw.astype(float))
             self.img_wind.update_image_and_drawings('bg',img_8,format='MONO8')
         elif self.show_img_type == params.SHOW_NONFORE:
-            img_8 = imagesk.double2mono8(self.isnotarena.astype(float))
+            isnotarena = self.isarena == False
+            img_8 = imagesk.double2mono8(isnotarena.astype(float))
             self.img_wind.update_image_and_drawings('bg',img_8,format='MONO8')
         elif self.show_img_type == params.SHOW_DEV:
             mu = num.mean(self.dev)
@@ -1144,7 +1358,7 @@ class BgSettingsDialog:
     def OnCalculate(self,evt):
         wx.BeginBusyCursor()
         wx.Yield()
-        self.bg.est_bg()
+        self.bg.est_bg(self.frame)
         wx.EndBusyCursor()
 
     def OnTextValidated(self,evt):

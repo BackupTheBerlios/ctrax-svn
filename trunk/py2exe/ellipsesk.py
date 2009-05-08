@@ -10,6 +10,7 @@ from wx import xrc
 from params import params
 import imagesk
 import matchidentities as m_id
+import wx
 
 #import pylab
 
@@ -361,8 +362,17 @@ def find_ellipses2( dfore , bw, dofix=True ):
 
     return (ellipses,L)
 
-def est_shape( bg ):
+def est_shape( bg, tracking_settings_frame=None ):
     """Estimate fly shape from a bunch of sample frames."""
+
+    interactive = params.interactive and tracking_settings_frame is not None
+    if interactive:
+        progressbar = \
+            wx.ProgressDialog('Computing Shape Model',
+                              'Detecting observations in %d frames to estimate median and median absolute deviation of shape parameters'%params.n_frames_size,
+                              params.n_frames_size,
+                              tracking_settings_frame,
+                              wx.PD_APP_MODAL|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.PD_REMAINING_TIME)
 
     # which frames will we estimate size from
     framelist = num.round( num.linspace( 0, params.n_frames-1,
@@ -370,9 +380,19 @@ def est_shape( bg ):
 
     ellipses = []
 
+    i = 0
     for frame in framelist:
         # get background-subtracted image
-        (dfore,bw) = bg.sub_bg( frame )
+        if interactive:
+            (keepgoing,skip) = progressbar.Update(value=i,newmsg='Detecting observations in frame %d (%d / %d)'%(frame,i,params.n_frames_size))
+            i+=1
+            if not keepgoing:
+                progressbar.Destroy()
+                return False
+        try:
+            (dfore,bw) = bg.sub_bg( frame )
+        except:
+            continue
         (L,ncc) = meas.label(bw)
         ellipsescurr = est.weightedregionprops(L,ncc,dfore)
         ellipses += ellipsescurr
@@ -380,7 +400,7 @@ def est_shape( bg ):
     n_ell = len(ellipses)
 
     if n_ell == 0: # probably threshold is too low
-        return
+        return False
 
     # grab ellipse info
     major = num.zeros( (n_ell) )
@@ -473,7 +493,12 @@ def est_shape( bg ):
     params.meanshape.area = mu_area
 
     params.have_computed_shape = True
+
+    if interactive:
+        progressbar.Destroy()
     
+    return True
+
 class EllipseWindow:
     """Container class for each ellipse drawing window."""
     def __init__( self, img_panel, ell_id=0 ):

@@ -71,7 +71,10 @@ class CtraxAlgorithm (settings.AppWithSettings):
             last_time = time.time()
 
             # perform background subtraction
-            (self.dfore,self.isfore) = self.bg_imgs.sub_bg( self.start_frame )
+            try:
+                (self.dfore,self.isfore) = self.bg_imgs.sub_bg( self.start_frame )
+            except:
+                break
 
             # write to sbfmf
             if self.dowritesbfmf:
@@ -149,6 +152,7 @@ class CtraxAlgorithm (settings.AppWithSettings):
             if self.break_flag:
                 break
 
+
         self.Finish()
 
     def Finish(self):
@@ -183,7 +187,10 @@ class CtraxAlgorithm (settings.AppWithSettings):
         # estimate the background
         if (not self.IsBGModel()) or params.batch_autodetect_bg_model:
             print "Estimating background model"
-            self.bg_imgs.est_bg()
+            if params.interactive:
+                self.bg_imgs.est_bg(self.frame)
+            else:
+                self.bg_imgs.est_bg()
         else:
             print "Not estimating background model"
 
@@ -194,12 +201,15 @@ class CtraxAlgorithm (settings.AppWithSettings):
         else:
             print "Not detecting arena"
 
-        self.bg_imgs.UpdateIsNotArena()
+        self.bg_imgs.UpdateIsArena()
 
         # estimate the shape
         if params.batch_autodetect_shape:
             print "Estimating shape model"
-            ell.est_shape(self.bg_imgs)
+            if params.interactive:
+                ell.est_shape(self.bg_imgs,self.frame)
+            else:
+                ell.est_shape(self.bg_imgs)
         else:
             print "Not estimating shape model"
 

@@ -40,7 +40,9 @@ class StoredObservations:
 
         self.obs = obs
         self.frame = frame
-        self.params = params.params.copy()
+        #self.params = params.params.copy()
+        #self.params = None
+        self.isvalid = True
         self.issmall = issmall
         self.islarge = islarge
         self.didlowerthresh = didlowerthresh
@@ -48,8 +50,12 @@ class StoredObservations:
         self.diddelete = diddelete
         self.didsplit = didsplit
 
+
+    def SetInvalid(self):
+      self.isvalid = False
+
     def issame(self,frame):
-        return ((self.params == params.params) and (self.frame == frame))
+        return (self.isvalid and (self.frame == frame))
 
 class TrackingSettings:
 
@@ -81,6 +87,14 @@ class TrackingSettings:
         self.OnResize()
         self.ShowImage()
 
+    def RegisterParamChange(self):
+      if hasattr(self,'obs_filtered'):
+        self.obs_filtered.SetInvalid()
+      if hasattr(self,'obs_unfiltered'):
+        self.obs_unfiltered.SetInvalid()
+      if hasattr(self,'obs_prev'):
+        self.obs_prev.SetInvalid()
+
     def InitControlHandles(self):
 
         #self.min_ntargets_input = self.control('min_ntarets')
@@ -94,12 +108,16 @@ class TrackingSettings:
         self.manual_shape_input = self.control('manual_bounds')
         self.manual_panel = self.control('manual_panel')
         self.min_area_input = self.control('min_area')
+        self.mean_area_input = self.control('mean_area')
         self.max_area_input = self.control('max_area')
         self.min_major_input = self.control('min_major')
+        self.mean_major_input = self.control('mean_major')
         self.max_major_input = self.control('max_major')
         self.min_minor_input = self.control('min_minor')
+        self.mean_minor_input = self.control('mean_minor')
         self.max_minor_input = self.control('max_minor')
         self.min_ecc_input = self.control('min_ecc')
+        self.mean_ecc_input = self.control('mean_ecc')
         self.max_ecc_input = self.control('max_ecc')
         self.angle_weight_input = self.control('angle_weight')
         self.max_jump_input = self.control('max_jump')
@@ -120,7 +138,7 @@ class TrackingSettings:
         self.zoomout_id = xrc.XRCID('zoomout')
         self.info_id = xrc.XRCID('moreinfo')
         self.toolbar.AddSeparator()
-        self.info_text = wx.TextCtrl(self.toolbar, -1, 'Observation Info', pos=(80,0), size=(300,20),style=wx.TE_READONLY|wx.TE_CENTRE)
+        self.info_text = wx.TextCtrl(self.toolbar, -1, 'Observation Info', size=(300,20),style=wx.TE_READONLY|wx.TE_CENTRE)
         self.info_text.SetValue('Observation Info')
         #self.info_text.SetEditable(False)
         self.toolbar.AddControl(self.info_text)
@@ -162,6 +180,10 @@ class TrackingSettings:
         self.min_major_input.SetValue(str(params.params.minshape.major))
         self.min_minor_input.SetValue(str(params.params.minshape.minor))
         self.min_ecc_input.SetValue(str(params.params.minshape.ecc))
+        self.mean_area_input.SetValue(str(params.params.meanshape.area))
+        self.mean_major_input.SetValue(str(params.params.meanshape.major))
+        self.mean_minor_input.SetValue(str(params.params.meanshape.minor))
+        self.mean_ecc_input.SetValue(str(params.params.meanshape.ecc))
         self.max_area_input.SetValue(str(params.params.maxshape.area))
         self.max_major_input.SetValue(str(params.params.maxshape.major))
         self.max_minor_input.SetValue(str(params.params.maxshape.minor))
@@ -218,10 +240,14 @@ class TrackingSettings:
         self.frame.Bind(wx.EVT_BUTTON,self.ComputeShapeNow,self.compute_shape_input)
 
         # manual shape
-        self.bindctrl(('min_area','max_area','min_major','max_major',
-                       'min_minor','max_minor','min_ecc','max_ecc'),
-                      ('float','float','float','float',
-                       'float','float','float','float'),
+        self.bindctrl(('min_area','mean_area','max_area',
+                       'min_major','mean_major','max_major',
+                       'min_minor','mean_minor','max_minor',
+                       'min_ecc','mean_ecc','max_ecc'),
+                      ('float','float','float',
+                       'float','float','float',
+                       'float','float','float',
+                       'float','float','float'),
                       self.SetManual)
 
         # motion
@@ -319,6 +345,7 @@ class TrackingSettings:
                 params.params.maxshape = self.automatic_maxshape.copy()
                 params.params.meanshape = self.automatic_meanshape.copy()
                 self.PrintShape()
+                self.RegisterParamChange()
                 self.ShowImage()
         else:
             self.automatic_panel.Enable(False)
@@ -387,9 +414,12 @@ class TrackingSettings:
         # estimate shape now
         wx.BeginBusyCursor()
         wx.Yield()
-        ell.est_shape( self.bg_imgs )
+        succeeded = ell.est_shape( self.bg_imgs,self.frame )
         wx.EndBusyCursor()
         
+        if not succeeded:
+          return
+
         # copy to temporary variable
         self.automatic_minshape = params.params.minshape.copy()
         self.automatic_maxshape = params.params.maxshape.copy()
@@ -401,6 +431,7 @@ class TrackingSettings:
         # set up to date
         self.shape_uptodate = True
         self.automatic_shape_text.SetLabel('')
+        self.RegisterParamChange()
 
         self.ShowImage()
 
@@ -410,6 +441,10 @@ class TrackingSettings:
         self.min_major_input.SetValue(str(params.params.minshape.major))
         self.min_minor_input.SetValue(str(params.params.minshape.minor))
         self.min_ecc_input.SetValue(str(params.params.minshape.ecc))
+        self.mean_area_input.SetValue(str(params.params.meanshape.area))
+        self.mean_major_input.SetValue(str(params.params.meanshape.major))
+        self.mean_minor_input.SetValue(str(params.params.meanshape.minor))
+        self.mean_ecc_input.SetValue(str(params.params.meanshape.ecc))
         self.max_area_input.SetValue(str(params.params.maxshape.area))
         self.max_major_input.SetValue(str(params.params.maxshape.major))
         self.max_minor_input.SetValue(str(params.params.maxshape.minor))
@@ -418,41 +453,58 @@ class TrackingSettings:
     def SetManual(self,evt):
 
         minarea = float(self.min_area_input.GetValue())
+        meanarea = float(self.mean_area_input.GetValue())
         maxarea = float(self.max_area_input.GetValue())
-        if (minarea < maxarea) and (maxarea > 0):
+        if (minarea <= meanarea) and (meanarea <= maxarea) and \
+              (minarea >= 0):
             params.params.minshape.area = minarea
+            params.params.meanshape.area = meanarea
             params.params.maxshape.area = maxarea
         else:
             self.min_area_input.SetValue(str(params.params.minshape.area))
+            self.mean_area_input.SetValue(str(params.params.meanshape.area))
             self.max_area_input.SetValue(str(params.params.maxshape.area))
         minmajor = float(self.min_major_input.GetValue())
+        meanmajor = float(self.mean_major_input.GetValue())
         maxmajor = float(self.max_major_input.GetValue())
-        if (minmajor < maxmajor) and (maxmajor > 0):
+        if (minmajor <= meanmajor) and (meanmajor <= maxmajor) and \
+              (minmajor >= 0):
             params.params.minshape.major = minmajor
+            params.params.meanshape.major = meanmajor
             params.params.maxshape.major = maxmajor
         else:
             self.min_major_input.SetValue(str(params.params.minshape.major))
+            self.mean_major_input.SetValue(str(params.params.meanshape.major))
             self.max_major_input.SetValue(str(params.params.maxshape.major))
         minminor = float(self.min_minor_input.GetValue())
+        meanminor = float(self.mean_minor_input.GetValue())
         maxminor = float(self.max_minor_input.GetValue())
-        if (minminor < maxminor) and (maxminor > 0):
+        if (minminor <= meanminor) and (meanminor <= maxminor) and \
+              (minminor >= 0):
             params.params.minshape.minor = minminor
+            params.params.meanshape.minor = meanminor
             params.params.maxshape.minor = maxminor
         else:
             self.min_minor_input.SetValue(str(params.params.minshape.minor))
+            self.mean_minor_input.SetValue(str(params.params.meanshape.minor))
             self.max_minor_input.SetValue(str(params.params.maxshape.minor))
         minecc = float(self.min_ecc_input.GetValue())
+        meanecc = float(self.mean_ecc_input.GetValue())
         maxecc = float(self.max_ecc_input.GetValue())
-        if (minecc < maxecc) and (maxecc > 0) and (minecc < 1):
+        if (minecc <= meanecc) and (meanecc <= maxecc) and \
+              (minecc >= 0) and (maxecc <= 1):
             params.params.minshape.ecc = minecc
+            params.params.meanshape.ecc = meanecc
             params.params.maxshape.ecc = maxecc
         else:
             self.min_ecc_input.SetValue(str(params.params.minshape.ecc))
+            self.mean_ecc_input.SetValue(str(params.params.meanshape.ecc))
             self.max_ecc_input.SetValue(str(params.params.maxshape.ecc))
 
-        params.params.meanshape = params.averageshape(params.params.minshape,
-                                                      params.params.maxshape)
+        #params.params.meanshape = params.averageshape(params.params.minshape,
+        #                                              params.params.maxshape)
 
+        self.RegisterParamChange()
         self.ShowImage()
 
     def SetMotion(self,evt):
@@ -481,6 +533,7 @@ class TrackingSettings:
         else:
             self.angle_dampen_input.SetValue(str(params.params.angle_dampen))
 
+        self.RegisterParamChange()
         self.ShowImage()
 
     def SetObservation(self,evt):
@@ -494,6 +547,7 @@ class TrackingSettings:
         else:
             self.lower_thresh_input.GetValue(params.params.minbackthresh)
 
+        self.RegisterParamChange()
         self.ShowImage()
 
     def FrameScrollbarMoved(self,evt):
@@ -513,7 +567,7 @@ class TrackingSettings:
         windowsize = [self.img_panel.GetRect().GetHeight(),self.img_panel.GetRect().GetWidth()]
 
         self.GetBgImage()
-            
+        
         if self.img_chosen == SHOW_UNFILTERED_OBSERVATIONS:
             obs_unfiltered = self.GetObsUnfiltered()
             plot_linesegs = ell.draw_ellipses(obs_unfiltered)
@@ -899,11 +953,6 @@ class TrackingSettings:
 
     def GetTargetMotion(self):
 
-        # if it has already been computed, then just grab and return
-        if hasattr(self,'targetmotion') and self.targetmotion[3] == self.show_frame \
-           and self.targetmotion[4] == params.params:
-            return self.targetmotion[0:3]
-        
         # get current positions
         obs_curr = self.GetObsFiltered()
         # get previous positions
@@ -931,6 +980,6 @@ class TrackingSettings:
         # compute predicted positions
         target_pred = cvpred(target_prev,target_curr)
         # store
-        self.targetmotion = (target_prev,target_curr,target_pred,self.show_frame,params.params.copy())
+        targetmotion = (target_prev,target_curr,target_pred)
         # return
-        return self.targetmotion[0:3]
+        return targetmotion

@@ -5,8 +5,8 @@ $ easy_install.exe --always-unzip Ctrax
 [http://www.py2exe.org/index.cgi/ExeWithEggs]
 Remove installed Ctrax (C:\Python25\Lib\site-packages\Ctrax...) to avoid confusion (nec?)
 
-2) Copy all .py, .xrc, .bmp, .ico, .c, .h, .cpp files from Ctrax/Ctrax to the main directory, Ctrax/Ctraxpy2exe. 
-$ cd Ctraxpy2exe
+2) Copy all .py, .xrc, .bmp, .ico, .c, .h, .cpp files from Ctrax/Ctrax to the main directory, Ctrax/py2exe. 
+$ cd py2exe
 $ cp ../Ctrax/*.py .
 $ cp ../Ctrax/*.xrc .
 $ cp ../Ctrax/*.ico .
@@ -33,6 +33,20 @@ python replacemotmotimports.py
 
 6) Compare the setup.py and setup_py2exe.py scripts -- see if there are any changes to setup.py that need to manually be added to the old setup_py2exe.py script. Update version numbers in setup_py2exe.py and setup.nsi. Copy setup_py2exe.py to setup.py
 $ cp setup_py2exe.py setup.py
+
+NEW STUFF, as of 05/07/2009:
+
+I updated a lot of the dependencies, and of course things no longer compiled. I needed to make the following changes:
+
+A) cp C:/Python25/Lib/site-packages/pygarrayimage-0.0.5/pygarrayimage/arrayimage.py py2exe/.
+B) change simple_overlay.py to import from arrayimage rather than pygarrayimage.arrayimage
+C) temporarily lose matplotlib so that scipy doesn't try to use it -- i moved the site-packages/matplotlib directory temporarily to another folder. 
+D) Change scipy.interpolate.polyint to import factorial from scipy.misc.common:
+Edit C:/Python25/Lib/site-packages/scipy/interpolate/polyint.py
+change the line:
+from scipy import factorial
+to 
+from scipy.misc.common import factorial
 
 7) Try to build
 $ python setup.py build -c mingw32

@@ -767,7 +767,7 @@ def trymergedisplay(ellipses,issmall,i,L,dfore):
     
     # if there are no close centers, just return
     if len(closeinds) == 0:
-        return False
+        return (False,num.array([]))
 
     #print 'ellipses close to ellipse[%d] = '%i + str(ellipses[i])
     #for jtmp in closeinds:
@@ -791,7 +791,7 @@ def trymergedisplay(ellipses,issmall,i,L,dfore):
 
     # see if the penalty is small enough, if not, return
     if minmergepenalty >= params.maxpenaltymerge:
-        return False
+        return (False,num.array([]))
 
     # perform the merge
     canmergewith = closeinds[bestjmerge]
@@ -824,7 +824,7 @@ def fixsmalldisplay(ellipses,L,dfore):
         if (retissmall[i] == True) and (issmall[i] == False):
             ellipses[i] = ellipselowerthresh
             retdidlowerthresh[i] = True
-            
+               
         if issmall[i]:
             (didmerge,mergedwith) = trymergedisplay(ellipses,issmall,i,L,dfore)
             if didmerge:

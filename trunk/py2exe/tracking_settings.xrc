@@ -9,7 +9,6 @@
           <orient>wxVERTICAL</orient>
           <object class="sizeritem">
             <object class="wxNotebook">
-              
               <object class="notebookpage">
                 <label>Shape</label>
                 <object class="wxPanel" name="shape_panel">
@@ -164,22 +163,52 @@
                           <orient>wxVERTICAL</orient>
                           <object class="sizeritem">
                             <object class="wxBoxSizer">
+                              <object class="sizeritem">
+                                <object class="wxStaticText">
+                                  <size>80,20</size>
+                                  <label>Minimum</label>
+                                  <style>wxALIGN_CENTRE</style>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxStaticText">
+                                  <size>80,20</size>
+                                  <label>Mean</label>
+                                  <style>wxALIGN_CENTRE</style>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxStaticText">
+                                  <size>80,20</size>
+                                  <label>Maximum</label>
+                                  <style>wxALIGN_CENTRE</style>
+                                </object>
+                              </object>
                               <orient>wxHORIZONTAL</orient>
+                            </object>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxBoxSizer">
+                              <orient>wxHORIZONTAL</orient>
+                              
                               <object class="sizeritem">
-                                <object class="wxStaticText">
-                                  <label>Min: </label>
+                                <object class="wxTextCtrl" name="min_area">
+                                  <tooltip>Lower bound on fly area (pixels-squared)</tooltip>
+                                  <help>Lower bound on fly area (pixels-squared)</help>
+                                </object>
+                              </object>
+                              
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="mean_area">
+                                  <tooltip>Mean fly area (pixels-squared)</tooltip>
+                                  <help>Mean fly area (pixels-squared)</help>
                                 </object>
                               </object>
                               <object class="sizeritem">
-                                <object class="wxTextCtrl" name="min_area"/>
-                              </object>
-                              <object class="sizeritem">
-                                <object class="wxStaticText">
-                                  <label>Max: </label>
+                                <object class="wxTextCtrl" name="max_area">
+                                  <tooltip>Upper bound on fly area (pixels-squared)</tooltip>
+                                  <help>Upper bound on fly area (pixels-squared)</help>
                                 </object>
-                              </object>
-                              <object class="sizeritem">
-                                <object class="wxTextCtrl" name="max_area"/>
                               </object>
                               <object class="sizeritem">
                                 <object class="wxStaticText">
@@ -191,97 +220,97 @@
                           <object class="sizeritem">
                             <object class="wxBoxSizer">
                               <orient>wxHORIZONTAL</orient>
+                              
                               <object class="sizeritem">
-                                <object class="wxStaticText">
-                                  <label>Min: </label>
+                                <object class="wxTextCtrl" name="min_major">
+                                  <tooltip>Lower bound on major axis length (pixels)</tooltip>
+                                  <help>Lower bound on major axis length (pixels)</help>
+                                </object>
+                              </object>
+                              
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="mean_major">
+                                  <tooltip>Mean major axis length</tooltip>
+                                  <help>Mean major axis length</help>
                                 </object>
                               </object>
                               <object class="sizeritem">
-                                <object class="wxTextCtrl" name="min_major"/>
-                              </object>
-                              <object class="sizeritem">
-                                <object class="wxStaticText">
-                                  <label>Max: </label>
+                                <object class="wxTextCtrl" name="max_major">
+                                  <tooltip>Upper bound on major axis length</tooltip>
+                                  <help>Upper bound on major axis length</help>
                                 </object>
                               </object>
                               <object class="sizeritem">
-                                <object class="wxTextCtrl" name="max_major"/>
-                              </object>
-                              <object class="sizeritem">
                                 <object class="wxStaticText">
-                                  <label>  Major Axis Length</label>
+                                  <label>  Major axis length</label>
                                 </object>
                               </object>
+                            
                             </object>
                           </object>
                           <object class="sizeritem">
                             <object class="wxBoxSizer">
                               <orient>wxHORIZONTAL</orient>
+                              
                               <object class="sizeritem">
-                                <object class="wxStaticText">
-                                  <label>Min: </label>
+                                <object class="wxTextCtrl" name="min_minor">
+                                  <tooltip>Lower bound on minor axis length (pixels)</tooltip>
+                                  <help>Lower bound on minor axis length (pixels)</help>
+                                </object>
+                              </object>
+                              
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="mean_minor">
+                                  <tooltip>Mean minor axis length (pixels)</tooltip>
+                                  <help>Mean minor axis length (pixels)</help>
                                 </object>
                               </object>
                               <object class="sizeritem">
-                                <object class="wxTextCtrl" name="min_minor"/>
-                              </object>
-                              <object class="sizeritem">
-                                <object class="wxStaticText">
-                                  <label>Max: </label>
+                                <object class="wxTextCtrl" name="max_minor">
+                                  <tooltip>Upper bound on minor axis length (pixels)</tooltip>
+                                  <help>Upper bound on minor axis length (pixels)</help>
                                 </object>
                               </object>
                               <object class="sizeritem">
-                                <object class="wxTextCtrl" name="max_minor"/>
-                              </object>
-                              <object class="sizeritem">
                                 <object class="wxStaticText">
-                                  <label>  Minor Axis Length</label>
+                                  <label>  Minor axis length</label>
                                 </object>
                               </object>
+                            
                             </object>
                           </object>
                           <object class="sizeritem">
                             <object class="wxBoxSizer">
                               <orient>wxHORIZONTAL</orient>
+                              
                               <object class="sizeritem">
-                                <object class="wxStaticText">
-                                  <label>Min: </label>
+                                <object class="wxTextCtrl" name="min_ecc">
+                                  <tooltip>Lower bound on eccentricity (minor / major axis length)</tooltip>
+                                  <help>Lower bound on eccentricity (minor / major axis length)</help>
+                                </object>
+                              </object>
+                              
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="mean_ecc">
+                                  <tooltip>Mean eccentricity (minor / major axis length)</tooltip>
+                                  <help>Mean eccentricity (minor / major axis length)</help>
                                 </object>
                               </object>
                               <object class="sizeritem">
-                                <object class="wxTextCtrl" name="min_ecc"/>
-                              </object>
-                              <object class="sizeritem">
-                                <object class="wxStaticText">
-                                  <label>Max: </label>
+                                <object class="wxTextCtrl" name="max_ecc">
+                                  <tooltip>Upper bound on eccentricity (minor / major axis length)</tooltip>
+                                  <help>Upper bound on eccentricity (minor / major axis length)</help>
                                 </object>
-                              </object>
-                              <object class="sizeritem">
-                                <object class="wxTextCtrl" name="max_ecc"/>
                               </object>
                               <object class="sizeritem">
                                 <object class="wxStaticText">
                                   <label>  Eccentricity</label>
                                 </object>
                               </object>
+                            
                             </object>
                           </object>
-                          <object class="sizeritem">
-                            <object class="wxStaticText">
-                              <label>Lower/Upper bounds on shape. 
-- Area is measured in square pixels.
-- Axis lengths are measured in pixels.
-- Eccentricity is minor axis length divided by major axis length. </label>
-                              <font>
-                                <size>8</size>
-                                <family>swiss</family>
-                                <style>normal</style>
-                                <weight>normal</weight>
-                                <underlined>0</underlined>
-                                <face>Sans</face>
-                              </font>
-                            </object>
-                          </object>
+                        
                         </object>
                         <size>360,160</size>
                         <style>wxTAB_TRAVERSAL</style>

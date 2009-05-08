@@ -1,5 +1,5 @@
 # movies.py
-# KMB 11/06/2208
+# KMB 11/06/2008
 
 import chunk
 import numpy as num
@@ -9,6 +9,9 @@ import wx
 import os
 from params import params
 from draw import annotate_bmp
+import pyglet.media as media
+
+DEBUG = False
 
 # version of sbfmf for writing
 __version__ = "0.3b"
@@ -60,22 +63,35 @@ class Movie:
                 raise
         # read AVI
         elif ext == '.avi':
-            self.type = 'avi'
             try:
                 self.h_mov = Avi( filename, fmfmode=True )
-            except (TypeError, ValueError, AssertionError):
-                if self.interactive:
-                    wx.MessageBox( "Failed opening file \"%s\".\nMake sure file is uncompressed, and either grayscale or RGB."%(filename), "Error", wx.ICON_ERROR )
-                raise
-            if self.h_mov.bits_per_pixel == 24:
+                self.type = 'avi'
+            except:
+                try:
+                    self.h_mov = CompressedAvi( filename )
+                    self.type = 'avbin'
+                except:
+                    if self.interactive:
+                        wx.MessageBox( "Failed opening file \"%s\"."%(filename), "Error", wx.ICON_ERROR )
+                    raise
+                else:
+                    if params.interactive:
+                        wx.MessageBox("Your movie is most likely compressed. Out-of-order frame access (e.g. dragging the frame slider toolbars around) will be slow. At this time, the frame chosen to be displayed may be off by one or two frames, i.e. may not line up perfectly with computed trajectories.","Warning",wx.ICON_WARNING)
+            if params.interactive and self.h_mov.bits_per_pixel == 24:
                 wx.MessageBox( "Currently, RGB movies are immediately converted to grayscale. All color information is ignored.", "Warning", wx.ICON_WARNING )
 
         # unknown movie type
         else:
-            if self.interactive:
-                wx.MessageBox( "Unknown file type %s"%(filename[-4:]), "Error", wx.ICON_ERROR )
-            raise TypeError( "unknown file type %s"%(filename[-4:]) )
-
+            try:
+                self.h_mov = CompressedAvi( filename )
+                self.type = 'avbin'
+            except:
+                if self.interactive:
+                    wx.MessageBox( "Failed opening file \"%s\"."%(filename), "Error", wx.ICON_ERROR )
+                raise
+            else:
+                if params.interactive:
+                    wx.MessageBox("Your movie is most likely compressed. Out-of-order frame access (e.g. dragging the frame slider toolbars around) will be slow. At this time, the frame chosen to be displayed may be off by one or two frames, i.e. may not line up perfectly with computed trajectories.","Warning",wx.ICON_WARNING)
 
     def get_frame( self, framenumber ):
         """Return numpy array containing frame data."""
@@ -291,7 +307,7 @@ class Movie:
 
 
 """
-AVI class; written by JB, altered by Don Olbris.
+AVI class; written by JB and KMB, altered by Don Olbris.
 
 Don's changes:
 important alterations from version I received:
@@ -333,7 +349,20 @@ class Avi:
         else:
             self.bytes_per_chunk = self.buf_size + self.timestamp_len
         #self.bits_per_pixel = 8 
+
+        self._all_timestamps = None
     
+    def get_all_timestamps(self):
+        if self._all_timestamps is None:
+            self._all_timestamps = []
+            for f in range(self.n_frames):
+                try:
+                    (frame,ts) = self.get_frame(f)
+                except:
+                    continue
+                self._all_timestamps.append(ts)
+        return self._all_timestamps
+
     def read_header( self ):
 
         # read RIFF then riffsize
@@ -367,6 +396,9 @@ class Avi:
         # skip to width
         self.file.seek(3*4,1)
         self.width,self.height = struct.unpack('2I',self.file.read(8))
+
+        if DEBUG: print "width = %d, height = %d"%(self.width,self.height)
+        if DEBUG: print "n_frames = %d"%self.n_frames
 
         # skip the rest of the aviheader
         self.file.seek(avihchunkstart+avih_size,0)
@@ -407,6 +439,7 @@ class Avi:
 
         # read in bits per pixel
         self.bits_per_pixel, = struct.unpack('H',self.file.read(2))
+        if DEBUG: print "bits_per_pixel = %d"%self.bits_per_pixel
 
         # is this an indexed avi?
         colormapsize = (strf_size - bitmapheadersize)/4
@@ -457,8 +490,22 @@ class Avi:
 
         # read one frame's header to check
         this_frame_id, frame_size = struct.unpack( '4sI', self.file.read( 8 ) )
+        if DEBUG: print "frame_size = " + str(frame_size)
+        depth = self.bits_per_pixel/8
 
-        if not self.width * self.height * self.bits_per_pixel / 8 == frame_size:
+        # figure out padding
+        unpaddedframesize = self.width*self.height*depth
+        if unpaddedframesize == frame_size:
+            # no padding
+            self.padwidth = 0
+            self.padheight = 0
+        elif unpaddedframesize + self.width*depth == frame_size:
+            self.padwidth = 0
+            self.padheight = 1
+        elif unpaddedframesize + self.height*depth == frame_size:
+            self.padwidth = 1
+            self.padheight = 0
+        else:
             raise TypeError("Invalid AVI file. Frame size does not match width * height * bytesperpixel.")
 
         if self.isindexed:
@@ -470,8 +517,12 @@ class Avi:
         else:
             raise TypeError("Unsupported AVI type. bitsperpixel must be 8 or 24, not %d."%self.bits_per_pixel)
 
+        if DEBUG: print "format = " + str(self.format)
+
         # set buf size
-        self.buf_size = self.width*self.height*self.bits_per_pixel/8
+        self.buf_size = frame_size
+        #self.buf_size = self.width*self.height*self.bits_per_pixel/8
+
 
     def old_read_header( self ):
 
@@ -653,6 +704,9 @@ class Avi:
 
     def get_frame( self, framenumber ):
         """Read frame from file and return as NumPy array."""
+
+        if DEBUG: print "uncompressed get_frame(%d)"%framenumber
+
         if framenumber < 0: raise IndexError
         if framenumber >= self.n_frames: raise NoMoreFramesException
         
@@ -670,6 +724,7 @@ class Avi:
         currentseekloc = self.file.tell()
          
         this_frame_id, frame_size = struct.unpack( '4sI', self.file.read( 8 ) )
+
         if frame_size != self.buf_size:
             raise ValueError( "Frame size does not equal buffer size; movie must be uncompressed" )
         if not hasattr( self, 'frame_id' ):
@@ -684,20 +739,26 @@ class Avi:
         # make frame into numpy array
         frame = num.fromstring( frame_data, num.uint8 )
 
+        width = self.width + self.padwidth
+        height = self.height + self.padheight
         if self.isindexed:
             frame = self.colormap[frame,:]
-            frame.resize((self.width,self.height,3))
+            frame.resize((width,height,3))
+            frame = frame[:self.width,:self.height,:]
             tmp = frame.astype(float)
             tmp = tmp[:,:,0]*.3 + tmp[:,:,1]*.59 + tmp[:,:,2]*.11
+            tmp = tmp.T
             frame = tmp.astype(num.uint8)
-        elif frame.size == self.width*self.height:
-            frame.resize( (self.height, self.width) )
-        elif frame.size == self.width*self.height*3:
-            frame.resize( (self.height, self.width*3) )
+        elif frame.size == width*height:
+            frame.resize( (height, width) )
+            frame = frame[:self.height,:self.width]
+        elif frame.size == width*height*3:
+            frame.resize( (height, width*3) )
             tmp = frame.astype(float)
-            tmp = tmp[:,2:self.width*3:3]*.3 + \
-                tmp[:,1:self.width*3:3]*.59 + \
-                tmp[:,0:self.width*3:3]*.11
+            tmp = tmp[:,2:width*3:3]*.3 + \
+                tmp[:,1:width*3:3]*.59 + \
+                tmp[:,0:width*3:3]*.11
+            tmp = tmp[:self.height,:self.width]
             frame = tmp.astype(num.uint8)
             #frame = imops.to_mono8( 'RGB24', frame )
             #raise TypeError( "movie must be grayscale" )
@@ -706,15 +767,16 @@ class Avi:
             #   right and see if width is integral and within 10 of expected;
             #   if so, use that; otherwise, error (djo)
             # raise ValueError( "frame size %d doesn't make sense: movie must be 8-bit grayscale"%(frame.size) )
-            if frame.size % self.height == 0:
-                self.newwidth = frame.size / self.height
-                if abs(self.newwidth - self.width) < 10:
-                    frame.resize((self.newwidth, self.height))
+            if frame.size % height == 0:
+                self.newwidth = frame.size / height
+                if abs(self.newwidth - width) < 10:
+                    frame.resize((self.newwidth, height))
+                    frame = frame[:self.width,:self.height]
                 else:
                     raise ValueError("apparent new width = %d; expected width = %d"
-                        % (self.height, self.newwidth))
+                        % (height, self.newwidth))
             else:
-                raise ValueError("apparent new width is not integral; mod = %d" % (frame.size % self.height))
+                raise ValueError("apparent new width is not integral; mod = %d" % (frame.size % height))
             
         # make up a timestamp based on the file's stated framerate
         
@@ -763,6 +825,341 @@ class Avi:
     
     # end class Avi
 
+
+class CompressedAvi:
+
+    """Use pyglet.media to read compressed avi files"""
+    def __init__(self,filename):
+
+        self.issbfmf = False
+        self.source = media.load(filename)
+        self.ZERO = 0.00001
+        self.source._seek(self.ZERO)
+        self.start_time = self.source.get_next_video_timestamp()
+
+        # estimate properties of the video that would be nice 
+        # to be able to read in -- i have no idea how accurate 
+        # these estimates are
+        self.duration_seconds = self.source.duration
+        self._estimate_fps()
+        self.frame_delay_us = 1e6 / self.fps
+        self._estimate_keyframe_period()
+        self.n_frames = int(num.floor(self.duration_seconds * self.fps))
+        print "n_frames estimated to be %d"%self.n_frames
+        
+        # added to help masquerade as FMF file:
+        self.filename = filename
+
+        # read in the width and height of each frame
+        self.width = self.source.video_format.width
+        self.height = self.source.video_format.height
+
+        self.MAXBUFFERSIZE = num.round(200*1000*1000/self.width/self.height)
+        self.buffersize = min(self.MAXBUFFERSIZE,self.keyframe_period)
+
+        # compute the bits per pixel
+        self.source._seek(self.ZERO)
+        im = self.source.get_next_video_frame()
+        im = num.fromstring(im.data,num.uint8)
+        self.color_depth = len(im)/self.width/self.height
+        if self.color_depth != 1 and self.color_depth != 3:
+            raise ValueError( 'color_depth = %d, only know how to deal with color_depth = 1 or colr_depth = 3'%self.color_depth )
+        self.bits_per_pixel = self.color_depth * 8
+
+        # allocate the buffer
+        self.buffer = num.zeros((self.height,self.width,self.buffersize),dtype=num.uint8)
+        self.bufferts = num.zeros(self.buffersize)
+        # put the first frame in it
+        self.source._seek(self.ZERO)
+        self.currframe = 0
+        (frame,ts) = self.get_next_frame_and_reset_buffer()
+
+        self._all_timestamps = None
+
+    def get_all_timestamps(self):
+        if self._all_timestamps is None:
+            self._all_timestamps = []
+            for f in range(self.n_frames):
+                try:
+                    (frame,ts) = self.get_frame(f)
+                except:
+                    continue
+                self._all_timestamps.append(ts)
+        return self._all_timestamps            
+
+    def get_frame(self,framenumber):
+        """Read frame from file and return as NumPy array."""
+
+        if framenumber < 0: raise IndexError
+
+        # have we already stored this frame?
+        if framenumber >= self.bufferframe0 and framenumber < self.bufferframe1:
+            off = num.mod(framenumber - self.bufferframe0 + self.bufferoff0,self.buffersize)
+            if DEBUG: print "frame %d is in buffer at offset %d"%(framenumber,off)
+            return (self.buffer[:,:,off].copy(),self.bufferts[off])
+
+        # is framenumber the next frame to read in?
+        if framenumber == self.currframe:
+            if DEBUG: print "frame %d is the next frame, just calling get_next_frame"%framenumber
+            return self.get_next_frame()
+
+        # otherwise, we need to seek
+
+        # find the last keyframe at or before framenumber
+        lastkeyframe = num.floor(framenumber / self.keyframe_period)*self.keyframe_period
+        lastkeyframe_s = lastkeyframe / self.fps + self.start_time
+
+        if DEBUG: print "keyframe before frame %d is %d (ts = %f)"%(framenumber,lastkeyframe,lastkeyframe_s)
+
+        didbeginbusy = False
+        if params.interactive:
+            wx.Yield()
+            if not wx.IsBusy():
+                didbeginbusy = True
+                wx.BeginBusyCursor()
+
+        # is the current frame before the desired frame and at or after the nearest keyframe?
+        if framenumber > self.currframe and self.currframe >= lastkeyframe:
+
+            if DEBUG: print "the best thing to do is just to read in frames until we get to desired %d (currframe = %d)"%(framenumber,self.currframe)
+
+            # read into the buffer
+            for f in range(self.currframe,framenumber+1):
+                try:
+                    (frame,ts) = self.get_next_frame()
+                except:
+                    if didbeginbusy:
+                        wx.EndBusyCursor()
+                    raise
+            
+            if didbeginbusy:
+                wx.EndBusyCursor()
+
+            return (frame,ts)
+            
+        # seek around til we find the right window
+
+        if DEBUG: print "we need to seek"
+
+        # make sure we don't move in opposite directions ever
+        dirmoved = 0
+
+        # convert from frame to time
+        wantts = framenumber / self.fps + self.start_time
+        if DEBUG: print "frame %d is equivalent to time stamp %f"%(framenumber,wantts)
+        while True:
+            # try seeking
+            if DEBUG: print "start_time = %f"%self.start_time
+            if DEBUG: print "trying to seek to %f (actually %f)"%(lastkeyframe_s,lastkeyframe_s-self.start_time)
+            try: 
+                self.source._seek(lastkeyframe_s-self.start_time)
+            except:
+                print 'seeking failed, aborting. tried to seek to %f (actually %f)'%(lastkeyframe_s,lastkeyframe_s-self.start_time)
+            tscurr = self.source.get_next_video_timestamp()
+            if DEBUG: print "ended up seeking to %f"%tscurr
+
+            # are we in the right ballpark?
+            if wantts < tscurr:
+
+                lastkeyframe_s = max(self.ZERO,lastkeyframe_s-self.keyframe_period_s)
+                if DEBUG: print "still not back far enough, trying to seek to %f"%lastkeyframe_s
+                dirmoved = -1
+                continue
+
+            elif wantts >= tscurr + self.keyframe_period_s:
+                if dirmoved == -1:
+                    # we went back and now we think we need to go forward
+                    # so we're screwed up
+                    # let's just stay
+                    if DEBUG: print "uh oh -- we've already gone backward, and now we think we need to go forward, so we're just going to stay"
+                    break
+                lastkeyframe_s += self.keyframe_period_s
+                dirmoved = 1
+                continue
+            else:
+                # we're in the right ballpark
+                if DEBUG: print "we're in the right ballpark"
+                break
+
+        # end loop searching for keyframe
+
+        lastkeyframe = (tscurr - self.start_time)*self.fps
+        self.currframe = int(lastkeyframe)
+
+        (frame,ts) = self.get_next_frame_and_reset_buffer()
+
+        # go forward until we get the right frame
+        for f in range(self.currframe,framenumber+1):
+            try:
+                (frame,ts) = self.get_next_frame()
+            except:
+                if didbeginbusy:
+                    wx.EndBusyCursor()
+                raise
+
+        if didbeginbusy:
+            wx.EndBusyCursor()
+
+        # return
+        return (frame,ts)
+
+    def get_next_frame_and_reset_buffer(self):
+        
+        self.bufferframe0 = self.currframe
+        self.bufferframe1 = self.currframe + 1
+        self.bufferoff0 = 0
+        self.bufferoff = 1
+        (frame,ts) = self._get_next_frame_helper()
+        self.buffer[:,:,0] = frame.copy()
+        self.bufferts[0] = ts
+
+        # set the current frame
+        self.currframe += 1
+        self.prevts = ts
+
+        return (frame,ts)
+
+    def _get_next_frame_helper(self):
+        ts = self.source.get_next_video_timestamp()
+        if ts is None:
+            if self.currframe - 1 < self.n_frames:
+                self.n_frames = self.currframe - 1
+            raise NoMoreFramesException
+        im = self.source.get_next_video_frame()
+        frame = num.fromstring(im.data,num.uint8)
+
+        if self.color_depth == 1:
+            frame.resize((im.height,im.width))
+        else: # color_depth == 3
+            frame.resize( (self.height, self.width*3) )
+            tmp = frame.astype(float)
+            tmp = tmp[:,2:self.width*3:3]*.3 + \
+                tmp[:,1:self.width*3:3]*.59 + \
+                tmp[:,0:self.width*3:3]*.11
+            frame = tmp.astype(num.uint8)
+
+        frame = num.flipud(frame)
+
+        return (frame,ts)
+
+    def get_next_frame(self):
+
+        (frame,ts) = self._get_next_frame_helper()
+
+        # store 
+
+        # last frame stored will be 1 more
+        self.bufferframe1 += 1
+
+        # are we erasing the first frame?
+        if self.bufferoff0 == self.bufferoff:
+            self.bufferframe0 += 1
+            self.bufferoff0 += 1
+            if DEBUG: print "erasing first frame, bufferframe0 is now %d, bufferoff0 is now %d"%(self.bufferframe0,self.bufferoff0)
+
+        if DEBUG: print "buffer frames: [%d,%d), bufferoffset0 = %d"%(self.bufferframe0,self.bufferframe1,self.bufferoff0)
+            
+        self.buffer[:,:,self.bufferoff] = frame.copy()
+        self.bufferts[self.bufferoff] = ts
+
+        if DEBUG: print "read into buffer[%d], ts = %f"%(self.bufferoff,ts)
+
+        self.bufferoff += 1
+
+        # wrap around
+        if self.bufferoff == self.buffersize:
+            self.bufferoff = 0
+
+        if DEBUG: print "incremented bufferoff to %d"%self.bufferoff
+
+        # remember current location in the movie
+        self.currframe += 1
+        self.prevts = ts
+
+        if DEBUG: print "updated currframe to %d, prevts to %f"%(self.currframe,self.prevts)
+
+        return (frame,ts)
+
+    def _estimate_fps(self):
+
+        # seek to the start of the stream
+        self.source._seek(self.ZERO)
+
+        # initial time stamp
+        ts0 = self.source.get_next_video_timestamp()
+        ts1 = ts0
+
+        # get the next frame and time stamp a bunch of times
+        nsamples = 200
+        i = 0 # i is the number of frames we have successfully grabbed
+        while True:
+            im = self.source.get_next_video_frame()
+            ts = self.source.get_next_video_timestamp()
+            if num.isnan(ts) or (ts <= ts0):
+                break
+            i = i + 1
+            ts1 = ts
+            if i >= nsamples:
+                break
+        
+        if ts1 <= ts0:
+            raise ValueError( "Could not compute the fps in the compressed movie" )
+
+        self.fps = float(i) / (ts1-ts0)
+        print 'Estimated frames-per-second = %f'%self.fps
+        
+    def _estimate_keyframe_period(self):
+
+        self.source._seek(self.start_time)
+        ts0 = self.source.get_next_video_timestamp()
+        i = 1 # i is the number of successful seeks
+        foundfirst = False
+        while True:
+
+            # seek to the next frame
+            self.source._seek(float(i)/self.fps)
+
+            # get the current time stamp
+            ts = self.source.get_next_video_timestamp()
+
+            # did we seek past the end of the movie?
+            if num.isnan(ts):
+                raise ValueError( "Could not compute keyframe period in compressed video" )    
+                break
+
+            if ts > ts0:
+                if foundfirst:
+                    break
+                else:
+                    foundfirst = True
+                    i0 = i
+                    ts0 = ts
+
+            i = i + 1
+
+        if DEBUG: print "i = %d, i0 = %d"%(i,i0)
+        self.keyframe_period = i - i0
+        self.keyframe_period_s = self.keyframe_period / self.fps
+        print "Estimated keyframe period = " + str(self.keyframe_period)
+
+    def get_n_frames( self ):
+        return self.n_frames
+
+    def get_width( self ):
+        return self.width
+
+    def get_height( self ):
+        return self.height
+
+    def seek(self,framenumber):
+
+        ts = float(framenumber) / self.fps + self.start_time
+        self.source._seek(ts)
+        ts = self.source.get_next_video_timestamp()
+        self.prevts = ts - 1. / self.fps
+        self.currframe = (ts - self.start_time)*self.fps
+
+        return self.currframe
 
 def write_results_to_avi(movie,tracks,filename,f0=None,f1=None):
 
@@ -1033,4 +1430,3 @@ def estimate_frame_delay_us(mov):
 
         frame_delay_us = float(stamp1-stamp0)/float(mov.n_frames-1)*1e6
         return frame_delay_us
-

@@ -10,6 +10,11 @@
 #if wxversion.checkInstalled(WXVER):
 #    wxversion.select(WXVER)
 
+# we need to import pyglet.media before scipy.linalg.decomp is 
+# imported by kcluster, as this seems to cause have_avbin to be false
+# on windows
+import pyglet.media as media
+
 import os # use os for manipulating path names
 import sys # use sys for parsing command line
 import time # use time for setting playback rate
@@ -612,7 +617,12 @@ instead, where <basename> is the base name of the movie.\n")
             frame, self.last_timestamp = self.movie.get_frame( framenumber )
             if num.isnan(self.last_timestamp):
                 self.last_timestamp = float(framenumber) / float(params.DEFAULT_FRAME_RATE)
-        except (IndexError, movies.NoMoreFramesException): # framenumber out of range
+        except movies.NoMoreFramesException:
+            self.n_frames = self.movie.get_n_frames()
+            self.start_frame = min(self.start_frame,self.n_frames-1)
+            self.slider.SetScrollbar( self.start_frame,1,self.n_frames-1,100 )
+            return
+        except IndexError: # framenumber out of range
             return
 
 	# set frame number display
@@ -772,6 +782,21 @@ instead, where <basename> is the base name of the movie.\n")
         if isshapemodel == False:
             return
 
+        # will data be lost?
+        if params.interactive and (self.ann_data is not None) and (len(self.ann_data) > 0):
+           if evt.GetId() == xrc.XRCID("menu_track_start"): 
+               msgtxt = 'Frames %d to %d have been tracked.\nErase these results and start tracking over?'%(params.start_frame,params.start_frame+len(self.ann_data)-1)
+               if wx.MessageBox( msgtxt, "Erase trajectories and start tracking?", wx.OK|wx.CANCEL ) == wx.CANCEL:
+                   return
+           elif evt.GetId() == xrc.XRCID("menu_track_resume_here"):
+               last_tracked = params.start_frame + len(self.ann_data) - 1
+               if last_tracked > self.start_frame:
+                   msgtxt = 'Frames %d to %d have been tracked.\nRestarting tracking at frame %d will cause old trajectories from %d to %d to be erased.\nErase these results and restart tracking in the current frame?'%(params.start_frame,last_tracked,self.start_frame,self.start_frame,last_tracked)
+               if wx.MessageBox( msgtxt, "Erase trajectories and start tracking?", wx.OK|wx.CANCEL ) == wx.CANCEL:
+                   return
+        # end check for trajectory erasure
+                   
+
         # set tracking flag
         self.tracking = True
 
@@ -923,7 +948,7 @@ instead, where <basename> is the base name of the movie.\n")
         self.status.SetStatusText( "calculating background", params.status_box )
         wx.BeginBusyCursor()
         wx.Yield()
-        self.bg_imgs.est_bg()
+        self.bg_imgs.est_bg(self.frame)
         wx.EndBusyCursor()
         self.status.SetBackgroundColour( start_color )
         self.status.SetStatusText( "", params.status_box )
@@ -946,13 +971,13 @@ instead, where <basename> is the base name of the movie.\n")
                 self.status.SetBackgroundColour( params.status_green )
                 self.status.SetStatusText( "calculating background", params.status_box )
                 wx.Yield()
-                self.bg_imgs.est_bg()
+                self.bg_imgs.est_bg(self.frame)
 
         self.status.SetBackgroundColour( params.status_red )
         self.status.SetStatusText( "calculating shape", params.status_box )
         wx.BeginBusyCursor()
         wx.Yield()
-        ell.est_shape( self.bg_imgs )
+        ell.est_shape( self.bg_imgs, self.frame )
         wx.EndBusyCursor()
         self.status.SetBackgroundColour( start_color )
         self.status.SetStatusText( "", params.status_box )

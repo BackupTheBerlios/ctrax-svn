@@ -706,7 +706,7 @@ class AppWithSettings( wx.App ):
         wx.Yield()
 
         # do the calculation
-        self.bg_imgs.est_bg()
+        self.bg_imgs.est_bg(self.frame)
 
         # return to normal
         if self.status is not None:
@@ -754,7 +754,10 @@ class AppWithSettings( wx.App ):
         wx.Yield()
 
         # do the calculation
-        ell.est_shape(self.bg_imgs)
+        if params.interactive:
+            ell.est_shape(self.bg_imgs,self.frame)
+        else:
+            ell.est_shape(self.bg_imgs)
 
         # return to normal
         if self.status is not None:
