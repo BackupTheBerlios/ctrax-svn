@@ -140,6 +140,7 @@ class BackgroundCalculator:
 
         # image of which parts flies are not able to walk in
         self.isarena = num.ones(params.movie_size,num.bool)
+        self.roi = num.ones(params.movie_size,num.bool)
 
         if params.movie.type == 'sbfmf':
             self.center = params.movie.h_mov.bgcenter.copy()
@@ -1053,7 +1054,8 @@ class BackgroundCalculator:
            hasattr(params,'arena_center_x') and \
            (params.arena_center_x is not None):
             self.isarena = self.isarena & ( ((params.GRID.X - params.arena_center_x)**2. + (params.GRID.Y - params.arena_center_y)**2) <= params.arena_radius**2. )
-        self.isarena = self.isarena & self.roi
+        if hasattr(self,'roi'):
+            self.isarena = self.isarena & self.roi
 
     def OnDetectArenaClick( self, evt ):
         if self.detect_arena_window_open:

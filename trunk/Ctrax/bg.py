@@ -4,7 +4,6 @@
 import numpy as num
 from numpy import fft
 from numpy import random
-from scipy.interpolate import interpolate
 from scipy.linalg.basic import eps
 import scipy.io
 import sys
