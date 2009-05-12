@@ -1,0 +1,98 @@
+<?xml version="1.0" ?>
+<resource>
+  <object class="wxFrame" name="roi_frame">
+    <object class="wxBoxSizer">
+      <object class="sizeritem">
+        <object class="wxPanel" name="img_panel"/>
+        <option>1</option>
+        <flag>wxEXPAND|wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+        <minsize>500,400</minsize>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <object class="sizeritem">
+            <object class="wxBoxSizer">
+              <object class="sizeritem">
+                <object class="wxChoice" name="displaymode_choice">
+                  <content>
+                    <item>Background Center</item>
+                    <item>Regions of Interest</item>
+                  </content>
+                  <selection>0</selection>
+                </object>
+                <flag>wxALIGN_CENTRE</flag>
+              </object>
+              <object class="spacer">
+                <size>20,20</size>
+              </object>
+              <orient>wxHORIZONTAL</orient>
+              <object class="sizeritem">
+                <object class="wxCheckBox" name="showpolygons_checkbox">
+                  <label>Show selected polygons</label>
+                  <checked>1</checked>
+                </object>
+              </object>
+            </object>
+            <flag>wxALIGN_CENTRE</flag>
+          </object>
+          <object class="sizeritem">
+            <object class="wxBoxSizer">
+              <object class="sizeritem">
+                <object class="wxButton" name="close_button">
+                  <label>Close</label>
+                  <enabled>0</enabled>
+                </object>
+              </object>
+              <object class="sizeritem">
+                <object class="wxButton" name="cancel_button">
+                  <label>Cancel</label>
+                  <enabled>0</enabled>
+                </object>
+              </object>
+              <object class="sizeritem">
+                <object class="wxButton" name="undo_button">
+                  <label>Undo</label>
+                </object>
+              </object>
+              <object class="spacer">
+                <size>50,10</size>
+              </object>
+              <object class="sizeritem">
+                <object class="wxButton" name="save_button">
+                  <label>Save</label>
+                </object>
+              </object>
+              <object class="sizeritem">
+                <object class="wxButton" name="quit_button">
+                  <label>Quit</label>
+                </object>
+              </object>
+              <orient>wxHORIZONTAL</orient>
+            </object>
+            <flag>wxALIGN_CENTRE</flag>
+          </object>
+          <object class="spacer">
+            <size>20,20</size>
+            <flag>wxALIGN_CENTRE</flag>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <label>Directions: 
+
+1. Click to select a polygonal region of interest. 
+2. Double click or push the &quot;Close&quot; button to close the polygon.
+3. Push the &quot;Cancel&quot; button to cancel the current polygon. 
+4. Regions outside of all polygons will always be classified as background.
+5. Push &quot;Save&quot; button to save the current regions of interest.
+6. Push &quot;Quit&quot; button to exit dialog.</label>
+            </object>
+          </object>
+          <orient>wxVERTICAL</orient>
+        </object>
+        <flag>wxALIGN_CENTRE</flag>
+      </object>
+      <orient>wxVERTICAL</orient>
+    </object>
+    <title>Select Regions of Interest</title>
+  </object>
+</resource>
