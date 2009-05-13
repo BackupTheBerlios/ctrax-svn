@@ -2,6 +2,12 @@ function fixedtrx2ann(trx,oldannname,newannname)
 
 % open the annotation file for reading and writing
 fin = fopen(oldannname,'rb');
+if exist(newannname,'file'),
+  b = questdlg(sprintf('File %s exists. Overwrite?',newannname));
+  if ~strcmpi(b,'yes'),
+    return;
+  end
+end
 fout = fopen(newannname,'wb');
 
 % find the end of the header
