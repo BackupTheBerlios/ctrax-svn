@@ -834,6 +834,10 @@ class CompressedAvi:
         self.issbfmf = False
         self.source = media.load(filename)
         self.ZERO = 0.00001
+        # for some video types, if we don't do a read before 
+        # seeking, bad things happen
+        im = self.source.get_next_video_frame()
+        ts = self.source.get_next_video_timestamp()
         self.source._seek(self.ZERO)
         self.start_time = self.source.get_next_video_timestamp()
 
@@ -956,6 +960,10 @@ class CompressedAvi:
             except:
                 print 'seeking failed, aborting. tried to seek to %f (actually %f)'%(lastkeyframe_s,lastkeyframe_s-self.start_time)
             tscurr = self.source.get_next_video_timestamp()
+            if tscurr is None:
+                print 'seeking failed, aborting. timestamp returned is None'
+                raise NoMoreFramesException
+
             if DEBUG: print "ended up seeking to %f"%tscurr
 
             # are we in the right ballpark?
