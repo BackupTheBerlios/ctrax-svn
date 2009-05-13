@@ -91,6 +91,9 @@ end
 clim = zeros(1,2);
 clim(1) = min(c);
 clim(2) = max(c);
+if clim(2) <= clim(1),
+  clim(2) = clim(1) + .001;
+end
 caxis(clim);
 
 if nargout > 0,

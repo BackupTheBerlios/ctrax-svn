@@ -1,4 +1,4 @@
-function [nn,ctrs] = hist3(varargin)
+function [nn,ctrs] = myhist3(varargin)
 %HIST3 Three-dimensional histogram of bivariate data.
 %   HIST3(X) bins the elements of the M-by-2 matrix X into a 10-by-10 grid
 %   of equally-spaced containers, and plots a histogram.  Each column of X
