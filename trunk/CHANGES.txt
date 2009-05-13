@@ -1,0 +1,290 @@
+2009-05-12 Kristin Branson
+
+* Version 0.1.4.1 released.
+
+* Major changes:
+
+  - Fixed bug in background estimation. "roi" attribute of background
+    was not being initialized correctly. This caused the program to
+    crash during background estimation. 
+
+2009-05-11 Kristin Branson
+
+* MANIFEST.in: Created this file to control which directories were
+  added to the source distribution
+
+* stdeb.cfg: Updated dependencies for deb package creation
+
+* bg.py: Major bug fix. "roi" attribute, used for region of interest
+  selection (introduced in version 0.1.4), was not being initialized
+  correctly. 
+
+2009-05-08 Kristin Branson
+
+* Added text files with notes about how to make a new release of Ctrax
+  to repository. 
+
+2009-05-07 Kristin Branson
+
+* Version 0.1.4 released. 
+
+* Major changes:
+
+  - Added "Regions of Interest" dialog for setting regions of interest
+    in the frame. One can set polygonal regions of interest using the
+    "Regions of Interest" dialog. Regions outside of all polygons set
+    are assumed to be background. In this dialog, the image panel can
+    show either the background model center or the currently selected
+    regions of interest in white and the always-background regions in
+    black. The previously selected polygons are shown by red lines. To
+    select a region, click on the image. Continue clicking to add more
+    points. Either double-click the start point or push the "Close"
+    button to close and add the selected region. To cancel adding the
+    current polygon, push the "Cancel" button. To remove the
+    last-added polygon, use the "Undo" button. To save the currently
+    selected regions, use the "Save" button. To close the dialog, use
+    the "Quit" button.
+
+  - Added "Fix Background Model" dialog. If a fly sits still for too
+    large a fraction of the video, the background model may assume
+    that this fly is part of the background. Errors in the background
+    modeling can be fixed using the "Fix Background Model" dialog [new
+    in version 0.1.4]. Using this dialog, one can select polygonal
+    regions of the image, and fill these regions by interpolating from
+    the boundaries. The interface is similar to the "Regions of
+    Interest" dialog. The image panel can show either the background
+    model center or deviation estimates.
+
+  - Added support for compressed movies via the AVbin
+    (http://code.google.com/p/avbin/) wrapper for FFmpeg. Ctrax
+    *should* now be able to read in any type of movie supported by
+    FFmpeg (see http://www.ffmpeg.org/general.html#SEC3 for a
+    description of codecs, formats supported by FFmpeg). Depending on
+    the type and parameters of the video compression, Ctrax may be
+    slow and inexact at allowing out-of-order frame access (used by
+    the GUIs). While Ctrax may be able to read a given file format, it
+    may not be able to successfully track the flies if compression
+    artifacts are too prevalent. All our experiments were performed
+    using Fly Movie Format and Static Background Fly Movie Format
+    videos. 
+
+  - Added ability to manually set the mean area, major, and minor axis
+    lengths, and eccentricity in the "Tracking Settings" dialog. The
+    mean area in particular is important for deciding how many flies
+    to split/merge connected components of foreground pixels into. 
+
+  - Added warnings when starting/restarting tracking will cause
+    computed trajectories to be lost. 
+
+  - Modified background model estimation and subtraction code to store
+    "isarena" attribute instead of "isnotarena"
+    attribute. isarena[i,j] is False if pixel (i,j) is always
+    background (based on minimum, maximum foreground intensity
+    thresholds, "Detect Circular Arena" results, and selected regions
+    of interest). Now, background subtraction is only performed on
+    areas where isarena == True, rather than the previous
+    implementation, which performed background subtraction on all
+    pixel locations and then zeroed out results where isarena ==
+    False. 
+
+  - Added progress bars for background model computation ("Background
+    Model") and shape bounds computation ("Tracking Settings Shape
+    Parameters"). 
+
+  - Fixed bug in background estimation based on mean and standard
+    deviation. There was a typo in setting "nframes" in "meanstd"
+    function, resulting in the mean and standard deviation not being
+    estimated from the correct interval of frames. 
+
+  - Updated Windows installer versions of all dependencies. 
+
+  - Added checks for out of bound frames to various functions, as it
+    is difficult to estimate the number of frames using avbin. 
+
+  - Fixed uncompressed AVI handling of video padded to have an even
+    number of elements per-frame. 
+
+2009-05-07 Kristin Branson
+
+* Updated py2exe directory code to reflect all changes to main code.
+* Made py2exe work with avbin and new versions of all dependencies. 
+
+2009-05-07 Kristin Branson
+
+* Modified background model estimation and subtraction code to store
+  "isarena" attribute instead of "isnotarena" attribute. isarena[i,j]
+  is False if pixel (i,j) is always background (based on minimum,
+  maximum foreground intensity thresholds, "Detect Circular Arena"
+  results, and selected regions of interest). Now, background
+  subtraction is only performed on areas where isarena == True, rather
+  than the previous implementation, which performed background
+  subtraction on all pixel locations and then zeroed out results where
+  isarena == False. Changes affect files bg.py and algorithm.py. 
+
+2009-05-07 Kristin Branson
+
+* Added "Regions of Interest" dialog for setting regions of interest
+  in the frame. The files roi.py and roi.xrc define this GUI. Changes
+  were made in bg.py to. annfiles.py was updated to store the regions
+  of interest to the annotation file. params.py was updated to
+  initialize the regions of interest to be unset by default. The
+  Matlab functions for reading annotation files were updated to ignore
+  the regions of interest parameter (regions of interest stored using
+  "pickle" module, which I didn't want to reverse-engineer). 
+
+2009-05-07 Kristin Branson
+
+* Fixed bug in medmad function in bg.py relating to progress bars. 
+
+2009-05-07 Kristin Branson
+
+* Modified slightly so that avbin would work in Windows -- for some
+  reason we need to import pyglet.media before scipy.linalg.decomp,
+  otherwise have_avbin is set to False. 
+
+* I didn't like the way wx.BeginBusyCursor was working in Windows, so
+  I added progress bars to compute shape and compute
+  background. 
+
+2009-05-07 Kristin Branson
+
+* Added "Fix Background Model" dialog for fixing the background model
+  to account for flies that sit still too long. The files fixbg.py and
+  fixbg.xrc define this GUI. 
+
+* Changed movies.py to catch any type of error in movie reading. 
+
+2009-05-06 Kristin Branson
+
+* Added support for reading compressed movies using avbin of pyglet. 
+
+* Removed calls to params.copy from tracking_settings
+
+* Fixed params.copy just in case so that it doesn't copy the movie
+
+* Added checks for out of bound frames to various functions, as it is 
+difficult to estimate the number of frames using avbin. 
+
+* Fixed uncompressed AVI handling of video padded to have an even number 
+of elements per-frame. 
+
+2009-05-04 Kristin Branson
+
+* Added control for mean area, major and minor axis lengths, and
+  eccentricity to tracking_settings dialog. 
+
+* Added warnings when starting/restarting tracking will cause computed
+  trajectories to be lost. 
+
+2009-05-03 Kristin Branson
+
+* Version 0.1.3.2 released. 
+
+  - Fixed bug if homomorphic filtering was used with SBFMF movie. 
+  - Fixed bugs in showing intermediate results in Tracking Settings
+    dialog. 
+  
+2009-04-30 Kristin Branson
+
+* Fixed bug in bg.py if homomorphic filtering was used with SBFMF
+  movie. 
+
+* Fixed bugs in estconncomps.py when looking at merged, split
+  connected components in Tracking Settings dialog. 
+
+* Updated help in setarena.xrc to reflect new colors of GUI. 
+
+2009-03-02 Kristin Branson
+
+* Version 0.1.3.1 released.
+
+* Major changes:
+
+  - Fixed bug in gmmem function of kcluster.py that occurred when prior
+    for one cluster was too small. 
+
+  - Fixed bug in matchidentities.py:
+    Default value for maxcost was set to params.max_jump, which uses
+    the initial, static value of max_jump, and does not update with
+    changes to params set in tracking_settings box. 
+
+  - Changed default bg_type to OTHER (not light flies on dark
+    background). 
+
+2009-03-02 Kristin Branson
+
+* Merged changes into py2exe version of code.
+
+2009-02-27 Kristin Branson
+
+* Fixed bug in gmmem function of kcluster.py that occurred when prior
+for one cluster was too small. 
+
+2009-02-24 Kristin Branson
+
+* Fixed bug in matchidentities.py:
+Default value for maxcost was set to params.max_jump, which uses the 
+initial, static value of max_jump, and does not update with changes to 
+params set in tracking_settings box. 
+
+2009-02-23 Kristin Branson
+
+* Changed default bg_type to OTHER (not light flies on dark background). 
+
+2009-02-05 Kristin Branson
+
+* Version 0.1.3 released.
+
+* Major changes:
+
+  - Scipy moved the locations of loadmat and savemat
+    functions. Updated code to deal with this. 
+
+  - Updated the AVI reader in movies.py to be slightly more tolerant to
+    some of the AVI header variants. Now, it should be able to read the
+    output of mencoder. 
+
+2009-02-05 Kristin Branson
+
+* Migrated changes to py2exe version of code.
+
+2009-02-05 Kristin Branson
+
+* The scipy.io.mio library was moved. The correct location for
+  loadmat, savemat is scipy.io. Changed bg.py and annfiles.py
+  accordingly.
+
+* Updated the AVI reader in movies.py to be slightly more tolerant to
+  some of the AVI header variants. Now, it should be able to read the
+  output of mencoder. At least temporarily.
+
+2008-12-09 Kristin Branson
+
+* Version 0.1.2 released. 
+
+* Major changes:
+
+* Fixed bugs in estconncomps that resulted from removing matplotlib
+  dependency.
+
+* Fixed bug in houghcircles_C.c for 64-bit machines: "dims" (size of
+  "accarray") needed to be of type "npy_intp" rather than int. Also
+  use "PyArray_DATA" to get pointer to data rather than just "->". 
+
+2008-12-09 Kristin Branson
+
+* Migrated changes to py2exe version of code.
+
+2008-12-02 Kristin Branson
+
+* Fixed bug in estconncomps that resulted from removing matplotlib
+  dependency.
+
+* Fixed bug in houghcircles_C.c for 64-bit machines: "dims" (size of
+  "accarray") needed to be of type "npy_intp" rather than int. Also
+  use "PyArray_DATA" to get pointer to data rather than just "->". 
+
+2008-11-19 Kristin Branson
+
+* Version 0.1 of Ctrax released. Ctrax obsoletes Mtrax. 
+
