@@ -1,3 +1,14 @@
+2009-05-13 Kristin Branson
+
+* For some types of compressed movies, we need to read in a frame before
+seeking otherwise bad things happen. Added an unnecessary read to the 
+CompressedMovie constructor. 
+
+* Also added a check for None timestamp which seems to be returned for 
+some types of compressed movies. 
+
+* Added "Any" as a file type choice when opening movie. 
+
 2009-05-12 Kristin Branson
 
 * Version 0.1.4.1 released.
