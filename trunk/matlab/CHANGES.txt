@@ -1,3 +1,6 @@
+2009-06-08 Kristin Branson
+* added "save_tracks.m" which removes the function handle f2i before saving the input trx variable to file.
+
 2009-05-13 Kristin Branson
 
 * fixedtrx2ann.m now checks to make sure you want to overwrite an ann file if the chosen output file exists. 
