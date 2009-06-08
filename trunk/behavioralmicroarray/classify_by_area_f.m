@@ -1,4 +1,4 @@
-function [succeeded,savematnames,classifiermatname,areathresh] = classify_by_area(varargin)
+function [succeeded,savematnames,classifiermatname,areathresh] = classify_by_area_f(varargin)
 
 setuppath;
 succeeded = false;
@@ -86,14 +86,17 @@ if doloadclassifier,
 
     classifiermatname = [classifiermatpath,classifiermatname];
     tmp = load(classifiermatname);
-    if ~all(isfield(tmp,{'areathresh','area_coeffs','normalize_area','typename','type0','type1'})),
+    if ~all(isfield(tmp,{'areathresh','area_coeffs','typename','type0','type1'})),
       msgbox(sprintf('Mat file %s does not contain the correct variables',classifiermatname));
       continue;
     end
 
     areathresh = tmp.areathresh;
     area_coeffs = tmp.area_coeffs;
-    normalize_area = tmp.normalize_area;
+    % compute normalization functions -- can't save these to file
+    predict_areafactor = @(x,y) reshape([x(:).^2,y(:).^2,x(:),y(:),ones(length(x(:)),1)]*area_coeffs,size(x));
+    normalize_area = @(x,y,a) a ./ predict_areafactor(x,y);
+    %normalize_area = tmp.normalize_area;
     typename = tmp.typename;
     type0 = tmp.type0;
     type1 = tmp.type1;
@@ -461,9 +464,11 @@ for i = 1:length(matnames),
   end
   savematnames{i} = [savematpath,savematnames{i}];
   if strcmp(savematnames{i},matnames{i}),
-    save('-append',savematnames{i},'trx');
+    didsave = save_tracks(trx,savematnames{i},'doappend',true);
+    if ~didsave, return; end
   else
-    save(savematnames{i},'trx');
+    didsave = save_tracks(trx,savematnames{i});
+    if ~didsave, return; end
   end
 end
 
@@ -482,7 +487,7 @@ if ~doloadclassifier,
   [classifiermatname,savepath] = uiputfilehelp('*.mat','Save area-based classifier','helpmsg',helpmsg);
   if ischar(classifiermatname),
     classifiermatname = [savepath,classifiermatname];
-    save(classifiermatname,'areathresh','area_coeffs','normalize_area','typename','type0','type1');
+    save(classifiermatname,'areathresh','area_coeffs','typename','type0','type1');
   end
 end
 

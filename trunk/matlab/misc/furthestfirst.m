@@ -9,7 +9,9 @@ function [mu,idx,mu_idx] = furthestfirst(x,k,varargin)
 
 [n,d] = size(x);
 
-[start,distance] = myparse(varargin,'Start','mean','Distance','sqEuclidean');
+[start,distance,weights] = myparse(varargin,'Start','mean','Distance','sqEuclidean','weights',ones(n,1));
+
+%isweight = ~all(weights==weights(1));
 
 % output centers
 mu = zeros(k,d);
@@ -19,10 +21,12 @@ mu_idx = zeros(k,1);
 if isnumeric(start)
   mu(1,:) = start;
 elseif strcmpi(start,'mean'),
-  mu(1,:) = mean(x,1);
+  mu(1,:) = sum( x.*repmat(weights,[1,d]), 1 ) / sum(weights);
+  %mu(1,:) = mean(x,1);
   mu_idx(1) = nan;
 else
-  i = ceil(rand(1)*n);
+  i = randsample(n,1,true,weights);
+  %i = ceil(rand(1)*n);
   mu(1,:) = x(i,:);
   mu_idx(1) = i;
 end;

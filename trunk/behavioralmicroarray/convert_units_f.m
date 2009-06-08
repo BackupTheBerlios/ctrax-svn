@@ -275,7 +275,7 @@ end
 %% save to file
 
 if ~alreadyconverted || didsomething,
-
+  
   nmissed = 0;
   while true,
     helpmsg = sprintf('Choose the file to which to save the trx from %s augmented with the pixel to mm and frame to second conversions',inputmatname);
@@ -300,9 +300,8 @@ if ~alreadyconverted || didsomething,
     tmpname = tempname;
     fprintf('Overwriting %s with converted data...\n',savename);
     movefile(matname,tmpname);
-    try
-      save('-append',savename,'trx');
-    catch
+    didsave = save_tracks(trx,savename,'doappend',true);
+    if ~didsave,
       fprintf('Aborting overwriting\n');
       movefile(tmpname,matname);
       return;
@@ -311,7 +310,10 @@ if ~alreadyconverted || didsomething,
   else
     fprintf('Saving converted data to file %s.\nUse this mat file instead of %s in the future\n',savename,inputmatname);
     copyfile(matname,savename);
-    save('-append',savename,'trx');
+    didsave = save_tracks(trx,savename,'doappend',true);
+    if ~didsave,
+      return;
+    end
   end
 end
 succeeded = true;

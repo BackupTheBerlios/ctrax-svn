@@ -230,6 +230,9 @@ fprintf('Saving results to file %s\n',savename);
 for i = 1:length(trx),
   trx(i).matname = savename;
 end
-save(savename,'trx');
+didsave = save_tracks(trx,savename);
+if ~didsave,
+  return;
+end
 
 succeeded = true;

@@ -11,6 +11,7 @@
 % 'MaxIters' = 100
 % 'Start' = 'furthestfirst'
 % 'distance' = 'sqEuclidean'
+% 'weights' = []
 function [mu,S,priors,post] = mygmm(X,k,varargin)
 
 [nreplicates,covartype,display,precision,resetcovar,maxiters,start,distance,weights] = ...

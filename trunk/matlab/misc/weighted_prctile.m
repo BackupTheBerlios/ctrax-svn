@@ -1,4 +1,4 @@
-function y = weighted_prctile(x,p,w,dim)
+function y = weighted_prctile(x,p,w,dim,issorted)
 % WEIGHTED_PRCTILE Percentiles of a sample.
 %   Y = WEIGHTED_PRCTILE(X,P,W) returns percentiles of the values in X.  P is a scalar
 %   or a vector of percent values.  When X is a vector, Y is the same size
@@ -7,7 +7,7 @@ function y = weighted_prctile(x,p,w,dim)
 %   For N-D arrays, WEIGHTED_PRCTILE operates along the first non-singleton
 %   dimension.
 %
-%   Y = WEIGHTED_PRCTILE(X,P,DIM) calculates percentiles along dimension DIM.  The
+%   Y = WEIGHTED_PRCTILE(X,P,W,DIM) calculates percentiles along dimension DIM.  The
 %   DIM'th dimension of Y has length LENGTH(P).
 %
 %   Percentiles are specified using percentages, from 0 to 100.  For an N
@@ -40,6 +40,9 @@ end
 
 % Figure out which dimension prctile will work along.
 sz = size(x);
+if nargin < 5,
+  issorted = false;
+end
 if nargin < 4 
     dim = find(sz ~= 1,1);
     if isempty(dim)
@@ -77,7 +80,11 @@ else
     x = reshape(x, nrows, ncols);
     y = zeros(numel(p), ncols, class(x));
     
-    [x,order] = sort(x,1);
+    if ~issorted,
+      [x,order] = sort(x,1);
+    else
+      order = repmat((1:nrows)',[1,ncols]);
+    end
     nonnans = ~isnan(x);
     
     for j = 1:ncols,

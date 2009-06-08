@@ -1,46 +1,57 @@
 % i'm not sure if this is exactly correct, but it is close enough
 
-function samples = samplepnoreplace(n,k,w,maxiter)
+function samples = samplepnoreplace(x,k,w,maxiter)
 
 if ~exist('maxiter','var'),
   maxiter = k;
 end;
-maxiter = min(maxiter,k)
+maxiter = min(maxiter,k);
 
-if isscalar(n),
-  n = 1:n;
+if isscalar(x),
+  n = x;
+  x = 1:n;
+else
+  n = length(x);
 end;
 
-% if we want more than half of the samples, choose samples that are
-% not in the set
-isreverse = false;
-if k > n/2,
-  isreverse = true;
-  k = n - k;
-end;
+if length(w) ~= n,
+  error('length of weights must be equivalent to number to sample from');
+end
 
-samples = [];
-nleft = k;
-samplesleft = n;
-wleft = w;
+ignore = w <= 0;
+x(ignore) = [];
+n = n - nnz(ignore);
+w(ignore) = [];
+
+if k > n,
+  error('k > n');
+end
+
+if k == 0,
+  samples = [];
+  return;
+elseif k == n,
+  samples = x;
+  return;
+end
+
+dosample = false(1,n);
+nneed = k;
 
 for iter = 1:maxiter,
-  newsamples = unique(randsample(samplesleft,nleft,true,wleft));
-  samples = [samples,newsamples];
-  nleft = nleft - length(newsamples);
-  inds = ismember(samplesleft,newsamples);
-  samplesleft(inds) = [];
-  wleft(inds) = [];
-  if nleft == 0,
+  idxleft = find(~dosample);
+  newsamples = idxleft(randsample(length(idxleft),nneed,true,w(~dosample)));
+  dosample(newsamples) = true;
+  nneed = k - nnz(dosample);
+  if nneed <= 0,
     break;
   end;
 end;
 
-if nleft > 0,
-  newsamples = randsample(samplesleft,nleft,false);
-  samples = [samples,newsamples];
+if nneed > 0,
+  idxleft = find(~dosample);
+  newsamples = idxleft(randsample(length(idxleft),nneed));
+  dosample(newsamples) = true;
 end;
 
-if isreverse,
-  samples = setdiff(n,samples);
-end;
+samples = x(dosample);

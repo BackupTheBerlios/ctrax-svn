@@ -59,7 +59,7 @@ end
 if ~ischar(trxname) && isstruct(trxname),
   trx = trxname;
 else
-  if ~ischar(trxname) || isempty(trxname) || ~exist('trxname','file'),
+  if ~ischar(trxname) || isempty(trxname) || ~exist(trxname,'file'),
     fprintf('Choose mat file containing flies'' trajectories corresponding to movie %s\n',moviename);
     [base,ext] = splitext(moviename);
     trxname = [moviename(1:end-length(ext)+1),'mat'];

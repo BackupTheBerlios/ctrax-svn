@@ -46,7 +46,11 @@ pts(:,1) = pts(:,1) + x;
 pts(:,2) = pts(:,2) + y;
 
 % plot
-h = patch(pts([1:3,1],1),pts([1:3,1],2),varargin{:});
+if isempty(varargin),
+  h = patch(pts([1:3,1],1),pts([1:3,1],2),'b');
+else
+  h = patch(pts([1:3,1],1),pts([1:3,1],2),varargin{:});
+end
 
 end
 

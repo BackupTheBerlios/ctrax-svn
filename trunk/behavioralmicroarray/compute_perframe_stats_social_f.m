@@ -121,7 +121,8 @@ for i = 1:nflies1,
       pairtrx(j).matname = savematname;
     end
     fprintf('Saving pair per-frame data for fly %d to %s\n',flies1(i),savematname);
-    save(savematname,'pairtrx');
+    didsave = save_tracks(pairtrx,savematname,'varname','pairtrx');
+    if ~didsave, return; end
   end
   savenames{i} = savematname;
 end

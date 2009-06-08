@@ -73,7 +73,14 @@ if issize,
   firstrow = min(find(~all(isallgray,2),1),maxfirstrow);
   lastcol = firstcol + sz(2) - 1;
   lastrow = firstrow + sz(1) - 1;
-else
+  lastcol0 = find(~all(isallgray,1),1,'last');
+  lastrow0 = find(~all(isallgray,2),1,'last');
+  if lastrow ~= lastrow0 || lastcol ~= lastcol0,
+    fprintf('input width = %d, actual width = %d, input height = %d, actual height = %d\n',...
+      sz(2),lastcol0-firstcol+1,sz(1),lastrow0-firstrow+1);
+  end
+
+else 
   firstcol = find(~all(isallgray,1),1);
   firstrow = find(~all(isallgray,2),1);
   lastcol = find(~all(isallgray,1),1,'last');

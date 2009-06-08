@@ -231,17 +231,18 @@ pxfns = {'xpred','ypred','dx','dy','v'};
 pxcpfns = {'x','y','a','b'};
 okfns = {'x','y','theta','a','b','id','moviename','firstframe','arena',...
   'f2i','nframes','endframe','xpred','ypred','thetapred','dx','dy','v',...
-  'a_mm','b_mm','x_mm','y_mm'};
+  'a_mm','b_mm','x_mm','y_mm','matname','sex','type'};
 unknownfns = setdiff(getperframepropnames(trx),okfns);
-if ~isempty(unknownfns),
-  b = questdlg({'Do not know how to convert the following variables: ',...
-    sprintf('%s, ',unknownfns{:}),'Ignore these variables and continue?'},...
-    'Unknown Variables','Continue','Abort','Abort');
-  if strcmpi(b,'abort'),
-    return;
-  end
-end
+
 if ~alreadyconverted,
+  if ~isempty(unknownfns),
+    b = questdlg({'Do not know how to convert the following variables: ',...
+      sprintf('%s, ',unknownfns{:}),'Ignore these variables and continue?'},...
+      'Unknown Variables','Continue','Abort','Abort');
+    if strcmpi(b,'abort'),
+      return;
+    end
+  end
   for ii = 1:length(pxfns),
     fn = pxfns{ii};
     if isfield(trx,fn),
@@ -274,7 +275,7 @@ end
 %% save to file
 
 if ~alreadyconverted || didsomething,
-
+  
   nmissed = 0;
   while true,
     helpmsg = sprintf('Choose the file to which to save the trx from %s augmented with the pixel to mm and frame to second conversions',inputmatname);
@@ -299,9 +300,8 @@ if ~alreadyconverted || didsomething,
     tmpname = tempname;
     fprintf('Overwriting %s with converted data...\n',savename);
     movefile(matname,tmpname);
-    try
-      save('-append',savename,'trx');
-    catch
+    didsave = save_tracks(trx,savename,'doappend',true);
+    if ~didsave,
       fprintf('Aborting overwriting\n');
       movefile(tmpname,matname);
       return;
@@ -310,7 +310,10 @@ if ~alreadyconverted || didsomething,
   else
     fprintf('Saving converted data to file %s.\nUse this mat file instead of %s in the future\n',savename,inputmatname);
     copyfile(matname,savename);
-    save('-append',savename,'trx');
+    didsave = save_tracks(trx,savename,'doappend',true);
+    if ~didsave,
+      return;
+    end
   end
 end
 succeeded = true;
