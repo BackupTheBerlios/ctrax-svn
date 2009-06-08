@@ -1,3 +1,7 @@
 2009-06-08 Kristin Branson
 
+VERSION 0.1.04 CREATED.
+
+2009-06-08 Kristin Branson
+
 Updated convert_units_f to be the same as the convert_units_f in behavioralmicroarray. 

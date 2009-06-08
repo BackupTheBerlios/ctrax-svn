@@ -1,5 +1,9 @@
 2009-06-08 Kristin Branson
 
+VERSION 0.1.04 CREATED
+
+2009-06-08 Kristin Branson
+
 Matlab, particularly v. 2009a, has trouble saving and loading function 
 handles correctly. the "f2i" field of the "trx" variable is a function 
 that inputs the frame number and returns the index into the trx fields 

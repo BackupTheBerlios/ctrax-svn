@@ -1,4 +1,8 @@
 2009-06-08 Kristin Branson
+
+VERSION 0.1.04 CREATED.
+
+2009-06-08 Kristin Branson
 * added "save_tracks.m" which removes the function handle f2i before saving the input trx variable to file.
 
 2009-05-13 Kristin Branson
