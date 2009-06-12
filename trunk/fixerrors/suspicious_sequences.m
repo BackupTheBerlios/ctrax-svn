@@ -10,7 +10,8 @@ function [suspicious,dataperfly,params] = suspicious_sequences(matname,annname,v
 if ~isstr(matname),
   dataperfly = matname;
 else
-  dataperfly = createdata_perfile('',matname,'',false);
+  dataperfly = load_tracks(matname);
+  %dataperfly = createdata_perfile('',matname,'',false);
 end
 nflies = length(dataperfly);
 nframes = max(getstructarrayfield(dataperfly,'endframe'));

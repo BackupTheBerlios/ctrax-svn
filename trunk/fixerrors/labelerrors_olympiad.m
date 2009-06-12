@@ -1,6 +1,6 @@
 % script that prompts user for mat, annotation, and movie files, parameters
 % for computing suspicious frames, then computes suspicious frames, then
-% brings up the fixerrors gui
+% brings up the labelerrors gui
 
 %% set all defaults
 
@@ -9,39 +9,45 @@ moviepath = '';
 setuppath;
 
 %% read last settings
-pathtofixerrors = which('fixerrors');
-savedsettingsfile = strrep(pathtofixerrors,'fixerrors.m','.fixerrorsrc.mat');
+pathtolabelerrors = which('labelerrors');
+savedsettingsfile = strrep(pathtolabelerrors,'labelerrors.m','.labelerrorsrc.mat');
 if exist(savedsettingsfile,'file')
   load(savedsettingsfile);
 end
 
 %% choose movie
 
-fprintf('Choose a movie to fix errors in\n');
-movieexts = {'*.fmf','*.sbfmf','*.avi'}';
-helpmsg = 'Choose movie file for which to fix tracking errors';
-[moviename,moviepath] = uigetfilehelp(movieexts,'Choose movie file',moviename,'helpmsg',helpmsg);
-if isnumeric(moviename) && moviename == 0, 
-  return;
-end
+moviepath = '/home/kristin/FLIES/data/olympiad/';
+moviename = 'Sept22_06_20080922T150608_seq3.sbfmf';
+% fprintf('Choose a movie to fix errors in\n');
+% movieexts = {'*.fmf','*.sbfmf','*.avi'}';
+% helpmsg = 'Choose movie file for which to fix tracking errors';
+% [moviename,moviepath] = uigetfilehelp(movieexts,'Choose movie file',moviename,'helpmsg',helpmsg);
+% if isnumeric(moviename) && moviename == 0, 
+%   return;
+% end
 [movietag,movieext] = splitext(moviename);
 
-helpmsg = sprintf('Choose the mat file containing the trajectories corresponding to movie %s.',[moviepath,moviename]);
-matname = [moviepath,strrep(moviename,movieext,'.mat')];
-[matname,matpath] = uigetfilehelp({'*.mat'},'Choose mat file',matname,'helpmsg',helpmsg);
-if isnumeric(matname) && matname == 0, 
-  return;
-end
+matpath = '/home/kristin/FLIES/data/olympiad/';
+matname = 'Sept22_06_20080922T150608_seq3_tube1_nosplit_yeshindsight10_converted.mat';
+% helpmsg = sprintf('Choose the mat file containing the trajectories corresponding to movie %s.',[moviepath,moviename]);
+% matname = [moviepath,strrep(moviename,movieext,'.mat')];
+% [matname,matpath] = uigetfilehelp({'*.mat'},'Choose mat file',matname,'helpmsg',helpmsg);
+% if isnumeric(matname) && matname == 0, 
+%   return;
+% end
 
-annname = [matpath,moviename,'.ann'];
-helpmsg = {};
-helpmsg{1} = 'Choose the Ctrax annotation file corresponding to:';
-helpmsg{2} = sprintf('Movie: %s',[moviepath,moviename]);
-helpmsg{3} = sprintf('Trajectory mat file: %s',[matpath,matname]);
-[annname,annpath] = uigetfilehelp({'*.ann'},'Choose ann file',annname,'helpmsg',helpmsg);
-if isnumeric(annname) && annname == 0,
-  return;
-end
+annpath = '/home/kristin/FLIES/data/olympiad/';
+annname = 'Sept22_06_20080922T150608_seq3_tube1_nosplit_yeshindsight10.sbfmf.ann';
+% annname = [matpath,moviename,'.ann'];
+% helpmsg = {};
+% helpmsg{1} = 'Choose the Ctrax annotation file corresponding to:';
+% helpmsg{2} = sprintf('Movie: %s',[moviepath,moviename]);
+% helpmsg{3} = sprintf('Trajectory mat file: %s',[matpath,matname]);
+% [annname,annpath] = uigetfilehelp({'*.ann'},'Choose ann file',annname,'helpmsg',helpmsg);
+% if isnumeric(annname) && annname == 0,
+%   return;
+% end
 
 moviename = [moviepath,moviename];
 matname = [matpath,matname];
@@ -58,17 +64,18 @@ end
 %% convert to px, seconds
 
 [matpathtmp,matnametmp] = split_path_and_filename(matname);
-[convertsucceeded,convertmatname] = convert_units_f('matname',matnametmp,'matpath',matpathtmp,'moviename',moviename);
-if ~convertsucceeded,
-  return;
-end
-%convertmatname = matname;
-[trx,matname,succeeded] = load_tracks(convertmatname,moviename);
+%[convertsucceeded,convertmatname] = convert_units_f('matname',matnametmp,'matpath',matpathtmp,'moviename',moviename);
+%if ~convertsucceeded,
+%  return;
+%end
+convertmatname = matname;
+convertsucceeded = true;
+[trx,matname,succeeded] = load_tracks(convertmatname);
 
 %% see if we should restart
 
 tag = movietag;
-loadname = sprintf('tmpfixed_%s.mat',tag);
+loadname = sprintf('tmplabel_%s.mat',tag);
 DORESTART = false;
   
 if exist(loadname,'file'),
@@ -85,7 +92,7 @@ if exist(loadname,'file'),
     oldmatname = 'unknown trx file';
   end
   prompt = {};
-  prompt{1} = sprintf('A restart file saved by fixerrors was found with tag %s ',tag);
+  prompt{1} = sprintf('A restart file saved by labelerrors was found with tag %s ',tag);
   prompt{2} = sprintf('Original movie: %s, selected movie %s. ',oldmoviename,moviename);
   prompt{3} = sprintf('Original trx file: %s, selected trx file %s. ',oldmatname,matname);
   prompt{4} = 'It is only recommended that you load these partial results if you are certain the trx files match. ';
@@ -213,7 +220,7 @@ minanglediff = minanglediff*pi/180;
 
 end
 
-%% call the fixerrors gui
+%% call the labelerrors gui
 
 fprintf('Movie: %s\n',moviename);
 fprintf('Mat: %s\n',matname);
@@ -221,29 +228,29 @@ fprintf('Annname: %s\n',annname);
 fprintf('Temporary file created at: %s\n',loadname);
 
 if ~DORESTART,
-  trx = fixerrorsgui(seqs,moviename,trx0,annname,params,matname,loadname);
+  [terror0,terror1,flyerror] = labelerrorsgui(seqs,moviename,trx0,annname,params,matname,loadname);
 else
-  realmatname = matname;
-  load(loadname);
-  matname = realmatname;
-  trx0 = trx;
-  for i = 1:length(trx0),
-    trx0(i).f2i = @(f) f - trx0(i).firstframe + 1;
-  end
-  trx = fixerrorsgui(seqs,moviename,trx0,annname,params,matname,loadname);
+  %realmatname = matname;
+  %load(loadname);
+  %matname = realmatname;
+  %trx0 = trx;
+  %for i = 1:length(trx0),
+  %  trx0(i).f2i = @(f) f - trx0(i).firstframe + 1;
+  %end
+  [terror0,terror1,flyerror] = labelerrorsgui([],moviename,trx,annname,[],matname,loadname);
 end
 
 %% save
 
 while true,
   helpmsg = {};
-  helpmsg{1} = 'Choose the mat file to which to save the fixed trajectories corresponding to:';
+  helpmsg{1} = 'Choose the mat file to which to save the labeled errors for:';
   helpmsg{2} = sprintf('Movie: %s',moviename);
   helpmsg{3} = sprintf('Trajectory mat file: %s',matname);
   helpmsg{4} = sprintf('Ctrax annotation file: %s',annname);
 
   [tmpmatpath,tmpmatname] = split_path_and_filename(matname);
-  savename = [tmpmatpath,'fixed_',tmpmatname];
+  savename = [tmpmatpath,'labelederrors_',tmpmatname];
   [savename, savepath] = uiputfilehelp('*.mat', 'Save results?', savename,'helpmsg',helpmsg);
   if isnumeric(savename) && savename == 0,
     fprintf('missed\n');
@@ -252,13 +259,10 @@ while true,
   end
 end
 savename = [savepath,savename];
-rmfns = intersect({'xpred','ypred','thetapred','dx','dy','v','f2i'},fieldnames(trx));
-trx = rmfield(trx,rmfns);
 if ~isempty(savename),
-  save(savename,'trx');
+  save(savename,'terror0','terror1','flyerror');
 else
-  trx = rmfield(trx,{'xpred','ypred','thetapred','dx','dy','v','f2i'});
-  tmpsavename = sprintf('backupfixed_movie%s.mat',tag);
-  save(tmpsavename,'trx');
-  msgbox(sprintf('saving trx to file %s\n',tmpsavename));
+  tmpsavename = sprintf('backuplabelederrors_movie%s.mat',tag);
+  save(tmpsavename,'terror0','terror1','flyerror');
+  msgbox(sprintf('saving results to file %s\n',tmpsavename));
 end
