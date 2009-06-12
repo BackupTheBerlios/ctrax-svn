@@ -695,7 +695,7 @@ class BackgroundCalculator:
             # do hysteresis
             bw = morph.binary_propagation(bwhigh,mask=bwlow)
         else:
-            bw = num.zeros(im,shape,dtype=bool)
+            bw = num.zeros(im.shape,dtype=bool)
             bw[self.isarena] = dfore[self.isarena] > params.n_bg_std_thresh
 
         # do morphology

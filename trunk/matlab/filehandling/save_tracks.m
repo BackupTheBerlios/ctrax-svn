@@ -16,7 +16,7 @@ try
   if ~strcmp(varname,'trx'),
     eval(sprintf('%s = trx;',varname));
   end
-  if doappend,
+  if doappend && exist(matname,'file'),
     save('-append',matname,varname);
   else
     save(matname,varname);
