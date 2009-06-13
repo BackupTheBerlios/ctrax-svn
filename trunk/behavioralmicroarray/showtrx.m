@@ -186,7 +186,7 @@ for fly = 1:handles.nflies,
     set(handles.hmarker(fly),'visible','off');
     set(handles.hselected(fly),'visible','off');
   else
-    i = handles.trx(fly).f2i(handles.f);
+    i = handles.trx(fly).off+(handles.f);
     set(handles.hpath(fly),'xdata',handles.trx(fly).x(max(i-handles.pathlength,1):i),...
       'ydata',handles.trx(fly).y(max(i-handles.pathlength,1):i));
     updatefly(handles.hmarker(fly),handles.trx(fly).x(i),handles.trx(fly).y(i),...
@@ -219,7 +219,7 @@ else
   y1 = 0;
   for fly = find(handles.isselected)
     if isalive(handles.trx(fly),handles.f)
-      i = handles.trx(fly).f2i(handles.f);
+      i = handles.trx(fly).off+(handles.f);
       [xa,xb,ya,yb] = ellipse_to_bounding_box(handles.trx(fly).x(i),...
         handles.trx(fly).y(i),handles.trx(fly).a(i)*2,...
         handles.trx(fly).b(i)*2,handles.trx(fly).theta(i));
@@ -284,7 +284,7 @@ fn = handles.propnames{v};
 if handles.f < handles.trx(handles.lastflyselected).firstframe,
   x = nan;
 else
-  i = handles.trx(handles.lastflyselected).f2i(handles.f);
+  i = handles.trx(handles.lastflyselected).off+(handles.f);
   j = min(i,length(handles.trx(handles.lastflyselected).(fn)));
   x = handles.trx(handles.lastflyselected).(fn)(j);
 end

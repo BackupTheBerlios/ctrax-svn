@@ -164,7 +164,7 @@ for i = 2:nframes,
   % index into dataperfly(fly) for each fly alive
   iperfly = zeros(1,nfliesalive);
   for j = 1:nfliesalive,
-    iperfly(j) = dataperfly(ids(j)).f2i(i);
+    iperfly(j) = dataperfly(ids(j)).off+(i);
   end
 
   % get predicted and observed positions of all flies in the current frame
@@ -253,7 +253,7 @@ for fly = 1:nflies,
       end
       if fly2 == fly, continue; end
       if (dataperfly(fly2).firstframe > f) || (dataperfly(fly2).endframe < f), continue; end
-      i2 = dataperfly(fly2).f2i(f);
+      i2 = dataperfly(fly2).off+(f);
       d = sqrt((dataperfly(fly2).x(i2) - dataperfly(fly).x(i)).^2 + ...
         (dataperfly(fly2).y(i2) - dataperfly(fly).y(i)).^2);
       isclose(j) = d <= MAXDISTCLOSE;
@@ -337,7 +337,7 @@ for fly = 1:nflies,
       end
       if fly2 == fly, continue; end
       if (dataperfly(fly2).firstframe > f) || (dataperfly(fly2).endframe < f), continue; end
-      i2 = dataperfly(fly2).f2i(f);
+      i2 = dataperfly(fly2).off+(f);
       d = sqrt((dataperfly(fly2).x(i2) - dataperfly(fly).x(i)).^2 + ...
         (dataperfly(fly2).y(i2) - dataperfly(fly).y(i)).^2);
       isclose(j) = d <= MAXDISTCLOSE;

@@ -1,8 +1,8 @@
 function [dnose2ell,t0s,t1s] = distfromnose2otherfly(trx,fly1,t0,t1)
 
 nflies = length(trx);
-i0 = trx(fly1).f2i(t0);
-i1 = trx(fly1).f2i(t1);
+i0 = trx(fly1).off+(t0);
+i1 = trx(fly1).off+(t1);
 xnose = trx(fly1).x(i0:i1) + 2*trx(fly1).a(i0:i1).*cos(trx(fly1).theta(i0:i1));
 ynose = trx(fly1).y(i0:i1) + 2*trx(fly1).a(i0:i1).*sin(trx(fly1).theta(i0:i1));
 
@@ -18,20 +18,21 @@ for fly2 = 1:nflies,
   t1c = min(t1,trx(fly2).endframe);
   for t = t0c:t1c,
     
-    i2 = trx(fly2).f2i(t);
+    i2 = trx(fly2).off+(t);
     
     % compute distance to fly2's ellipse from each nose
     docompute = t >= t0s & t <= t1s;
     
     d(:) = nan;
-    i1 = f2i(t);
+    %i1 = f2i(t);
+    i1 = trx(fly1).off+(t);
     d(docompute) = ellipsedist_hack(trx(fly2).x(i2),trx(fly2).y(i2),trx(fly2).a(i2),...
       trx(fly2).b(i2),trx(fly2).theta(i2),xnose(docompute,i1),ynose(docompute,i1));
   
     % store
     for fly1 = flies1(docompute),
       if fly1 == fly2, continue; end
-      trx(fly1).dnose2ell(fly2,trx(fly1).f2i(t)) = d(fly1);
+      trx(fly1).dnose2ell(fly2,trx(fly1).off+(t)) = d(fly1);
     end
 
   end % end loop over frame number

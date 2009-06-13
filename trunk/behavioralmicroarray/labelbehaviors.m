@@ -133,8 +133,8 @@ ax = axis;
 colors = lines(6);
 for i = 1:length(handles.segstarts),
   f1 = handles.segstarts(i); f2 = handles.segends(i);
-  i1 = handles.trx(handles.fly).f2i(f1);
-  i2 = handles.trx(handles.fly).f2i(f2);
+  i1 = handles.trx(handles.fly).off+(f1);
+  i2 = handles.trx(handles.fly).off+(f2);
   handles.isseg(i1:i2) = ...
     plot(handles.trx(handles.fly).x(i1:i2),...
     handles.trx(handles.fly).y(i1:i2),'m','linewidth',4,'hittest','off');
@@ -155,7 +155,7 @@ handles.hcenter = plot(0,0,'o','color','r','hittest','off');
 set(handles.hmarker,'color','r','linewidth',2,'hittest','off');
 handles.hlabel = zeros(size(handles.labels));
 for i = 1:length(handles.labels),
-  j = handles.trx(handles.fly).f2i(handles.labels(i).f);
+  j = handles.trx(handles.fly).off+(handles.labels(i).f);
   handles.hlabel(i) = text(handles.trx(handles.fly).x(j),...
     handles.trx(handles.fly).y(j),handles.labels(i).s,'horizontalalignment','left',...
     'color','r','fontname','times','fontsize',16,'clipping','on');
@@ -181,7 +181,7 @@ im = handles.readframe(handles.f);
 set(handles.him,'cdata',uint8(repmat(im,[1,1,3])));
 
 fly = handles.fly;
-i = handles.trx(fly).f2i(handles.f);
+i = handles.trx(fly).off+(handles.f);
 updatefly(handles.hmarker,handles.trx(fly).x(i),handles.trx(fly).y(i),...
   handles.trx(fly).theta(i),handles.trx(fly).a(i),handles.trx(fly).b(i));
 set(handles.hcenter,'xdata',handles.trx(fly).x(i),'ydata',handles.trx(fly).y(i));
@@ -200,7 +200,7 @@ y0 = inf;
 y1 = 0;
 fly = handles.fly;
 if isalive(handles.trx(fly),handles.f)
-  i = handles.trx(fly).f2i(handles.f);
+  i = handles.trx(fly).off+(handles.f);
   [xa,xb,ya,yb] = ellipse_to_bounding_box(handles.trx(fly).x(i),...
     handles.trx(fly).y(i),handles.trx(fly).a(i)*2,...
     handles.trx(fly).b(i)*2,handles.trx(fly).theta(i));
@@ -251,7 +251,7 @@ if handles.f >= handles.trx(handles.fly).endframe,
   set(handles.dvcor_text,'string',sprintf('dv_cor: nan'));
   set(handles.corfrac_text,'string',sprintf('cor: nan'));
 else
-  i = handles.trx(handles.fly).f2i(handles.f);
+  i = handles.trx(handles.fly).off+(handles.f);
   set(handles.scattervaltext,'string',sprintf('%f',handles.c(i)));
   set(handles.ductr_text,'string',sprintf('du_ctr: %f',handles.trx(handles.fly).du_ctr(i)));
   set(handles.dvctr_text,'string',sprintf('dv_ctr: %f',handles.trx(handles.fly).dv_ctr(i)));
@@ -463,7 +463,7 @@ function addstartbutton_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 f1 = handles.f;
-i1 = handles.trx(handles.fly).f2i(f1);
+i1 = handles.trx(handles.fly).off+(f1);
 if handles.isseg(i1)>0 || f1 > handles.trx(handles.fly).endframe || ...
     f1 < handles.trx(handles.fly).firstframe,
   return;
@@ -475,8 +475,8 @@ else
   i2 = i2 + i1 - 1;
 end
 handles.currentstarti = i1;
-%i1 = handles.trx(handles.fly).f2i(f1);
-%i2 = handles.trx(handles.fly).f2i(f2);
+%i1 = handles.trx(handles.fly).off+(f1);
+%i2 = handles.trx(handles.fly).off+(f2);
 handles.isseg(i1:i2) = plot(handles.trx(handles.fly).x(i1:i2),...
   handles.trx(handles.fly).y(i1:i2),'m','linewidth',4,'hittest','off');
 chil = get(handles.mainaxes,'children');
@@ -499,7 +499,7 @@ function addendbutton_Callback(hObject, eventdata, handles)
 
 % end last interval at f1
 f1 = handles.f;
-i1 = handles.trx(handles.fly).f2i(f1);
+i1 = handles.trx(handles.fly).off+(f1);
 if handles.isseg(i1)<=0 || f1 > handles.trx(handles.fly).endframe || ...
     f1 < handles.trx(handles.fly).firstframe,
   return;
@@ -584,12 +584,12 @@ function deletesegbutton_Callback(hObject, eventdata, handles)
 
 f = handles.f;
 off = handles.trx(handles.fly).firstframe-1;
-i = handles.trx(handles.fly).f2i(f);
+i = handles.trx(handles.fly).off+(f);
 if handles.isseg(i) <= 0,
   fprintf('No label at this frame. Not deleting\n');
   return;
 end
-fidx = handles.trx(handles.fly).f2i(f);
+fidx = handles.trx(handles.fly).off+(f);
 tmp = find(handles.segstarts<=fidx);
 [i0,j] = max(handles.segstarts(tmp));
 j = tmp(j);
@@ -634,7 +634,7 @@ function addlabelbutton_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 f = handles.f;
-i = handles.trx(handles.fly).f2i(f);
+i = handles.trx(handles.fly).off+(f);
 if handles.isseg(i) <= 0,
   return;
 end
@@ -661,7 +661,7 @@ function prevlabel_button_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-i = handles.trx(handles.fly).f2i(handles.f);
+i = handles.trx(handles.fly).off+(handles.f);
 j = find(handles.isseg(1:i-2)<=0&handles.isseg(2:i-1)>0,1,'last');
 if isempty(j),
   return;
@@ -678,7 +678,7 @@ function nextlabel_button_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-i = handles.trx(handles.fly).f2i(handles.f);
+i = handles.trx(handles.fly).off+(handles.f);
 j = find(handles.isseg(i:end-1)<=0&handles.isseg(i+1:end)>0,1,'first');
 if isempty(j),
   return;

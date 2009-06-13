@@ -58,11 +58,11 @@ end
 %% convert to px, seconds
 
 [matpathtmp,matnametmp] = split_path_and_filename(matname);
-[convertsucceeded,convertmatname] = convert_units_f('matname',matnametmp,'matpath',matpathtmp,'moviename',moviename);
-if ~convertsucceeded,
-  return;
-end
-%convertmatname = matname;
+%[convertsucceeded,convertmatname,trx] = convert_units_f('matname',matnametmp,'matpath',matpathtmp,'moviename',moviename);
+%if ~convertsucceeded,
+%  return;
+%end
+convertmatname = matname;
 [trx,matname,succeeded] = load_tracks(convertmatname,moviename);
 
 %% see if we should restart
@@ -225,11 +225,17 @@ if ~DORESTART,
 else
   realmatname = matname;
   load(loadname);
+  if isfield(trx,'f2i'),
+    trx = rmfield(trx,'f2i');
+  end
+  if ~isfield(trx,'off'),
+    for i = 1:length(trx),
+      trx(i).off = -trx(i).firstframe + 1;
+    end
+  end
   matname = realmatname;
   trx0 = trx;
-  for i = 1:length(trx0),
-    trx0(i).f2i = @(f) f - trx0(i).firstframe + 1;
-  end
+  clear trx;
   trx = fixerrorsgui(seqs,moviename,trx0,annname,params,matname,loadname);
 end
 
@@ -257,7 +263,6 @@ trx = rmfield(trx,rmfns);
 if ~isempty(savename),
   save(savename,'trx');
 else
-  trx = rmfield(trx,{'xpred','ypred','thetapred','dx','dy','v','f2i'});
   tmpsavename = sprintf('backupfixed_movie%s.mat',tag);
   save(tmpsavename,'trx');
   msgbox(sprintf('saving trx to file %s\n',tmpsavename));

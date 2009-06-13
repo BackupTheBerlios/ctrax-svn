@@ -78,7 +78,7 @@ for s = 1:nseqs
   if ~strcmpi(seqs(s).type,'jump'), continue; end
   fly = seqs(s).flies;
   f = seqs(s).frames;
-  i = dataperfly(fly).f2i(f);
+  i = dataperfly(fly).off+(f);
   i(i < 1 | i > dataperfly(fly).nframes) = [];
   if isempty(i), seqs(s).type = 'dummy'; continue; end
   [xpred,ypred] = predcenter(fly,f);
@@ -100,7 +100,7 @@ for s = 1:nseqs
   if ~strcmpi(seqs(s).type,'orientchange'), continue; end
   fly = seqs(s).flies;
   f = seqs(s).frames;
-  i = dataperfly(fly).f2i(f);
+  i = dataperfly(fly).off+(f);
   i(i < 1 | i > dataperfly(fly).nframes) = [];
   if isempty(i), seqs(s).type = 'dummy'; continue; end
   thetapred = predtheta(fly,f);
@@ -142,7 +142,7 @@ for s = 1:nseqs,
     ycurr = ypred;
     thetacurr = thetapred;
     for j = 1:2,
-      ii = dataperfly(flies(j)).f2i(f);
+      ii = dataperfly(flies(j)).off+(f);
       [xpred(j),ypred(j)] = predcenter(flies(j),f);
       thetapred(j) = predtheta(flies(j),f);
       xcurr(j) = dataperfly(flies(j)).x(ii);
@@ -181,7 +181,7 @@ for s = 1:nseqs
   if ~strcmpi(seqs(s).type,'largemajor'), continue; end
   fly = seqs(s).flies;
   f = seqs(s).frames;
-  i = dataperfly(fly).f2i(f);
+  i = dataperfly(fly).off+(f);
   i(i < 0 | i > dataperfly(fly).nframes) = [];
   islargemajor = dataperfly(fly).a(i) > LARGEMAJOR;
   if ~any(islargemajor),
@@ -204,7 +204,7 @@ for s = 1:nseqs,
     continue;
   end
   f = seqs(s).frames;
-  i = sort(dataperfly(fly).f2i(f));
+  i = sort(dataperfly(fly).off+(f));
   i(i < 1 | i > dataperfly(fly).nframes) = [];
   if i(1) == 1, i0 = 2; else i0 = 1; end
   if i(end) == dataperfly(fly).nframes, i1 = length(i)-1; else i1 = length(i); end
@@ -240,7 +240,7 @@ params = {'minerrjumpfrac',MINERRJUMPFRAC,'closelength',CLOSELENGTH,...
 
   function [xpred,ypred] = predcenter(fly,f)
   
-    i = dataperfly(fly).f2i(f);
+    i = dataperfly(fly).off+(f);
     xpred = zeros(size(f));
     ypred = zeros(size(f));
     if any(i < 3),
@@ -254,7 +254,7 @@ params = {'minerrjumpfrac',MINERRJUMPFRAC,'closelength',CLOSELENGTH,...
 
   function thetapred = predtheta(fly,f)
 
-    i = dataperfly(fly).f2i(f);
+    i = dataperfly(fly).off+(f);
     thetapred = zeros(size(f));
     if any(i) < 3,
       thetapred(i<3) = dataperfly(fly).theta(1);

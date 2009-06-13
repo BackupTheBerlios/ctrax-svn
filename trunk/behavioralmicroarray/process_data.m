@@ -189,7 +189,8 @@ for fly = 1:nflies,
   data(fly).abssmoothd2theta = abs(data(fly).smoothd2theta);
   data(fly).units.abssmoothd2theta = parseunits('rad/s/s');
 
-  data(fly).f2i = @(f) f - data(fly).firstframe + 1;
+  data(fly).off = -data(fly).firstframe + 1;
+  %data(fly).f2i = @(f) f - data(fly).firstframe + 1;
   
   % velocity direction
   if data(fly).nframes < 2,

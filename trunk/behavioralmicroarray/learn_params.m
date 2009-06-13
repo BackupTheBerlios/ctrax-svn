@@ -90,7 +90,8 @@ for i = 1:nmovies,
     trk.matname = matnames{i};
     trk.moviename = movienames{i};
     % sometimes weird things happen with this member function
-    trk.f2i = @(f) f - trk.firstframe + 1;
+    trk.off = -trk.firstframe + 1;
+    %trk.f2i = @(f) f - trk.firstframe + 1;
     %trk = process_data(trx(fly),matnames{i},movienames{i});
     %trk = process_data_crabwalks(trk);
     trk = GetPartOfTrack(trk,t0,t1);
@@ -122,7 +123,8 @@ for fly = 1:length(datalearn),
   t0 = datalearn(fly).firstframe;
   datalearn(fly).firstframe = 1;
   datalearn(fly).endframe = datalearn(fly).nframes;
-  datalearn(fly).f2i = @(f) f;
+  datalearn(fly).off = 0;
+  %datalearn(fly).f2i = @(f) f;
   
   % seems to be unhappy with non-speed parameters
   fns = fieldnames(datalearn(fly));

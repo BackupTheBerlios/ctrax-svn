@@ -221,7 +221,7 @@ for fly = 1:handles.nfliestot,
       set(handles.hpathother(fly),'visible','off');
     end
   else
-    i = handles.trx(fly).f2i(handles.f);
+    i = handles.trx(fly).off+(handles.f);
     idx = max(i-20,1):min(i+20,handles.trx(fly).nframes);
     if ~ismember(fly,handles.flies)
       set(handles.hpathother(fly),'xdata',handles.trx(fly).x(idx),...
@@ -244,7 +244,7 @@ y0 = inf;
 y1 = 0;
 for fly = handles.flies
   if isalive(handles.trx(fly),handles.f)
-    i = handles.trx(fly).f2i(handles.f);
+    i = handles.trx(fly).off+(handles.f);
     [xa,xb,ya,yb] = ellipse_to_bounding_box(handles.trx(fly).x(i),...
       handles.trx(fly).y(i),handles.trx(fly).a(i)*2,...
       handles.trx(fly).b(i)*2,handles.trx(fly).theta(i));

@@ -97,7 +97,7 @@ if readtrx,
   for i = 1:length(trx),
     trx(i).nframes = length(trx(i).x);
     trx(i).endframe = trx(i).firstframe + trx(i).nframes - 1;
-    trx(i).f2i = @(f) f - trx(i).firstframe + 1;
+    trx(i).off = -trx(i).firstframe + 1;
   end
   
   if readall,

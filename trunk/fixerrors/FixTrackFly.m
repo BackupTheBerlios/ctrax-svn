@@ -4,14 +4,14 @@ trk = handles.trx(fly);
 boxrad = handles.maxjump;
 for f = f0+1:f1
   
-  i = trk.f2i(f);
+  i = trk.off+(f);
   [isfore,xpred,ypred,thetapred,r0,r1,c0,c1,im] = FixBgSub(fly,f,handles);
 
   [cc,ncc] = bwlabel(isfore);
   isdeleted = [];
   for fly2 = 1:handles.nflies,
     if fly2 == fly, continue; end
-    i2 = handles.trx(fly2).f2i(f);
+    i2 = handles.trx(fly2).off+(f);
     bw = ellipsepixels([handles.trx(fly2).x(i2),handles.trx(fly2).y(i2),...
       handles.trx(fly2).a(i2)*4,handles.trx(fly2).b(i2)*4,handles.trx(fly2).theta(i2)],...
       [r0,r1,c0,c1]);

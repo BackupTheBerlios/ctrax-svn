@@ -14,8 +14,8 @@ for fly2 = 1:nflies,
 
   for i = 1:length(fns),
     fn = fns{i};
-    i0 = trx(fly1).f2i(t0curr);
-    i1 = trx(fly1).f2i(t1curr);
+    i0 = trx(fly1).off+(t0curr);
+    i1 = trx(fly1).off+(t1curr);
     if length(pairtrx(fly2).(fn)) == trx(fly1).nframes-1,
       pairtrx(fly2).(fn) = trx(fly1).(fn)(i0:i1-1);
     elseif length(pairtrx(fly2).(fn)) == trx(fly1).nframes,
@@ -25,7 +25,8 @@ for fly2 = 1:nflies,
   
   pairtrx(fly2).firstframe = t0curr;
   pairtrx(fly2).endframe = t1curr;
-  pairtrx(fly2).f2i = @(f) f - pairtrx(fly2).firstframe + 1;
+  pairtrx(fly2).off = -pairtrx(fly2).firstframe + 1;
+  %pairtrx(fly2).f2i = @(f) f - pairtrx(fly2).firstframe + 1;
   pairtrx(fly2).nframes = t1curr - t0curr + 1;
   
 end
@@ -42,8 +43,8 @@ pairtrx(fly1).endframe = 0;
 pairtrx(fly1).nframes = 0;
 
 % location of the fly 1's nose
-i0 = trx(fly1).f2i(t0);
-i1 = trx(fly1).f2i(t1);
+i0 = trx(fly1).off+(t0);
+i1 = trx(fly1).off+(t1);
 xnose = trx(fly1).x_mm(i0:i1) + 2*trx(fly1).a_mm(i0:i1).*cos(trx(fly1).theta(i0:i1));
 ynose = trx(fly1).y_mm(i0:i1) + 2*trx(fly1).a_mm(i0:i1).*sin(trx(fly1).theta(i0:i1));
 
@@ -75,17 +76,17 @@ for fly2 = 1:nflies,
   end
   
   % statistics of pairs of flies
-  i0 = trx(fly1).f2i(pairtrx(fly2).firstframe);
-  i1 = trx(fly1).f2i(pairtrx(fly2).endframe);
-  j0 = trx(fly2).f2i(pairtrx(fly2).firstframe);
-  j1 = trx(fly2).f2i(pairtrx(fly2).endframe);
+  i0 = trx(fly1).off+(pairtrx(fly2).firstframe);
+  i1 = trx(fly1).off+(pairtrx(fly2).endframe);
+  j0 = trx(fly2).off+(pairtrx(fly2).firstframe);
+  j1 = trx(fly2).off+(pairtrx(fly2).endframe);
   
   % distance from fly1's nose to fly2
   pairtrx(fly2).distnose2ell = zeros(1,pairtrx(fly2).nframes);
   for t = pairtrx(fly2).firstframe:pairtrx(fly2).endframe,
-    i_pair = pairtrx(fly2).f2i(t);
+    i_pair = pairtrx(fly2).off+(t);
     i_nose1 = t - t0 + 1;
-    i_fly2 = trx(fly2).f2i(t);
+    i_fly2 = trx(fly2).off+(t);
     pairtrx(fly2).distnose2ell(i_pair) = ...
       ellipsedist_hack(trx(fly2).x_mm(i_fly2),trx(fly2).y_mm(i_fly2),trx(fly2).a_mm(i_fly2),...
       trx(fly2).b_mm(i_fly2),trx(fly2).theta(i_fly2),xnose(i_nose1),ynose(i_nose1));
@@ -132,9 +133,9 @@ for fly2 = 1:nflies,
   pairtrx(fly2).minabsanglefrom1to2 = zeros(1,pairtrx(fly2).nframes);
   pairtrx(fly2).anglesub = zeros(1,pairtrx(fly2).nframes);
   for t = pairtrx(fly2).firstframe:pairtrx(fly2).endframe,
-    i_pair = pairtrx(fly2).f2i(t);
-    i1 = trx(fly1).f2i(t);
-    i2 = trx(fly2).f2i(t);
+    i_pair = pairtrx(fly2).off+(t);
+    i1 = trx(fly1).off+(t);
+    i2 = trx(fly2).off+(t);
     % compute angles to fly2
     [pairtrx(fly2).anglesub(i_pair),psi1,psi2] = tangentangles(trx(fly1).x(i1),trx(fly1).y(i1),...
       trx(fly1).a(i1)*2,trx(fly1).b(i1)*2,trx(fly1).theta(i1),...

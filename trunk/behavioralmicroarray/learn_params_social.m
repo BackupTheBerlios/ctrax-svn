@@ -104,7 +104,8 @@ for i = 1:nmovies,
     fly = fliestolabel{i}(j);
     load(savenames{i}{j});
     for fly2 = 1:length(pairtrx),
-      pairtrx(fly2).f2i = @(f) f - pairtrx(fly2).firstframe + 1;
+      pairtrx(fly2).off = -pairtrx(fly2).firstframe + 1;
+      %pairtrx(fly2).f2i = @(f) f - pairtrx(fly2).firstframe + 1;
     end
     [labelscurr] = pairwise2unarylabels(labeledbehavior{i}(fly),pairtrx);
     % we want firstframe to be 1 for use in learn_params
@@ -116,7 +117,8 @@ for i = 1:nmovies,
         pairtrx(fly2).endframe = pairtrx(fly2).endframe - pairtrx(fly2).firstframe + 1;
       end
       pairtrx(fly2).firstframe = 1;
-      pairtrx(fly2).f2i = @(f) f;
+      pairtrx(fly2).off = 0;
+      %pairtrx(fly2).f2i = @(f) f;
       
       % seems to be unhappy with non-speed parameters
       fns = fieldnames(pairtrx(fly2));

@@ -69,8 +69,10 @@ end
 load(matname);
 if exist('trx','var'),
   data = trx;
+  if ~isfield(data,'off'),
   for fly = 1:length(data),
-    data(fly).f2i = @(f) f - data(fly).firstframe + 1;
+    data(fly).off = -data(fly).firstframe + 1;
+    %data(fly).f2i = @(f) f - data(fly).firstframe + 1;
   end
   return;
 end
@@ -129,7 +131,8 @@ for id = idscurr,
   end
   fprintf('datacurr = \n');
   disp(datacurr);
-  datacurr.f2i = @(f) f - datacurr.firstframe + 1;
+  datacurr.off = -datacurr.firstframe + 1;
+  %datacurr.f2i = @(f) f - datacurr.firstframe + 1;
   datacurr.nframes = length(datacurr.x);
   datacurr.endframe = datacurr.nframes + datacurr.firstframe - 1;
   if ~exist('data','var'),

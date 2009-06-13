@@ -227,10 +227,16 @@ else
   realmatname = matname;
   load(loadname);
   matname = realmatname;
-  trx0 = trx;
-  for i = 1:length(trx0),
-    trx0(i).f2i = @(f) f - trx0(i).firstframe + 1;
+  if isfield(trx,'f2i'),
+    trx = rmfield(trx,'f2i');
   end
+  if ~isfield(trx,'off'),
+    for i = 1:length(trx),
+      trx(i).off = -trx(i).firstframe + 1;
+    end
+  end
+  trx0 = trx;
+  clear trx;
   trx = labelerrorsgui(seqs,moviename,trx0,annname,params,matname,loadname);
 end
 
@@ -258,7 +264,6 @@ trx = rmfield(trx,rmfns);
 if ~isempty(savename),
   save(savename,'trx');
 else
-  trx = rmfield(trx,{'xpred','ypred','thetapred','dx','dy','v','f2i'});
   tmpsavename = sprintf('backupfixed_movie%s.mat',tag);
   save(tmpsavename,'trx');
   msgbox(sprintf('saving trx to file %s\n',tmpsavename));

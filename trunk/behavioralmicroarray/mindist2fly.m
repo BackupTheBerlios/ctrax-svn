@@ -16,10 +16,10 @@ for fly1 = 1:nflies-1,
     t0 = max(trx(fly1).firstframe,trx(fly2).firstframe);
     t1 = min(trx(fly1).endframe,trx(fly2).endframe);
     if t0 > t1, continue; end
-    i0 = trx(fly1).f2i(t0);
-    i1 = trx(fly1).f2i(t1);
-    j0 = trx(fly2).f2i(t0);
-    j1 = trx(fly2).f2i(t1);
+    i0 = trx(fly1).off+(t0);
+    i1 = trx(fly1).off+(t1);
+    j0 = trx(fly2).off+(t0);
+    j1 = trx(fly2).off+(t1);
     dx = trx(fly1).x(i0:i1) - trx(fly2).x(j0:j1);
     dy = trx(fly1).y(i0:i1) - trx(fly2).y(j0:j1);
     d = sqrt(dx.^2 + dy.^2);

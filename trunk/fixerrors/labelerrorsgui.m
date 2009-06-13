@@ -76,8 +76,8 @@ if length(varargin) > 6,
         handles.flyerror = flyerror;
         for i = 1:length(handles.terror0),
           fly = handles.flyerror(i);
-          ierror0 = handles.trx(fly).f2i(handles.terror0(i));
-          ierror1 = handles.trx(fly).f2i(handles.terror1(i));
+          ierror0 = handles.trx(fly).off+(handles.terror0(i));
+          ierror1 = handles.trx(fly).off+(handles.terror1(i));
           handles.trx(fly).iserror(ierror0:ierror1) = true;
         end
       end
@@ -234,7 +234,7 @@ for flyi = 1:nfliesseq,
   fly = handles.seq.flies(flyi);
   for fi = 1:nframesseq,
     f = frames(fi);
-    i = handles.trx(fly).f2i(f);
+    i = handles.trx(fly).off+(f);
     if isalive(handles.trx(fly),f)
       [x0(flyi,fi),x1(flyi,fi),y0(flyi,fi),y1(flyi,fi)] = ...
         ellipse_to_bounding_box(handles.trx(fly).x(i),handles.trx(fly).y(i),...
@@ -276,7 +276,7 @@ if isdummytrk(handles.trx(fly)),
   return;
 end
 
-ii = handles.trx(fly).f2i(handles.f);
+ii = handles.trx(fly).off+(handles.f);
 
 if isalive(handles.trx(fly),handles.f)
   SetFlyVisible(handles,fly,'on');
@@ -428,7 +428,7 @@ if tmp(1,3) ~= 1,
   return;
 end
 
-i = handles.trx(fly).f2i(handles.f);
+i = handles.trx(fly).off+(handles.f);
 handles.trx(fly).x(i) = tmp(1,1);
 handles.trx(fly).y(i) = tmp(1,2);
 FixUpdateFly(handles,fly);
@@ -442,7 +442,7 @@ if tmp(1,3) ~= 1,
 end
 x1 = tmp(1,1);
 y1 = tmp(1,2);
-i = handles.trx(fly).f2i(handles.f);
+i = handles.trx(fly).off+(handles.f);
 
 x = handles.trx(fly).x(i);
 y = handles.trx(fly).y(i);
@@ -472,7 +472,7 @@ if tmp(1,3) ~= 1,
 end
 x3 = tmp(1,1);
 y3 = tmp(1,2);
-i = handles.trx(fly).f2i(handles.f);
+i = handles.trx(fly).off+(handles.f);
 
 x = handles.trx(fly).x(i);
 y = handles.trx(fly).y(i);
@@ -508,7 +508,7 @@ if tmp(1,3) ~= 1,
 end
 x4 = tmp(1,1);
 y4 = tmp(1,2);
-i = handles.trx(fly).f2i(handles.f);
+i = handles.trx(fly).off+(handles.f);
 
 x = handles.trx(fly).x(i);
 y = handles.trx(fly).y(i);
@@ -544,7 +544,7 @@ if tmp(1,3) ~= 1,
 end
 x2 = tmp(1,1);
 y2 = tmp(1,2);
-i = handles.trx(fly).f2i(handles.f);
+i = handles.trx(fly).off+(handles.f);
 
 x = handles.trx(fly).x(i);
 y = handles.trx(fly).y(i);
@@ -923,7 +923,7 @@ for fly = 1:handles.nflies,
   if ~isalive(handles.trx(fly),f),
     continue;
   end
-  i = handles.trx(fly).f2i(f);
+  i = handles.trx(fly).off+(f);
   x(fly) = handles.trx(fly).x(i);
   y(fly) = handles.trx(fly).y(i);
 end
@@ -1049,8 +1049,8 @@ guidata(hObject,handles);
 
 function trk = GetPartOfTrack(trk,f0,f1)
 
-i0 = trk.f2i(f0);
-i1 = trk.f2i(f1);
+i0 = trk.off+(f0);
+i1 = trk.off+(f1);
 i0 = max(1,i0);
 i1 = min(i1,trk.nframes);
 trk.x = trk.x(i0:i1);
@@ -1061,7 +1061,8 @@ trk.theta = trk.theta(i0:i1);
 trk.nframes = max(0,i1-i0+1);
 trk.firstframe = max(f0,trk.firstframe);
 trk.endframe = min(trk.endframe,f1);
-trk.f2i = @(f) f - trk.firstframe + 1;
+trk.off = -trk.firstframe + 1;
+%trk.f2i = @(f) f - trk.firstframe + 1;
 
 function trk1 = CatTracks(trk1,trk2)
 
@@ -1121,8 +1122,8 @@ if ~isalive(handles.trx(fly1),f) || ~isalive(handles.trx(fly2),f),
   return;
 end
 
-i1 = handles.trx(fly1).f2i(f);
-i2 = handles.trx(fly2).f2i(f);
+i1 = handles.trx(fly1).off+(f);
+i2 = handles.trx(fly2).off+(f);
 
 handles.undolist{end+1} = {'swap',f,[fly1,fly2]};
 trk1 = GetPartOfTrack(handles.trx(fly1),f,inf);
@@ -1326,7 +1327,7 @@ if strcmpi(s,'birth nearby'),
       continue;
     end
     fly = handles.seqs(i).flies;
-    j = handles.trx(fly).f2i(f);
+    j = handles.trx(fly).off+(f);
     x = handles.trx(fly).x(j);
     y = handles.trx(fly).y(j);
     if x >= xlim(1) && x <= xlim(2) && y >= ylim(1) && y <= ylim(2),
@@ -1365,7 +1366,7 @@ elseif strcmpi(s,'death nearby'),
       continue;
     end
     fly = handles.seqs(i).flies;
-    j = handles.trx(fly).f2i(f);
+    j = handles.trx(fly).off+(f);
     x = handles.trx(fly).x(j);
     y = handles.trx(fly).y(j);
     if x >= xlim(1) && x <= xlim(2) && y >= ylim(1) && y <= ylim(2),
@@ -1416,7 +1417,7 @@ if strcmpi(s,'birth nearby'),
       continue;
     end
     fly = handles.seqs(i).flies;
-    j = handles.trx(fly).f2i(f);
+    j = handles.trx(fly).off+(f);
     x = handles.trx(fly).x(j);
     y = handles.trx(fly).y(j);
     if x >= xlim(1) && x <= xlim(2) && y >= ylim(1) && y <= ylim(2),
@@ -1455,7 +1456,7 @@ elseif strcmpi(s,'death nearby'),
       continue;
     end
     fly = handles.seqs(i).flies;
-    j = handles.trx(fly).f2i(f);
+    j = handles.trx(fly).off+(f);
     x = handles.trx(fly).x(j);
     y = handles.trx(fly).y(j);
     if x >= xlim(1) && x <= xlim(2) && y >= ylim(1) && y <= ylim(2),
@@ -1596,8 +1597,8 @@ f1 = min(f1,handles.trx(fly).endframe);
 handles.terror0(end+1) = f0;
 handles.terror1(end+1) = f1;
 handles.flyerror(end+1) = fly;
-i0 = handles.trx(fly).f2i(f0);
-i1 = handles.trx(fly).f2i(f1);
+i0 = handles.trx(fly).off+(f0);
+i1 = handles.trx(fly).off+(f1);
 handles.trx(handles.adderrorfly).iserror(f0:f1) = true;
 
 delete(handles.hadderror);
@@ -1655,7 +1656,7 @@ set(handles.adderrorfirstframebutton,'string',sprintf('First = %d',handles.f));
 
 % draw the fly
 fly = handles.adderrorfly;
-i = handles.trx(fly).f2i(handles.f);
+i = handles.trx(fly).off+(handles.f);
 x = handles.trx(fly).x(i);
 y = handles.trx(fly).y(i);
 a = 2*handles.trx(fly).a(i);
@@ -1690,7 +1691,7 @@ set(handles.extendfirstflybutton,'enable','off');
 
 % draw the fly
 fly = handles.extendfly;
-i = handles.trx(fly).f2i(handles.f);
+i = handles.trx(fly).off+(handles.f);
 x = handles.trx(fly).x(i);
 y = handles.trx(fly).y(i);
 a = 2*handles.trx(fly).a(i);
@@ -1706,7 +1707,7 @@ guidata(hObject,handles);
 function UpdateInterpolateFly(handles)
 
 fly = handles.interpolatefly;
-i = handles.trx(fly).f2i(handles.interpolatefirstframe);
+i = handles.trx(fly).off+(handles.interpolatefirstframe);
 x = handles.trx(fly).x(i);
 y = handles.trx(fly).y(i);
 a = 2*handles.trx(fly).a(i);
@@ -1753,8 +1754,8 @@ handles.undolist{end+1} = {'connect',[f1,f2],[fly1,fly2],...
   GetPartOfTrack(handles.trx(fly2),1,f2-1)]};
 
 % interpolate between f1 and f2
-i1 = handles.trx(fly1).f2i(f1);
-i2 = handles.trx(fly2).f2i(f2);
+i1 = handles.trx(fly1).off+(f1);
+i2 = handles.trx(fly2).off+(f2);
 x1 = handles.trx(fly1).x(i1);
 y1 = handles.trx(fly1).y(i1);
 a1 = handles.trx(fly1).a(i1);
@@ -1794,7 +1795,7 @@ elseif f3 > handles.trx(fly1).endframe,
 end
 
 % copy over the interpolation
-idx = i1:handles.trx(fly1).f2i(f2);
+idx = i1:handles.trx(fly1).off+(f2);
 handles.trx(fly1).x(idx) = xinterp;
 handles.trx(fly1).y(idx) = yinterp;
 handles.trx(fly1).a(idx) = ainterp;
@@ -1802,8 +1803,8 @@ handles.trx(fly1).b(idx) = binterp;
 handles.trx(fly1).theta(idx) = thetainterp;
 
 % copy over fly2
-idx1 = handles.trx(fly1).f2i(f2):handles.trx(fly1).f2i(f3);
-idx2 = handles.trx(fly2).f2i(f2):handles.trx(fly2).f2i(f3);
+idx1 = handles.trx(fly1).off+(f2):handles.trx(fly1).off+(f3);
+idx2 = handles.trx(fly2).off+(f2):handles.trx(fly2).off+(f3);
 handles.trx(fly1).x(idx1) = handles.trx(fly2).x(idx2);
 handles.trx(fly1).y(idx1) = handles.trx(fly2).y(idx2);
 handles.trx(fly1).a(idx1) = handles.trx(fly2).a(idx2);
@@ -1979,7 +1980,7 @@ set(handles.connectfirstflybutton,'string',sprintf('First = %d',handles.f));
 
 % draw the fly
 fly = handles.connectfirstfly;
-i = handles.trx(fly).f2i(handles.f);
+i = handles.trx(fly).off+(handles.f);
 x = handles.trx(fly).x(i);
 y = handles.trx(fly).y(i);
 a = 2*handles.trx(fly).a(i);
@@ -2132,7 +2133,8 @@ if f < handles.trx(fly).firstframe,
   handles.trx(fly).b(1:n) = handles.trx(fly).b(n+1);
   handles.trx(fly).theta(1:n) = handles.trx(fly).theta(n+1);
   handles.trx(fly).firstframe = f;
-  handles.trx(fly).f2i = @(f) f - handles.trx(fly).firstframe + 1;
+  handles.trx(fly).off = -f + 1;
+  %handles.trx(fly).f2i = @(f) f - handles.trx(fly).firstframe + 1;
   handles.trx(fly).nframes = length(handles.trx(fly).x);
   % move the death event
   handles = FixDeathEvent(handles,fly);
@@ -2275,7 +2277,7 @@ set(handles.autotrackfirstframebutton,'enable','off');
 set(handles.autotracksettingsbutton,'enable','on');
 % draw the fly
 fly = handles.autotrackfly;
-i = handles.trx(fly).f2i(handles.f);
+i = handles.trx(fly).off+(handles.f);
 x = handles.trx(fly).x(i);
 y = handles.trx(fly).y(i);
 a = 2*handles.trx(fly).a(i);
@@ -2310,7 +2312,7 @@ for f = f0+1:f1
     break;
   end
   
-  i = trk.f2i(f);
+  i = trk.off+(f);
   [isfore,dfore,xpred,ypred,thetapred,r0,r1,c0,c1,im] = FixBgSub(fly,f,handles);
 
   [cc,ncc] = bwlabel(isfore);
@@ -2318,7 +2320,7 @@ for f = f0+1:f1
   for fly2 = 1:handles.nflies,
     if fly2 == fly, continue; end
     if ~isalive(handles.trx(fly2),f), continue; end
-    i2 = handles.trx(fly2).f2i(f);
+    i2 = handles.trx(fly2).off+(f);
     if handles.trx(fly2).x(i2)-(2*handles.trx(fly2).a(i2)+5) > c1 || ...
         handles.trx(fly2).x(i2) + (2*handles.trx(fly2).a(i2)+5)< c0 || ...
         handles.trx(fly2).y(i2) + (2*handles.trx(fly2).a(i2)+5)< r0 || ...
@@ -2475,7 +2477,7 @@ handles.undolist{end+1} = {'flip',handles.flipframe,f,fly};
 
 % flip
 for f = handles.flipframe:f,
-  i = handles.trx(fly).f2i(f);
+  i = handles.trx(fly).off+(f);
   handles.trx(fly).theta(i) = modrange(handles.trx(fly).theta(i)+pi,-pi,pi);
 end
 
@@ -2533,7 +2535,7 @@ set(handles.flipfirstframebutton,'enable','off');
 
 % draw the fly
 fly = handles.flipfly;
-i = handles.trx(fly).f2i(handles.f);
+i = handles.trx(fly).off+(handles.f);
 x = handles.trx(fly).x(i);
 y = handles.trx(fly).y(i);
 a = 2*handles.trx(fly).a(i);
@@ -2569,7 +2571,7 @@ S0 = zeros([2,2,nflies]);
 priors0 = zeros(1,nflies);
 for i = 1:nflies,
   fly = flies(i);
-  j = handles.trx(fly).f2i(f0);
+  j = handles.trx(fly).off+(f0);
   mu0(i,:) = [handles.trx(fly).x(j),handles.trx(fly).y(j)];
   S0(:,:,i) = axes2cov(handles.trx(fly).a(j)*2,handles.trx(fly).b(j)*2,handles.trx(fly).theta(j));
   priors0(i) = handles.trx(fly).a(j)*handles.trx(fly).b(j);
@@ -2591,7 +2593,7 @@ for f = f0+1:f1
   for fly2 = 1:handles.nflies,
     if ismember(fly2,flies), continue; end
     if ~isalive(handles.trx(fly2),f), continue; end
-    i2 = handles.trx(fly2).f2i(f);
+    i2 = handles.trx(fly2).off+(f);
     if handles.trx(fly2).x(i2)-(2*handles.trx(fly2).a(i2)+5) > c1 || ...
         handles.trx(fly2).x(i2) + (2*handles.trx(fly2).a(i2)+5)< c0 || ...
         handles.trx(fly2).y(i2) + (2*handles.trx(fly2).a(i2)+5)< r0 || ...
@@ -2666,7 +2668,7 @@ for f = f0+1:f1
   end
   for i = 1:nflies,
     fly = flies(i);
-    j = handles.trx(fly).f2i(f);
+    j = handles.trx(fly).off+(f);
     handles.trx(fly).x(j) = mu(i,1);
     handles.trx(fly).y(j) = mu(i,2);
     [a,b,theta] = cov2ell(S(:,:,i));
@@ -2816,7 +2818,7 @@ set(handles.manytracksettingsbutton,'enable','on');
 % draw the fly
 handles.hmanytrack = [];
 for fly = handles.manytrackflies(:)',
-  i = handles.trx(fly).f2i(handles.f);
+  i = handles.trx(fly).off+(handles.f);
   x = handles.trx(fly).x(i);
   y = handles.trx(fly).y(i);
   a = 2*handles.trx(fly).a(i);

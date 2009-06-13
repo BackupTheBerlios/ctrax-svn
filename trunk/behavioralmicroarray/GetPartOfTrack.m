@@ -1,7 +1,7 @@
 function trk1 = GetPartOfTrack(trk0,t0,t1)
 
 fns = fieldnames(trk0);
-dontsplit = {'id','moviename','firstframe','arena','f2i','nframes','endframe','offset_start'};
+dontsplit = {'id','moviename','firstframe','off','arena','f2i','nframes','endframe','offset_start'};
 if t0 < trk0.firstframe,
   fprintf('firstframe of trx = %d, requesting frame %d\n',trk0.firstframe,t0);
 end
@@ -10,8 +10,8 @@ if t1 > trk0.endframe,
 end
 t0 = min(trk0.endframe,max(t0,trk0.firstframe));
 t1 = max(trk0.firstframe,min(t1,trk0.endframe));
-i0 = trk0.f2i(t0);
-i1 = trk0.f2i(t1);
+i0 = trk0.off+(t0);
+i1 = trk0.off+(t1);
 for i = 1:length(fns)
   fn = fns{i};
   if any(strcmpi(fn,dontsplit)),
@@ -35,4 +35,4 @@ end
 trk1.firstframe = t0;
 trk1.endframe = t1;
 trk1.nframes = t1 - t0 + 1;
-trk1.f2i = @(f) f-t0+1;
+trk1.off = -t0 + 1;

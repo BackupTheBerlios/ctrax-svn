@@ -8,7 +8,7 @@ end
   
 fns = fieldnames(trx);
 % always ignore these fields
-ignorefns = {'id','moviename','firstframe','arena','f2i','nframes','endframe',...
+ignorefns = {'id','moviename','firstframe','off','arena','f2i','nframes','endframe',...
             'pxpermm','fps','matname','annname','sex','type','units'};
 fns = setdiff(fns,ignorefns);
 ignore = [];

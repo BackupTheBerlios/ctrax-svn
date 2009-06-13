@@ -1,4 +1,4 @@
-function [succeeded,savename] = convert_units_f(varargin)
+function [succeeded,savename,trx] = convert_units_f(varargin)
 
 setuppath;
 
