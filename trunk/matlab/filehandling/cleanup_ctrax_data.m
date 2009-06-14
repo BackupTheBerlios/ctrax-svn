@@ -40,7 +40,8 @@ for id = idscurr,
   datacurr.arena.x = nan;
   datacurr.arena.y = nan;
   datacurr.arena.r = nan;
-  datacurr.f2i = @(f) f - datacurr.firstframe + 1;
+  datacurr.off = -datacurr.firstframe + 1;
+  %datacurr.f2i = @(f) f - datacurr.firstframe + 1;
   datacurr.nframes = length(datacurr.x);
   datacurr.endframe = datacurr.nframes + datacurr.firstframe - 1;
   if isconverted,
@@ -60,4 +61,4 @@ for id = idscurr,
 end
 
 savename = strrep(matname,'.mat',['trx',ds,'.mat']);
-save(savename,'trx');
+save_tracks(trx,savename);
