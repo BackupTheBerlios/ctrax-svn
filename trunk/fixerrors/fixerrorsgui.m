@@ -74,6 +74,8 @@ if ~isseqleft,
   uiresume(handles.figure1);
   return;
 end
+handles.nflies = length(handles.trx);
+handles = SetFlyColors(handles);
 handles = SetSeq(handles,i,true);
 handles.nselect = 0;
 handles.selected = [];
@@ -110,7 +112,6 @@ end
 if ~didload,
   handles.doneseqs = [];
 end
-handles.nflies = length(handles.trx);
 
 % initialize gui
 
@@ -154,8 +155,6 @@ im = handles.readframe(handles.f);
 handles.him = imagesc(im);
 colormap gray; axis image; hold on;
 zoom reset;
-
-handles.colors = SetFlyColors(handles);
 
 handles.hellipse = zeros(1,handles.nflies);
 handles.hcenter = handles.hellipse;
@@ -573,15 +572,27 @@ else
   set(handles.hpath(fly),'linewidth',1);
 end
 
-function colors = SetFlyColors(handles)
+function handles = SetFlyColors(handles)
 
-colors = jet(handles.nflies);
-idx = round(linspace(1,handles.nflies,length(handles.seq.flies)));
-for i = 1:length(handles.seq.flies),
-  tmp = colors(handles.seq.flies(i),:);
-  colors(handles.seq.flies,:) = colors(idx(i),:);
-  colors(idx(i),:) = tmp;
+% order we will assign colors to flies
+D = squareform(pdist((1:handles.nflies)'));
+isassigned = false(1,handles.nflies);
+D(:,handles.nflies) = nan;
+handles.colororder = zeros(1,handles.nflies);
+handles.colororder(1) = handles.nflies;
+isassigned(handles.nflies) = true;
+for i = 2:handles.nflies,
+  mind = min(D(isassigned,:),[],1);
+  maxd = max(mind);
+  j = find(mind==maxd);
+  [tmp,k] = max(D(handles.colororder(i-1),j));
+  j = j(k);
+  handles.colororder(i) = j;
+  D(:,j) = nan;
+  isassigned(j) = true;
 end
+handles.colors0 = jet(handles.nflies);
+handles.colors = handles.colors0(handles.colororder,:);
 
 function InitializeDisplayPanel(handles)
 
@@ -877,6 +888,49 @@ set(handles.seqframestext,'string',sprintf('Frames: %d:%d',handles.seq.frames(1)
 set(handles.seqfliestext,'string',['Flies: [',num2str(handles.seq.flies),']']);
 set(handles.seqtypetext,'string',sprintf('Type: %s',handles.seq.type));
 set(handles.seqsusptext,'string',sprintf('Susp: %f',max(handles.seq.suspiciousness)));
+
+% set fly colors so that flies that are close have different colors
+x = nan(1,handles.nflies);
+y = nan(1,handles.nflies);
+f = round(mean([handles.seq.frames(1),handles.seq.frames(end)]));
+for fly = 1:handles.nflies,
+  if ~isalive(handles.trx(fly),f),
+    continue;
+  end
+  i = handles.trx(fly).off+(f);
+  x(fly) = handles.trx(fly).x(i);
+  y(fly) = handles.trx(fly).y(i);
+end
+
+D = squareform(pdist([x;y]'));
+handles.colors(handles.seq.flies,:) = handles.colors0(handles.colororder(1:length(handles.seq.flies)),:);
+isassigned = false(1,handles.nflies);
+isassigned(handles.seq.flies) = true;
+D(:,handles.seq.flies) = nan;
+for i = length(handles.seq.flies)+1:handles.nflies,
+  [mind,fly] = min(min(D(isassigned,:),[],1));
+  if isnan(mind),
+    handles.colors(~isassigned,:) = handles.colors0(handles.colororder(i:end),:);
+    break;
+  end
+  handles.colors(fly,:) = handles.colors0(handles.colororder(i),:);
+  isassigned(fly) = true;
+  D(:,fly) = nan;
+end
+
+if isfield(handles,'hpath'),
+  for fly = 1:handles.nflies,
+    set(handles.hpath(fly),'color',handles.colors(fly,:));
+    set(handles.htailmarker(fly),'color',handles.colors(fly,:));
+    set(handles.hellipse(fly),'color',handles.colors(fly,:));
+    set(handles.hleft(fly),'color',handles.colors(fly,:));
+    set(handles.hright(fly),'color',handles.colors(fly,:));
+    set(handles.hhead(fly),'color',handles.colors(fly,:));
+    set(handles.htail(fly),'color',handles.colors(fly,:));
+    set(handles.hcenter(fly),'color',handles.colors(fly,:));
+  end
+end
+
 if nargin < 3 || ~isfirstframe,
   SetFrameNumber(handles);
   PlotFrame(handles);

@@ -124,8 +124,8 @@ for s = 1:nseqs,
   fs = seqs(s).frames;
   isalive = false(size(fs));
   for fly = flies,
-    isalive = isalive | ...
-      ( fs >= dataperfly(fly).firstframe & fs < dataperfly(fly).endframe);
+    isalive = isalive & ...
+      ( fs >= dataperfly(fly).firstframe & fs <= dataperfly(fly).endframe);
   end
   if ~any(isalive), seqs(s).type = 'dummy'; continue; end
   fs = fs(isalive);
