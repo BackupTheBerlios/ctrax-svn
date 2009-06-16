@@ -15,7 +15,7 @@ elseif strcmpi(ext,'.sbfmf'),
   fid = fopen(filename);
   readframe = @(f) sbfmfreadframe(f,fid,frame2file,bgcenter);
 else
-  fid = -1;
+  fid = 0;
   if CTRAX_ISVIDEOIO,
     readerobj = videoReader(filename,'preciseFrames',30,'frameTimeoutMS',5000);
     info = getinfo(readerobj);

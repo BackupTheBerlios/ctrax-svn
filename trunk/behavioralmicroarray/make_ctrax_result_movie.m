@@ -51,7 +51,7 @@ else
   [moviepath,movienameonly] = split_path_and_filename(moviename);
 end
 [readframe,nframes,fid] = get_readframe_fcn(moviename);
-if fid <= 0,
+if fid < 0,
   uiwait(msgbox(sprintf('Could not read in movie %s',moviename)));
   return;
 end
@@ -260,7 +260,7 @@ if nzoom > 0,
 end
 endframe = min(nframes,firstframe+maxnframes-1);
 im = readframe(firstframe);
-[nr,nc] = size(im);
+[nr,nc,ncolors] = size(im);
 
 % choose some random flies to zoom in on
 nzoom = nzoomr*nzoomc;
@@ -317,13 +317,16 @@ for frame = firstframe:endframe,
   
   % draw the unzoomed image
   im = uint8(readframe(frame));
+  if ncolors == 1,
+    im = repmat(im,[1,1,3]);
+  end
   if frame == firstframe,
-    him = image([1,nc],[1,nr],repmat(im,[1,1,3]));
+    him = image([1,nc],[1,nr],im);
     axis image;
     axis([.5,x1(end)+.5,.5,y1(end)+.5]);
     axis off;
   else
-    set(him,'cdata',repmat(im,[1,1,3]));
+    set(him,'cdata',im);
   end
   
   % draw the zoomed image
@@ -442,6 +445,8 @@ for frame = firstframe:endframe,
 end
 
 aviobj = close(aviobj);
-fclose(fid);
+if fid > 0,
+  fclose(fid);
+end
 
 succeeded = true;

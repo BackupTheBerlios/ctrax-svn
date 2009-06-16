@@ -1,3 +1,7 @@
+2009-06-15 Kristin Branson
+
+* When reading compressed AVIs with a keyframe in every frame, the buffer offset was not being set correctly initially (initialized to 1 instead of 0, which caused trouble when the length of the buffer was 1). Fixed this bug. 
+
 2009-05-13 Kristin Branson
 
 * For some types of compressed movies, we need to read in a frame before

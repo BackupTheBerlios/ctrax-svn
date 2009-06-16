@@ -1016,7 +1016,7 @@ class CompressedAvi:
         self.bufferframe0 = self.currframe
         self.bufferframe1 = self.currframe + 1
         self.bufferoff0 = 0
-        self.bufferoff = 1
+        self.bufferoff = 0
         (frame,ts) = self._get_next_frame_helper()
         self.buffer[:,:,0] = frame.copy()
         self.bufferts[0] = ts
@@ -1075,7 +1075,7 @@ class CompressedAvi:
         self.bufferoff += 1
 
         # wrap around
-        if self.bufferoff == self.buffersize:
+        if self.bufferoff >= self.buffersize:
             self.bufferoff = 0
 
         if DEBUG: print "incremented bufferoff to %d"%self.bufferoff

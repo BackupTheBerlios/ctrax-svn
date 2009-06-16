@@ -8,3 +8,7 @@ VERSION 0.1.04 CREATED.
 2009-05-13 Kristin Branson
 
 * fixedtrx2ann.m now checks to make sure you want to overwrite an ann file if the chosen output file exists. 
+
+2009-06-15 Kristin Branson
+
+* changed get_readframe_fcn so that it returns fid=0 when using mmreader to read an AVI. 
