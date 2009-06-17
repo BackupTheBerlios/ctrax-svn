@@ -1,3 +1,7 @@
+2009-06-16 Kristin Branson
+
+* More AVI fun. Fixed bug in estimating fps of compressed movie if there are <= 200 frames. Fixed bug if the timestamp for the first frame of the compressed movie was 0, and the video was such that seeking to 0 caused trouble. 
+
 2009-06-15 Kristin Branson
 
 * When reading compressed AVIs with a keyframe in every frame, the buffer offset was not being set correctly initially (initialized to 1 instead of 0, which caused trouble when the length of the buffer was 1). Fixed this bug. 

@@ -831,6 +831,8 @@ class CompressedAvi:
     """Use pyglet.media to read compressed avi files"""
     def __init__(self,filename):
 
+
+        if DEBUG: print 'Trying to read compressed AVI'
         self.issbfmf = False
         self.source = media.load(filename)
         self.ZERO = 0.00001
@@ -838,13 +840,17 @@ class CompressedAvi:
         # seeking, bad things happen
         im = self.source.get_next_video_frame()
         ts = self.source.get_next_video_timestamp()
+        if DEBUG: print 'first frame read results in im = ' + str(im)
+        if DEBUG: print 'and ts = ' + str(ts)
         self.source._seek(self.ZERO)
         self.start_time = self.source.get_next_video_timestamp()
+        if DEBUG: print 'First seek to ZERO succeeded, start_time = ' + str(self.start_time)
 
         # estimate properties of the video that would be nice 
         # to be able to read in -- i have no idea how accurate 
         # these estimates are
         self.duration_seconds = self.source.duration
+        if DEBUG: print 'duration_seconds = ' + str(self.duration_seconds)
         self._estimate_fps()
         self.frame_delay_us = 1e6 / self.fps
         self._estimate_keyframe_period()
@@ -1090,20 +1096,28 @@ class CompressedAvi:
 
     def _estimate_fps(self):
 
+        if DEBUG: print 'Estimating fps'
+
         # seek to the start of the stream
         self.source._seek(self.ZERO)
+
+        if DEBUG: print 'First seek succeeded'
 
         # initial time stamp
         ts0 = self.source.get_next_video_timestamp()
         ts1 = ts0
 
+        if DEBUG: print 'initial time stamp = ' + str(ts0)
+
         # get the next frame and time stamp a bunch of times
         nsamples = 200
+        if DEBUG: print 'nsamples = ' + str(nsamples)
         i = 0 # i is the number of frames we have successfully grabbed
         while True:
             im = self.source.get_next_video_frame()
             ts = self.source.get_next_video_timestamp()
-            if num.isnan(ts) or (ts <= ts0):
+            if DEBUG: print 'i = %d, ts = '%i + str(ts)
+            if (ts is None) or num.isnan(ts) or (ts <= ts0):
                 break
             i = i + 1
             ts1 = ts
@@ -1118,8 +1132,12 @@ class CompressedAvi:
         
     def _estimate_keyframe_period(self):
 
-        self.source._seek(self.start_time)
+        if DEBUG: print 'Estimating keyframe period'
+
+        self.source._seek(max(self.ZERO,self.start_time))
+
         ts0 = self.source.get_next_video_timestamp()
+
         i = 1 # i is the number of successful seeks
         foundfirst = False
         while True:
