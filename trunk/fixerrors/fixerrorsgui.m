@@ -56,6 +56,7 @@ end
 [handles.readframe,handles.nframes,handles.fid] = get_readframe_fcn(handles.moviename);
 
 % initialize parameters
+handles = InitializeMainAxes(handles);
 
 % initialize state
 isseqleft = false;
@@ -128,6 +129,15 @@ Play(handles,handles.figure1);
 
 % UIWAIT makes fixerrorsgui wait for user response (see UIRESUME)
 uiwait(handles.figure1);
+
+function handles = InitializeMainAxes(handles)
+
+% tmp = get(handles.mainaxes,'units');
+% set(handles.mainaxes,'units','pixels');
+% ax = get(handles.mainaxes,'position');
+% set(handles.mainaxes,'units',tmp);
+% handles.mainaxesaspectratio = (ax(2)-ax(1))/(ax(4)-ax(3));
+handles.mainaxesaspectratio = 1;
 
 % --- Outputs from this function are returned to the command line.
 function varargout = fixerrorsgui_OutputFcn(hObject, eventdata, handles) 
@@ -225,7 +235,26 @@ xlim = [min(x0(:))-BORDER,max(x1(:))+BORDER];
 xlim = max(min(xlim,handles.nc),1);
 ylim = [min(y0(:))-BORDER,max(y1(:))+BORDER];
 ylim = max(min(ylim,handles.nr),1);
+
+% match aspect ratio
+[xlim,ylim] = match_aspect_ratio(xlim,ylim,handles);
+
 set(handles.mainaxes,'xlim',xlim,'ylim',ylim);
+
+function [xlim,ylim] = match_aspect_ratio(xlim,ylim,handles)
+
+aspectratiocurr = diff(xlim)/diff(ylim);
+if aspectratiocurr < handles.mainaxesaspectratio,
+  % make x limits bigger to match
+  xmu = mean(xlim);
+  dx = diff(ylim)*handles.mainaxesaspectratio;
+  xlim = xmu+[-dx/2,dx/2];
+else
+  % make y limits bigger to match
+  ymu = mean(ylim);
+  dy = diff(xlim)/handles.mainaxesaspectratio;
+  ylim = ymu+[-dy/2,dy/2];
+end
 
 function v = isdummytrk(trk)
 
@@ -920,14 +949,15 @@ end
 
 if isfield(handles,'hpath'),
   for fly = 1:handles.nflies,
-    set(handles.hpath(fly),'color',handles.colors(fly,:));
-    set(handles.htailmarker(fly),'color',handles.colors(fly,:));
-    set(handles.hellipse(fly),'color',handles.colors(fly,:));
-    set(handles.hleft(fly),'color',handles.colors(fly,:));
-    set(handles.hright(fly),'color',handles.colors(fly,:));
-    set(handles.hhead(fly),'color',handles.colors(fly,:));
-    set(handles.htail(fly),'color',handles.colors(fly,:));
-    set(handles.hcenter(fly),'color',handles.colors(fly,:));
+    safeset(handles.hpath(fly),'color',handles.colors(fly,:));
+    safeset(handles.hpath(fly),'color',handles.colors(fly,:));
+    safeset(handles.htailmarker(fly),'color',handles.colors(fly,:));
+    safeset(handles.hellipse(fly),'color',handles.colors(fly,:));
+    safeset(handles.hleft(fly),'color',handles.colors(fly,:));
+    safeset(handles.hright(fly),'color',handles.colors(fly,:));
+    safeset(handles.hhead(fly),'color',handles.colors(fly,:));
+    safeset(handles.htail(fly),'color',handles.colors(fly,:));
+    safeset(handles.hcenter(fly),'color',handles.colors(fly,:));
   end
 end
 
@@ -937,6 +967,11 @@ if nargin < 3 || ~isfirstframe,
   ZoomInOnSeq(handles);
 end
 
+function safeset(h,varargin)
+
+if ishandle(h),
+  set(h,varargin{:});
+end
 
 % --- Executes on button press in backbutton.
 function backbutton_Callback(hObject, eventdata, handles)
@@ -965,6 +1000,7 @@ if ~isfield(handles,'savename') || isempty(handles.savename),
 end
 
 %trx = rmfield(handles.trx,'f2i');
+trx = handles.trx;
 seqs = handles.seqs;
 doneseqs = handles.doneseqs;
 moviename = handles.moviename;
@@ -1587,7 +1623,11 @@ if strcmpi(handles.zoommode,s),
 end
 handles.zoommode = s;
 if strcmpi(s,'whole arena'),
-  set(handles.mainaxes,'xlim',[1,handles.nc],'ylim',[1,handles.nr]);
+  xlim = [1,handles.nc];
+  ylim = [1,handles.nr];
+  % match aspect ratio
+  [xlim,ylim] = match_aspect_ratio(xlim,ylim,handles);
+  set(handles.mainaxes,'xlim',xlim,'ylim',ylim);
 else
   ZoomInOnSeq(handles);
 end
@@ -2727,12 +2767,13 @@ for f = f0+1:f1
     handles.trx(fly).b(j) = b/2;
     dtheta = modrange(theta-handles.trx(fly).theta(j-1),-pi/2,pi/2);
     handles.trx(fly).theta(j) = modrange(handles.trx(fly).theta(j-1)+dtheta,-pi,pi);
+    handles.trx(fly).nframes = length(handles.trx(fly).x);
+    handles.trx(fly).endframe = handles.trx(fly).firstframe + handles.trx(fly).nframes - 1;
   end
   handles.f = f;
   if handles.trx(fly).endframe < handles.f
     handles.trx(fly).endframe = f;
   end
-  handles.trx(fly).nframes = length(handles.trx(fly).x);
   guidata(handles.figure1,handles);
 
   if get(handles.manytrackshowtrackingbutton,'value')

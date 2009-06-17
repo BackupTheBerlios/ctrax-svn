@@ -1,3 +1,9 @@
+2209-06-17 Kristin Branson
+
+Fixed bugs in check_suspicious_sequences when trajectory time lines do not overlap sufficiently. 
+
+Changed fixerrorsgui so that the axes are always square and equal. 
+
 2009-06-08 Kristin Branson
 
 VERSION 0.1.04 CREATED.

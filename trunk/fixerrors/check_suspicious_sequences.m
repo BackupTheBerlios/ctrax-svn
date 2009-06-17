@@ -72,6 +72,23 @@ for s = 1:nseqs,
   end
 end
 
+%% shorten seqs to be where flies are alive
+
+for s = 1:nseqs,
+  flies = seqs(s).flies;
+  frames = seqs(s).frames;
+  badidx = false(1,length(frames));
+  for j = 1:length(flies),
+    badidx = badidx | frames < dataperfly(flies(j)).firstframe | ...
+      frames > dataperfly(flies(j)).endframe;
+  end
+  if all(badidx),
+    seqs(s).type = 'dummy';
+  else
+    seqs(s).frames = seqs(s).frames(~badidx);
+  end
+end
+
 %% find frames, flies where the fly jumps
 
 for s = 1:nseqs
@@ -79,8 +96,6 @@ for s = 1:nseqs
   fly = seqs(s).flies;
   f = seqs(s).frames;
   i = dataperfly(fly).off+(f);
-  i(i < 1 | i > dataperfly(fly).nframes) = [];
-  if isempty(i), seqs(s).type = 'dummy'; continue; end
   [xpred,ypred] = predcenter(fly,f);
   % error of prediction
   err = sqrt((xpred - dataperfly(fly).x(i)).^2 + (ypred - dataperfly(fly).y(i)).^2);
@@ -101,8 +116,6 @@ for s = 1:nseqs
   fly = seqs(s).flies;
   f = seqs(s).frames;
   i = dataperfly(fly).off+(f);
-  i(i < 1 | i > dataperfly(fly).nframes) = [];
-  if isempty(i), seqs(s).type = 'dummy'; continue; end
   thetapred = predtheta(fly,f);
   % error of prediction
   err = abs(modrange(dataperfly(fly).theta(i)-thetapred,-pi,pi));
@@ -122,13 +135,6 @@ for s = 1:nseqs,
   if ~strcmpi(seqs(s).type,'swap'), continue; end
   flies = seqs(s).flies;
   fs = seqs(s).frames;
-  isalive = false(size(fs));
-  for fly = flies,
-    isalive = isalive & ...
-      ( fs >= dataperfly(fly).firstframe & fs <= dataperfly(fly).endframe);
-  end
-  if ~any(isalive), seqs(s).type = 'dummy'; continue; end
-  fs = fs(isalive);
   seqs(s).frames = fs;
 
   isswap = false(size(fs));
@@ -182,7 +188,6 @@ for s = 1:nseqs
   fly = seqs(s).flies;
   f = seqs(s).frames;
   i = dataperfly(fly).off+(f);
-  i(i < 0 | i > dataperfly(fly).nframes) = [];
   islargemajor = dataperfly(fly).a(i) > LARGEMAJOR;
   if ~any(islargemajor),
     seqs(s).type = 'dummy';
@@ -205,7 +210,6 @@ for s = 1:nseqs,
   end
   f = seqs(s).frames;
   i = sort(dataperfly(fly).off+(f));
-  i(i < 1 | i > dataperfly(fly).nframes) = [];
   if i(1) == 1, i0 = 2; else i0 = 1; end
   if i(end) == dataperfly(fly).nframes, i1 = length(i)-1; else i1 = length(i); end
   dx = (dataperfly(fly).x(i(i0:i1)+1) - dataperfly(fly).x(i(i0:i1)-1))/2;

@@ -58,12 +58,12 @@ end
 %% convert to px, seconds
 
 [matpathtmp,matnametmp] = split_path_and_filename(matname);
-%[convertsucceeded,convertmatname,trx] = convert_units_f('matname',matnametmp,'matpath',matpathtmp,'moviename',moviename);
-%if ~convertsucceeded,
-%  return;
-%end
+[convertsucceeded,convertmatname,trx] = convert_units_f('matname',matnametmp,'matpath',matpathtmp,'moviename',moviename);
+if ~convertsucceeded,
+  return;
+end
 convertmatname = matname;
-[trx,matname,succeeded] = load_tracks(convertmatname,moviename);
+%[trx,matname,succeeded] = load_tracks(convertmatname,moviename);
 
 %% see if we should restart
 
