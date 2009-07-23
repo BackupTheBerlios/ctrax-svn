@@ -377,7 +377,7 @@ instead, where <basename> is the base name of the movie.\n")
     def ChooseAnnFile(self,evt=None):
         # choose an annotation file
         defaultDir = self.dir
-        defaultFile = self.filename + '.ann'
+        defaultFile = self.file + '.ann'
         dlg = wx.FileDialog( self.frame, "Annotation File", defaultDir, defaultFile, "Annotation files (*.ann)|*.ann", wx.SAVE )
 
         if dlg.ShowModal() == wx.ID_OK:

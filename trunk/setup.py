@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-DISABLE_INSTALL_REQUIRES = True
 
 try:
     from setuptools import setup, Extension
@@ -26,15 +25,17 @@ numpyincludedirs = numpy.get_include()
 #includedirs = numarrayincludedirs+[numpyincludedirs,]
 
 kws = {}
-if DISABLE_INSTALL_REQUIRES or \
-        int(os.getenv( 'DISABLE_INSTALL_REQUIRES','0' )):
+if int(os.getenv( 'DIABLE_INSTALL_REQUIRES','1' )):
     print "Setuptools install_requires disabled"
 else:
+    # commented wx, numpy, scipy, PIL out because eggs are not 
+    # available for them. From now on, DISABLE_INSTALL_REQUIRES
+    # is by default 1
     print "Checking requirements using Setuptools install_requires"
-    install_requires=['wxPython>=2.8',
-                      'numpy>=1.0.3',
-                      'scipy',
-                      'PIL>=1.1.6',
+    install_requires=[#'wxPython>=2.8',
+                      #'numpy>=1.0.3',
+                      #'scipy',
+                      #'PIL>=1.1.6',
                       'motmot.wxvideo>=0.5.2.dev',
                       'motmot.wxglvideo>=0.6.1.dev',
                       'motmot.wxvalidatedtext',

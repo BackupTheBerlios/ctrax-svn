@@ -1,3 +1,11 @@
+2009-07-23 Kristin Branson
+
+* Modified Ctrax.py to set default filename for ann file correctly. 
+
+2009-06-17 Kristin Branson
+
+* Modified setup.py to deal with failures of install_requires. Eggs are no longer available for many packages, and install_requires is more of a hinderence than a help. Set default behavior to now not use install_requires, unless DISABLE_INSTALL_REQUIRES is set to 0. 
+
 2009-06-16 Kristin Branson
 
 * More AVI fun. Fixed bug in estimating fps of compressed movie if there are <= 200 frames. Fixed bug if the timestamp for the first frame of the compressed movie was 0, and the video was such that seeking to 0 caused trouble. 
