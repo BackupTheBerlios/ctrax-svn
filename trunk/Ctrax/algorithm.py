@@ -236,7 +236,7 @@ class CtraxAlgorithm (settings.AppWithSettings):
 
         # save to a .mat file
         (basename,ext) = os.path.splitext(self.filename)
-        if self.matfilename is None:
+        if not(hasattr(self,'matfilename')) or self.matfilename is None:
             savename = basename + '.mat'
         else:
             savename = self.matfilename
