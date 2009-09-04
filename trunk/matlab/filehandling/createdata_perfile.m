@@ -70,9 +70,10 @@ load(matname);
 if exist('trx','var'),
   data = trx;
   if ~isfield(data,'off'),
-  for fly = 1:length(data),
-    data(fly).off = -data(fly).firstframe + 1;
-    %data(fly).f2i = @(f) f - data(fly).firstframe + 1;
+    for fly = 1:length(data),
+      data(fly).off = -data(fly).firstframe + 1;
+      %data(fly).f2i = @(f) f - data(fly).firstframe + 1;
+    end
   end
   return;
 end
