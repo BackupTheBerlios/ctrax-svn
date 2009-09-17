@@ -75,7 +75,7 @@ end
 if logplot,
   epsilon = min(meandata(meandata > 0));
   if ~strcmpi(plotstd,'off'),
-    epsilon = min(epsilon,min(min([below(below>0);above(above>0)])));
+    epsilon = min(epsilon,min(min(below(below>0)),min(above(above>0))));
   end
   if plotindivs,
     epsilon = min(epsilon,min(perflydata(perflydata>0)));

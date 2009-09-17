@@ -1298,9 +1298,9 @@ behaviornames = {handles.behaviors.name};
 if isduration,
   idx = off+(1:nbehaviors);
   X(:,idx) = reshape([handles.microarrays.duration],[nbehaviors,nflies])';
-  [allowedprops(idx).proptype] = 'duration';
-  [allowedprops(idx).behavior] = deal(tmpbehaviors{:});
   for i = 1:nbehaviors,
+    allowedprops(i+off).proptype = 'duration';
+    allowedprops(i+off).behavior = tmpbehaviors{i};
     allowedprops(idx(i)).name = sprintf('%s duration',behaviornames{i});
   end
   off = off + nbehaviors;
@@ -1308,9 +1308,9 @@ end
 if isfractime,
   idx = off+(1:nbehaviors);
   X(:,idx) = reshape([handles.microarrays.fractime],[nbehaviors,nflies])';
-  [allowedprops(idx).proptype] = 'fractime';
-  [allowedprops(idx).behavior] = deal(tmpbehaviors{:});
   for i = 1:nbehaviors,
+    allowedprops(i+off).proptype = 'fractime';
+    allowedprops(i+off).behavior = tmpbehaviors{i};
     allowedprops(idx(i)).name = sprintf('%s fractime',behaviornames{i});
   end
   off = off + nbehaviors;
@@ -1318,9 +1318,9 @@ end
 if isfrequency,
   idx = off+(1:nbehaviors);
   X(:,idx) = reshape([handles.microarrays.frequency],[nbehaviors,nflies])';
-  [allowedprops(idx).proptype] = 'frequency';
-  [allowedprops(idx).behavior] = deal(tmpbehaviors{:});
   for i = 1:nbehaviors,
+    allowedprops(i+off).proptype = 'frequency';
+    allowedprops(i+off).behavior = tmpbehaviors{i};
     allowedprops(idx(i)).name = sprintf('%s frequency',behaviornames{i});
   end
   off = off + nbehaviors;

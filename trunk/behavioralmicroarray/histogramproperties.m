@@ -1489,7 +1489,10 @@ handles.isbehavior(handles.datashow) = [];
 handles.doinvert(handles.datashow) = [];
 handles.averagingidx(handles.datashow) = [];
 handles.segfile(handles.datashow) = [];
-handles.flytype(handles.ndata) = [];
+for i = 1:length(handles.trx),
+  handles.trx(i).seg(handles.datashow) = [];
+end
+handles.flytype(handles.datashow) = [];
 handles.ndata = handles.ndata - 1;
 if handles.datashow > 1,
   handles.datashow = handles.datashow - 1;
