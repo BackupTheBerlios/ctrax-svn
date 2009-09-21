@@ -53,7 +53,8 @@ class CtraxAlgorithm (settings.AppWithSettings):
             self.ann_file.write_ellipses(self.ann_data[ff])
         self.lastframewritten = max(-1,len(self.ann_data)-self.maxlookback-1)
 
-        wx.Yield()
+        if params.interactive:
+            wx.Yield()
 
         # initialize hindsight data structures
         self.hindsight = hindsight.Hindsight(self.ann_data,self.bg_imgs)
@@ -226,8 +227,23 @@ class CtraxAlgorithm (settings.AppWithSettings):
         # begin tracking
         if params.interactive:
             self.UpdateToolBar('started')
+
+        # write sbfmf header
+        if self.dowritesbfmf:
+            # open an sbfmf file if necessary
+            self.movie.writesbfmf_start(self.bg_imgs,
+                                        self.writesbfmf_filename)
+
         sys.stderr.write("Tracking...\n")
-        self.Track()
+        try:
+            self.Track()
+        except:
+            pass
+        print "Done tracking"
+
+        # write the sbfmf index and close the sbfmf file
+        if self.dowritesbfmf and self.movie.writesbfmf_isopen():
+            self.movie.writesbfmf_close(self.start_frame)
 
         sys.stderr.write("Choosing Orientations...\n")
         # choose orientations
