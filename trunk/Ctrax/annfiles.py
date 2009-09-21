@@ -631,7 +631,7 @@ class AnnotationFile:
                      'startframe': startframe}
 
         if dosavestamps:
-            print "reading in movie to save stamps"
+            if DEBUG: print "reading in movie to save stamps"
             stamps = params.movie.get_some_timestamps(t1=startframe,t2=startframe+nframes)
             save_dict['timestamps'] = stamps
 

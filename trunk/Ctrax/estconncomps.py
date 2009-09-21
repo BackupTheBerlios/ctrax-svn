@@ -5,7 +5,8 @@ import scipy.ndimage as meas
 import kcluster
 #from kcluster import gmm
 from params import params
-DEBUG = False
+# this uses its own debug
+from version import DEBUG_ESTCONNCOMPS as DEBUG
 
 #class ShapeParams:
 #    def __init__(self,major=0,minor=0,area=0,ecc=0):
@@ -224,7 +225,7 @@ def getnewlabel(Lnewbox,ncc,Lbox,i):
         newl = Lnewbox[Lbox==i+1]
         llowerthresh = newl[0]
         if num.all(newl==llowerthresh) == False:
-            print "Something is wrong -- this should never happen!\n"
+            print "Sanity check: Something is wrong -- this should never happen!\n"
             bins = linspace(-.5,ncc+.5,ncc+2)
             votes = num.histogram(Lnewbox[Lbox==i+1],bins)
             llowerthresh = argmax(votes)
@@ -646,7 +647,7 @@ def trysplit(ellipses,i,isdone,L,dfore):
     # split the component)
 
     if ncomponents < 1:
-        print "ncomponents = " + str(ncomponents) + " resetting to 1"
+        if DEBUG: print "ncomponents = " + str(ncomponents) + " resetting to 1"
         ncomponents = 1
 
     if ncomponents == 1:

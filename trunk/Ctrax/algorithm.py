@@ -62,8 +62,6 @@ class CtraxAlgorithm (settings.AppWithSettings):
 
         self.break_flag = False
 
-        #print 'In Track, just before main loop: self.start_frame = %d, params.start_frame = %d, len(ann_data) = %d'%(self.start_frame,params.start_frame,len(self.ann_data))
-
         for self.start_frame in range(self.start_frame,self.n_frames):
         
             if self.break_flag:
@@ -75,6 +73,7 @@ class CtraxAlgorithm (settings.AppWithSettings):
             try:
                 (self.dfore,self.isfore) = self.bg_imgs.sub_bg( self.start_frame )
             except:
+                # catch all error types here, and just break out of loop
                 break
 
             # write to sbfmf
@@ -84,8 +83,6 @@ class CtraxAlgorithm (settings.AppWithSettings):
                                                  self.bg_imgs.curr_stamp,
                                                  self.start_frame)
             
-            #print 'time to perform background subtraction: '+str(time.time() - last_time)
-
             # process gui events
             if params.interactive:
                 wx.Yield()
@@ -118,7 +115,7 @@ class CtraxAlgorithm (settings.AppWithSettings):
                 flies = ell.TargetList()
                 for i,obs in enumerate(self.ellipses):
                     if obs.isEmpty():
-                        print 'empty observation'
+                        if DEBUG: print 'empty observation'
                     else:
                         obs.identity = params.nids
                         flies.append(obs)
@@ -234,18 +231,19 @@ class CtraxAlgorithm (settings.AppWithSettings):
             self.movie.writesbfmf_start(self.bg_imgs,
                                         self.writesbfmf_filename)
 
-        sys.stderr.write("Tracking...\n")
+        print "Tracking..."
         try:
             self.Track()
         except:
-            pass
+            print "Error during Track"
+            raise
         print "Done tracking"
 
         # write the sbfmf index and close the sbfmf file
         if self.dowritesbfmf and self.movie.writesbfmf_isopen():
             self.movie.writesbfmf_close(self.start_frame)
 
-        sys.stderr.write("Choosing Orientations...\n")
+        print "Choosing Orientations..."
         # choose orientations
         self.choose_orientations = chooseorientations.ChooseOrientations(self.frame,self.ann_data,interactive=False)
         self.choose_orientations.ChooseOrientations()

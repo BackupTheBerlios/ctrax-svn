@@ -324,7 +324,7 @@ class BackgroundCalculator:
         offseti = 0
 
         for rowoffset in range(0,nr,nrsmall):
-            print "row offset = %d."%rowoffset
+            if DEBUG: print "row offset = %d."%rowoffset
 
             # if this is the last iteration, there may not be npixelssmall left
             # store in npixelscurr the number of pixels that are to be read in,
@@ -335,7 +335,7 @@ class BackgroundCalculator:
             # allocate memory for buffer that holds data read in in current pass
             buf = num.zeros((nframes,nrowscurr,nc),dtype=num.uint8)
 
-            print 'Reading ...'
+            if DEBUG: print 'Reading ...'
 
             # loop through frames
             frame = params.bg_firstframe
@@ -363,7 +363,7 @@ class BackgroundCalculator:
 
             # compute the median and median absolute difference at each 
             # pixel location
-            print 'Computing ...'
+            if DEBUG: print 'Computing ...'
             # sort all the histories to get the median
             buf = num.rollaxis(num.rollaxis(buf,2,0),2,0)
             buf.sort(axis=2,kind='mergesort')
@@ -410,7 +410,7 @@ class BackgroundCalculator:
         nframesmovie = bg_lastframe - params.bg_firstframe + 1
         nframes = min(params.n_bg_frames,nframesmovie)
 
-        print "firstframe = %d, lastframe = %d"%(params.bg_firstframe,bg_lastframe)
+        if DEBUG: print "firstframe = %d, lastframe = %d"%(params.bg_firstframe,bg_lastframe)
 
        # we will estimate background from every nframesskip-th frame
         #nframesskip = int(num.floor(10000/params.n_bg_frames))
@@ -491,7 +491,7 @@ class BackgroundCalculator:
 
         offseti = 0
         for imageoffset in range(0,nbytes,nbytessmall):
-            print "image offset = %d."%imageoffset
+            if DEBUG: print "image offset = %d."%imageoffset
 
             # if this is the last iteration, there may not be npixelssmall left
             # store in npixelscurr the number of pixels that are to be read in,
@@ -511,7 +511,7 @@ class BackgroundCalculator:
             # seek to pixel imageoffset of the first frame
             fp.seek(imageoffset+headersize,0)
 
-            print 'Reading ...'
+            if DEBUG: print 'Reading ...'
 
             # loop through frames
             for i in range(nframes):
@@ -544,7 +544,7 @@ class BackgroundCalculator:
 
             # compute the median and median absolute difference at each 
             # pixel location
-            print 'Computing ...'
+            if DEBUG: print 'Computing ...'
             # sort all the histories to get the median
             buf = buf.transpose()
             buf.sort(axis=1,kind='mergesort')
@@ -594,7 +594,7 @@ class BackgroundCalculator:
 
         # are we using the median or the mean?
         if params.use_median:
-            print 'params.movie.type = ' + str(params.movie.type)
+            if DEBUG: print 'params.movie.type = ' + str(params.movie.type)
 
             if params.movie.type == 'fmf' or \
                     (params.movie.type == 'avi' and \
@@ -614,8 +614,8 @@ class BackgroundCalculator:
                 self.dev = params.movie.h_mov.bgstd.copy()
                 self.center.shape = params.movie.h_mov.framesize
                 self.dev.shape = params.movie.h_mov.framesize
-                print 'center.shape = ' + str(self.center.shape)
-                print 'dev.shape = ' + str(self.dev.shape)
+                if DEBUG: print 'center.shape = ' + str(self.center.shape)
+                if DEBUG: print 'dev.shape = ' + str(self.dev.shape)
             else:
                 succeeded = self.flexmedmad(parent)
                 if not succeeded:
@@ -642,8 +642,8 @@ class BackgroundCalculator:
                 self.dev = params.movie.h_mov.bgstd.copy()
                 self.center.shape = params.movie.h_mov.framesize
                 self.dev.shape = params.movie.h_mov.framesize
-                print 'center.shape = ' + str(self.center.shape)
-                print 'dev.shape = ' + str(self.dev.shape)
+                if DEBUG: print 'center.shape = ' + str(self.center.shape)
+                if DEBUG: print 'dev.shape = ' + str(self.dev.shape)
             else:
                 wx.MessageBox( "Invalid movie type",
                                "Error", wx.ICON_ERROR )
@@ -666,6 +666,11 @@ class BackgroundCalculator:
         """Reads image, subtracts background, then thresholds."""
 
         # read in the image
+        # IndexError if requested frame < 0
+        # NoMoreFramesException if frame is >= n_frames
+        # ValueError if the frame size read in does not equal the buffer
+        #   for uncompressed AVI
+        
         self.curr_im, stamp = params.movie.get_frame( int(framenumber) )
         im = self.curr_im.astype( num.float )
         self.curr_stamp = stamp
@@ -1290,7 +1295,7 @@ class BackgroundCalculator:
             mu = num.mean(self.dev)
             sig = num.std(self.dev)
             if sig == 0:
-                print "dev is uniformly " + str(mu)
+                resp = wx.MessageBox("Normalization image is uniformly " + str(mu),"Uniform Normalization Image",wx.OK)
                 img_8 = imagesk.double2mono8(self.dev)
             else:
                 n1 = mu - 3.*sig
@@ -1512,22 +1517,22 @@ class BgSettingsDialog:
 #        finally:
 #            self.lock.release()
 
-def save_image( filename, img ):
-    """Saves an image as a MATLAB array."""
-    scipy.io.savemat( filename + '.mat', {filename: img})
-    print "saved", filename, ".mat"
+#def save_image( filename, img ):
+#    """Saves an image as a MATLAB array."""
+#    scipy.io.savemat( filename + '.mat', {filename: img})
+#    print "saved", filename, ".mat"
 
-def read_image( filename ):
-    """Reads an image from a mat-file."""
-    new_dict = scipy.io.loadmat( filename )
-    print "loaded", filename, ".mat"
-    return new_dict[filename]
+#def read_image( filename ):
+#    """Reads an image from a mat-file."""
+#    new_dict = scipy.io.loadmat( filename )
+#    print "loaded", filename, ".mat"
+#    return new_dict[filename]
 
-def write_img_text( img, filename ):
-    fp = open( filename, "w" )
-    for r in img:
-        for c in r:
-            fp.write( "%f\t"%c )
-        fp.write( "\n" )
-    fp.close()
+#def write_img_text( img, filename ):
+#    fp = open( filename, "w" )
+#    for r in img:
+#        for c in r:
+#            fp.write( "%f\t"%c )
+#        fp.write( "\n" )
+#    fp.close()
 

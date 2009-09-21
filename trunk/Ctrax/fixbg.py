@@ -115,13 +115,9 @@ class FixBG:
 
     def OnKeyPress(self,evt):
 
-        print 'keypressed1'
-
         # only when in the middle of adding a new polygon
         if self.currpolygon.shape[0] == 0:
             return
-
-        print 'keypressed2'
 
         kc = evt.GetKeyCode()
         if kc == wx.WXK_ESCAPE:
@@ -146,7 +142,8 @@ class FixBG:
         if self.currpolygon.shape[0] > 2:
             self.AddPolygon()
         else:
-            print 'not enough points selected yet to close this polygon'
+            wx.MessageBox( "Not enough points selected to close this polygon",
+                           "Select More Points", wx.ICON_ERROR )
 
         self.currpolygon = num.zeros((0,2))
         self.InAddPolygonMode()

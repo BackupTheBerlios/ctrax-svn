@@ -6,8 +6,7 @@ import estconncomps as est
 import kcluster
 import matchidentities
 #import pylab as mpl
-
-DEBUG = False
+from version import DEBUG_HINDSIGHT as DEBUG
 
 class MyDictionary(dict):
     def __init__(self,emptyval=None):
@@ -186,12 +185,12 @@ class Hindsight:
             
     def fix_spuriousdetection(self,id,t2):
 
-        print 'testing to see if death of id=%d in frame t2=%d is from a spurious detection'%(id,t2)
+        if DEBUG: print 'testing to see if death of id=%d in frame t2=%d is from a spurious detection'%(id,t2)
 
         t1 = self.milestones.getbirthframe(id)
         lifespan = t2 - t1
         if lifespan > params.spuriousdetection_length:
-            print 'lifespan longer than %d, not spurious, not deleting'%params.spuriousdetection_length
+            if DEBUG: print 'lifespan longer than %d, not spurious, not deleting'%params.spuriousdetection_length
             return False
         #elif (type(t1) is not num.dtype('int')) or \
         #     (type(t2) is not num.dtype('int')):
@@ -1043,6 +1042,6 @@ def computemergepenalty(ellipses,i,j,L,dfore):
     dforemerge = 1 - dforemerge[newforemerge]
     dforemerge[dforemerge<0] = 0
     mergepenalty = num.sum(dforemerge)
-    print 'mergepenalty = ' + str(mergepenalty)
+    if DEBUG: print 'mergepenalty = ' + str(mergepenalty)
     #print 'in computemergepenalty, ellipsemerge is: ' + str(ellipsemerge)
     return (mergepenalty,ellipsemerge)

@@ -70,6 +70,18 @@ class CtraxApp( algorithm.CtraxAlgorithm ): # eventually inherits from wx.App
 	# open movie, ann file
 	self.OpenMovieAndAnn()
 
+        if params.interactive:
+            print "******** Ctrax Warning and Error Messages ********"
+            print "Ctrax is currently under development, and you may "
+            print "encounter bugs with the program, or correct usage "
+            print "may not be obvious. Error and warning messages "
+            print "will appear in this window. If you have trouble "
+            print "and are contacting the Ctrax mailing list "
+            print "(see http://groups.google.com/group/ctrax ), "
+            print "be sure to copy and paste the relevant messages "
+            print "from this window into your email."
+            print "******************** Ctrax ***********************\n"
+
 	# make sure everything is drawn the right size
         self.OnResize( None )
 
@@ -93,6 +105,7 @@ class CtraxApp( algorithm.CtraxAlgorithm ): # eventually inherits from wx.App
                 self.OpenMovie()
                 self.UpdateStatusMovie()
             except:
+                print "Could not open movie"
                 self.n_frames = 0
 
 
@@ -152,6 +165,9 @@ instead, where <basename> is the base name of the movie.\n")
             if name.lower() == '--interactive':
                 if value.lower() == 'false':
                     params.interactive = False
+                    # if we were redirecting to an output window,
+                    # restore stdio to the command line prompt
+                    self.RestoreStdio()
             elif name.lower() == '--input':
                 self.filename = value
                 (self.dir,self.file) = os.path.split(value)
@@ -285,7 +301,7 @@ instead, where <basename> is the base name of the movie.\n")
         try:
             tmpannfile = annot.AnnotationFile(self.settingsfilename,__version__,False)
         except:
-            print 'error reading annotation file'
+            print 'Error reading annotation file'
             return
         tmpannfile.file = open( tmpannfile.filename, mode="rb" )
         if params.interactive or self.IsBGModel():
@@ -441,7 +457,7 @@ instead, where <basename> is the base name of the movie.\n")
                 wx.MessageBox( "No valid annotation\nexists for this movie\nor no movie is loaded.",
                                "Error", wx.ICON_ERROR )
             else:
-                print "not saving -- no data"
+                print "Not saving -- no data"
             return
 
         defaultDir = self.save_dir
@@ -477,7 +493,7 @@ instead, where <basename> is the base name of the movie.\n")
                 wx.MessageBox( "No valid annotation\nexists for this movie\nor no movie is loaded.",
                                "Error", wx.ICON_ERROR )
             else:
-                print "not saving -- no data"
+                print "Not saving -- no data"
             return
 
         dlg = wx.TextEntryDialog(self.frame,"Frames to output to AVI file: (startframe:endframe): ","Save as AVI-file","%d:%d"%(params.start_frame,params.start_frame+len(self.ann_data)-1))
@@ -1326,9 +1342,10 @@ def main():
         print "there is output!"
         sys.stdout.flush()
     else:
+        # redirect to a window
         args = ()
-        kw = dict(redirect=True,filename='Ctrax.log')
-    
+        kw = dict(redirect=True,filename='')
+
     app = CtraxApp( *args, **kw )
     app.MainLoop()
 

@@ -1,6 +1,7 @@
 import numpy as num
 import scipy.cluster.vq as vq
 import scipy.linalg.decomp as decomp
+from version import DEBUG
 
 def clusterdistfun(x,c):
     n = x.shape[0]
@@ -163,8 +164,8 @@ def gmmmemberships(mu,S,priors,x,weights=1,initcovars=None):
         try:
             c = decomp.cholesky(S[:,:,j])
         except num.linalg.linalg.LinAlgError:
-            print 'S[:,:,%d] = '%j + str(S[:,:,j]) + ' is singular'
-            print 'Reverting to initcovars[:,:,%d] = '%j + str(initcovars[:,:,j])
+            if DEBUG: print 'S[:,:,%d] = '%j + str(S[:,:,j]) + ' is singular'
+            if DEBUG: print 'Reverting to initcovars[:,:,%d] = '%j + str(initcovars[:,:,j])
             S[:,:,j] = initcovars[:,:,j]
             c = decomp.cholesky(S[:,:,j])
         #print 'chol(S[:,:,%d]) = '%j + str(c)
@@ -224,39 +225,45 @@ def gmmupdate(mu,S,priors,gamma,x,weights=1,mincov=.01,initcovars=None):
         priors[:] = num.sum(gamma,axis=0)
         Z = priors.copy()
         priors /= num.sum(priors)
-        print 'after fixsmallpriors, priors is ' + str(priors)
+        if DEBUG: print 'after fixsmallpriors, priors is ' + str(priors)
 
     issmall = issmall.any()
     if issmall:
-        print 'outside fixsmallpriors'
-        print 'reset mu = ' + str(mu)
-        for i in range(k):
-            print 'reset S[:,:,%d] = '%i + str(S[:,:,i])
-        print 'reset priors = ' + str(priors)
+        if DEBUG: 
+            print 'outside fixsmallpriors'
+            print 'reset mu = ' + str(mu)
+            for i in range(k):
+                print 'reset S[:,:,%d] = '%i + str(S[:,:,i])
+            print 'reset priors = ' + str(priors)
         #print 'reset gamma = '
         #print gamma
 
     for i in range(k):
         # update the means
         mu[i,:] = num.sum(num.tile(gamma[:,i].reshape(n,1),[1,d])*x,axis=0)/Z[i]
-        if issmall: print 'updated mu[%d,:] to '%i + str(mu[i,:])
+        if DEBUG:
+            if issmall: 
+                print 'updated mu[%d,:] to '%i + str(mu[i,:])
         # update the covariances
         diffs = x - num.tile(mu[i,:],[n,1])
         #if issmall: print 'diffs = ' + str(diffs)
         diffs *= num.tile(num.sqrt(gamma[:,i].reshape(n,1)),[1,d])
         #if issmall: print 'weighted diffs = ' + str(diffs)
         S[:,:,i] = (num.dot(num.transpose(diffs),diffs)) / Z[i]
-        if issmall: print 'updated S[:,:,%d] to [%.4f,%.4f;%.4f,%.4f]'%(i,S[0,0,i],S[0,1,i],S[1,0,i],S[1,1,i])
+        if DEBUG:
+            if issmall: 
+                print 'updated S[:,:,%d] to [%.4f,%.4f;%.4f,%.4f]'%(i,S[0,0,i],S[0,1,i],S[1,0,i],S[1,1,i])
         # make sure covariance is not too small
         if mincov > 0:
             [D,V] = num.linalg.eig(S[:,:,i])
             if num.min(D) < mincov:
                 S[:,:,i] = initcovars[:,:,i]
-                print 'mineigval = %.4f'%num.min(D)
-                print 'reinitializing covariance'
-                print 'D = '
-                print D
-                print 'initcovars[:,:,%d] = [%.4f,%.4f;%.4f,%.4f]'%(i,initcovars[0,0,i],initcovars[0,1,i],initcovars[1,0,i],initcovars[1,1,i])
+                if DEBUG: 
+                    print 'mineigval = %.4f'%num.min(D)
+                    print 'reinitializing covariance'
+                    print 'D = '
+                    print D
+                    print 'initcovars[:,:,%d] = [%.4f,%.4f;%.4f,%.4f]'%(i,initcovars[0,0,i],initcovars[0,1,i],initcovars[1,0,i],initcovars[1,1,i])
                 
 def gmmem(x,mu0,S0,priors0,weights=None,niters=100,thresh=.001,mincov=.01):
 
@@ -326,7 +333,7 @@ def fixsmallpriors(x,mu,S,priors,initcovars,gamma):
     smalli, = num.where(issmall)
     for i in smalli:
 
-        print 'fixing cluster %d with small prior = %f: '%(i,priors[i])
+        if DEBUG: print 'fixing cluster %d with small prior = %f: '%(i,priors[i])
 
         # compute mixture density of each data point
         p = num.sum(gamma*num.tile(priors,[n,1]),axis=1)
@@ -339,7 +346,7 @@ def fixsmallpriors(x,mu,S,priors,initcovars,gamma):
         # choose the point with the smallest probability
         j = p.argmin()
 
-        print 'lowest density sample: x[%d] = '%j + str(x[j,:])
+        if DEBUG: print 'lowest density sample: x[%d] = '%j + str(x[j,:])
 
         # create a new cluster
         mu[i,:] = x[j,:]
@@ -347,12 +354,13 @@ def fixsmallpriors(x,mu,S,priors,initcovars,gamma):
         priors *= (1. - MINPRIOR)/(1.-priors[i])
         priors[i] = MINPRIOR
 
-        print 'reset cluster %d to: '%i
-        print 'mu = ' + str(mu[i,:])
-        print 'S = '
-        print S[:,:,i]
-        print 'S.shape: ' + str(S[:,:,i].shape)
-        print 'priors = ' + str(priors)
+        if DEBUG: 
+            print 'reset cluster %d to: '%i
+            print 'mu = ' + str(mu[i,:])
+            print 'S = '
+            print S[:,:,i]
+            print 'S.shape: ' + str(S[:,:,i].shape)
+            print 'priors = ' + str(priors)
 
         # update gamma
         [gamma[:],newe] = gmmmemberships(mu,S,priors,x,1,initcovars)

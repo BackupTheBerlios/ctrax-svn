@@ -377,6 +377,10 @@ class AppWithSettings( wx.App ):
     def OnSettingsBGModel( self, evt ):
         """Open window for bg model settings."""
 
+        if params.movie.type == 'sbfmf':
+            resp = wx.MessageBox( "Background Model is already set for SBFMF files, and cannot be changed", "Cannot Change Background Model", wx.OK )
+            return
+
         # set up bg window
         if not hasattr( self.bg_imgs, 'modeldlg' ):
             self.bg_imgs.modeldlg = bg.BgSettingsDialog( self.frame, self.bg_imgs )
