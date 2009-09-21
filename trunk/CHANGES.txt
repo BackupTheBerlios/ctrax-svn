@@ -1,3 +1,7 @@
+2009-09-08 Kristin Branson
+
+* Fixed bug when running Ctrax from the commandline or in batch mode and outputting an sbfmf file simultaneously. The "DoAll" function did not open and write the header for the sbfmf file. Added a call to "writesbfmf_start" to DoAll. Similarly, writesbfmf_close was not being called at the end of DoAll. Added a call to this function as well. Currently, sbfmf cannot be salvaged if tracking is canceled in the middle of tracking in non-interactive mode. I made some attempts at rectifying this situation, but couldn't get the KeyboardInterrupt exception to catch in the right place. 
+
 2009-08-11 Kristin Branson
 
 * Fixed bug in batch processing if matlab file name was not provided. 
