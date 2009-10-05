@@ -3,16 +3,17 @@ from wx import xrc
 import motmot.wxvalidatedtext.wxvalidatedtext as wxvt
 import numpy as num
 from params import params
+import annfiles as annot
+from version import DEBUG
 
 import pkg_resources # part of setuptools
 RSRC_FILE = pkg_resources.resource_filename( __name__, "chooseorientations.xrc" )
 
 class ChooseOrientations:
 
-    def __init__(self,parent,targets,interactive=True):
+    def __init__(self,parent,interactive=True):
 
         self.interactive = interactive
-        self.targets = targets
 
         if self.interactive:
             rsrc = xrc.XmlResource( RSRC_FILE )
@@ -77,10 +78,21 @@ class ChooseOrientations:
         
         return abs( ( (theta1-theta2+num.pi)%(2.*num.pi) ) - num.pi)
 
-    def ChooseOrientations(self):
+    def ChooseOrientations(self,targets):
 
         params.velocity_angle_weight = self.weight
         params.max_velocity_angle_weight = self.max_weight
+
+        self.targets = targets
+        realnids = params.nids
+        self.out_ann_file = annot.AnnotationFile(None,
+                                                 self.targets.bg_imgs)
+        # associate idtable with new file, so that we don't increment
+        # nids
+        self.out_ann_file.idtable = self.targets.idtable
+        if DEBUG: print "Created temporary annotation file %s"%self.out_ann_file.filename
+        self.out_ann_file.InitializeData(self.targets.firstframetracked,self.targets.firstframetracked-1)
+        params.nids = realnids
 
         N = len(self.targets)
         startframes = num.zeros(params.nids,dtype=int)
@@ -90,6 +102,8 @@ class ChooseOrientations:
         keystostart = set(range(params.nids))
         keystoend = set([])
         allkeys = set(range(params.nids))
+        if DEBUG: print "Finding start and end frames"
+        if DEBUG: print "keystostart = " + str(keystostart)
         for t in range(N):
             keys = set(self.targets[t].keys())
             newstarts = keystostart & keys
@@ -105,9 +119,37 @@ class ChooseOrientations:
         for i in keystoend:
             endframes[i] = N
 
+        if DEBUG: print "starts of trajectories: " + str(startframes)
+        if DEBUG: print "ends of trajectories: " + str(endframes)
+
+        # compute the new orientations
+        self.newtheta = dict()
         for i in range(params.nids):
+            if DEBUG: print "Choose orientations for fly %d, frames %d to %d..."%(i,startframes[i],endframes[i])
             if startframes[i] < endframes[i]-1:
+                if DEBUG: print "Actually calling"
                 self.ChooseOrientationsPerID(i,startframes[i],endframes[i])
+            else:
+                if DEBUG: print "Not a real trajectory, not calling"
+
+        # write to the annotation file
+        if DEBUG: print "Done choosing orientations, writing to file"
+        for t in range(N):
+            ells = self.targets[t]
+            for (id,ell) in ells.iteritems():
+                ells[id].angle = self.newtheta[id][t-startframes[id]]
+            self.out_ann_file.append(ells)
+
+        if DEBUG: print "Calling finish_writing"
+        self.out_ann_file.finish_writing()
+
+        # switch to out_ann_file
+        if DEBUG: print "Renaming %s as %s"%(self.out_ann_file.filename,self.targets.filename)
+        self.targets.file.close()
+        self.out_ann_file.rename_file(self.targets.filename)
+        self.targets = self.out_ann_file
+        if DEBUG: print "Done with chooseorientations"
+        return self.targets
 
     def ChooseOrientationsPerID(self,id,startframe,endframe):
         
@@ -131,17 +173,26 @@ class ChooseOrientations:
         
         # initialize first frame
         costprev = num.zeros(2)
-        
+
+        theta = num.zeros(N)
+        # avoid rereading previous frame
+        ellprev = self.targets[startframe][id]
         # compute iteratively
         for tloc in range(1,N):
 
             t = tloc + startframe
+
+            # read current frame
+            ell = self.targets[t][id]
+
+            # store orientation
+            theta[tloc] = ell.angle
 	    
 	    # compute velocity
-            xcurr = self.targets[t][id].center.x
-            ycurr = self.targets[t][id].center.y
-	    xprev = self.targets[t-1][id].center.x
-	    yprev = self.targets[t-1][id].center.y
+            xcurr = ell.center.x
+            ycurr = ell.center.y
+	    xprev = ellprev.center.x
+	    yprev = ellprev.center.y
 	    vx = xcurr - xprev
 	    vy = ycurr - yprev
 	    # compute angle of velocity
@@ -151,12 +202,12 @@ class ChooseOrientations:
             # compute for both possible states
             for scurr in [0,1]:
                 
-                thetacurr = self.targets[t][id].angle + scurr*num.pi
+                thetacurr = ell.angle + scurr*num.pi
                 
                 # try both previous states
                 for sprev in [0,1]:
                     
-                    thetaprev = self.targets[t-1][id].angle + sprev*num.pi
+                    thetaprev = ellprev.angle + sprev*num.pi
                     
                     costcurr = (1.-w)*self.angledist(thetaprev,thetacurr) + \
                                w*self.angledist(thetacurr,velocityangle)
@@ -178,13 +229,15 @@ class ChooseOrientations:
 
             costprev[:] = costprevnew[:]
 	
+            # set ellprev for next iteration
+            ellprev = ell
 	# end loop over frames
 
 	# choose the best last state
 	scurr = num.argmin(costprev)
 	if scurr == 1:
-	    self.targets[endframe-1][id].angle += num.pi
-	    self.targets[endframe-1][id].angle = self.anglemod(self.targets[endframe-1][id].angle)
+            theta[N-1] += num.pi
+            theta[N-1] = self.anglemod(theta[-1])
 
         # choose the best states
         for tloc in range(N-2,-1,-1):
@@ -193,6 +246,8 @@ class ChooseOrientations:
             
             scurr = stateprev[tloc,scurr]
             if scurr == 1:
-                self.targets[t][id].angle += num.pi
-                self.targets[t][id].angle = self.anglemod(self.targets[t][id].angle)
+                theta[tloc] += num.pi
+                theta[tloc] = self.anglemod(theta[tloc])
 
+        self.newtheta[id] = theta
+        #if DEBUG: print "assigned newtheta[%d] = "%id + str(self.newtheta[id])

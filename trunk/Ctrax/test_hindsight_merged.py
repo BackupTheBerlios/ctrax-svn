@@ -7,9 +7,22 @@ import hindsight
 from params import params
 import estconncomps as est
 import pylab as mpl
+import os
+import annfiles as ann
 
 params.dampen = 0.
+params.GRID.setsize([100,100])
 
+def drawellipse(ellipse,format='w',params={}):
+    theta = num.linspace(-.03,2*num.pi,100)
+    x = 2*ellipse.major*num.cos(theta)
+    y = 2*ellipse.minor*num.sin(theta)
+    X = num.cos(ellipse.angle)*x - num.sin(ellipse.angle)*y
+    Y = num.sin(ellipse.angle)*x + num.cos(ellipse.angle)*y
+    X += ellipse.center.x
+    Y += ellipse.center.y
+    h = mpl.plot(X,Y,format,**params)
+    return h
 
 def find_flies( old0, old1, obs ):
     """All arguments are EllipseLists. Returns an EllipseList."""
@@ -96,7 +109,15 @@ colors = ['r','g','b','y']
 #        est.drawellipse(e,colors[id])
 #    mpl.show()
 
-tracks = []
+try:
+    os.remove('tmp.ann')
+except:
+    pass
+tracks = ann.AnnotationFile('tmp.ann',None,True,False,False)
+tracks.InitializeData(0,-1)
+tracks.InitializeBufferForTracking(0)
+
+#tracks = []
 cc = []
 obs = ell.find_ellipses(bw[0].astype(float),bw[0],False)
 (L,ncc) = meas.label(bw[0])
@@ -151,9 +172,12 @@ print tracks
 for t in range(2,len(tracks)):
     hind.fixerrors(t)
 
+mpl.gray()
 for t in range(len(tracks)):
 
     mpl.imshow(bw[t])
     for [id,e] in tracks[t].iteritems():
-        est.drawellipse(e,colors[id])
+        drawellipse(e,colors[id])
+    mpl.axis('tight')
+    mpl.title('Frame %d'%t)
     mpl.show()

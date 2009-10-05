@@ -213,11 +213,15 @@ def gmmupdate(mu,S,priors,gamma,x,weights=1,mincov=.01,initcovars=None):
     # update the priors (note that it has not been normalized yet)
     priors[:] = num.sum(gamma,axis=0)
     Z = priors.copy()
-    priors /= num.sum(priors)
+    sumpriors = num.sum(priors)
+    if sumpriors > 0:
+        priors /= sumpriors
+        issmall = priors < .01
+        issmall = issmall.any()
+    else:
+        if DEBUG: print "All priors are too small, reinitiallizing"
+        issmall = True
     #print 'updated priors to ' + str(priors)
-
-    issmall = priors < .01
-    issmall = issmall.any()
 
     # if any prior is to small, then reinitialize that cluster
     if issmall:

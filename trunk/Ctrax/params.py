@@ -112,6 +112,13 @@ class Parameters:
                                    [0,114,178],   # blue
                                    [213,94,0],    # vermillion
                                    [204,121,167]] # red-purple
+
+        # number of frames of annotation to buffer
+        self.anndata_nbuffer = 1000
+        # we will store the location of every anndata_lookupinterval(th)
+        # in the annotation data
+        self.anndata_lookupinterval = 1000
+
         # background constants
         self.SHOW_BACKGROUND = 0
         self.SHOW_DISTANCE = 1

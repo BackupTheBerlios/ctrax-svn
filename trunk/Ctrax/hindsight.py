@@ -202,6 +202,8 @@ class Hindsight:
         # delete this track
         for t in range(int(t1),int(t2)):
             tmp = self.tracks[t].pop(id)
+        # recycle this id
+        self.tracks.RecycleId(id)
         self.milestones.deleteid(id)
         if DEBUG: print 'deleted track for id=%d with life span=%d'%(id,lifespan)
 
@@ -283,6 +285,8 @@ class Hindsight:
 
         # remove id2 from all data structures
         self.milestones.deleteid(id2)
+        # recycle this id
+        self.tracks.RecycleId(id2)
 
         # reset death of id1 as d2
         self.milestones.setdeath(id1,d2)
@@ -480,7 +484,9 @@ class Hindsight:
 
             # delete id3
             self.milestones.deleteid(id3)
-            
+            # recycle this id
+            self.tracks.RecycleId(id3)
+
             # set id1 to die when id2 died
             self.milestones.setdeath(id1,d2)
             
@@ -503,7 +509,9 @@ class Hindsight:
                 
             # delete id3
             self.milestones.deleteid(id3)
-            
+            # recycle this id
+            self.tracks.RecycleId(id3)
+
             # id1 now dies when id3 died
             self.milestones.setdeath(id1,d3)
 
@@ -623,6 +631,8 @@ class Hindsight:
                                                self.milestones.getdeathframe(lastborn)))
         # delete lastborn
         self.milestones.deleteid(lastborn)
+        # recycle this id
+        self.tracks.RecycleId(lastborn)
 
         return True
 

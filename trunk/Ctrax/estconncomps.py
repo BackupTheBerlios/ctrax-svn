@@ -67,17 +67,6 @@ def cov2ell(S):
         sizeH = num.sqrt(eigA)
     return (sizeH,sizeW,angle)
 
-def drawellipse(ellipse,format='w',params={}):
-    theta = num.linspace(-.03,2*num.pi,100)
-    x = 2*ellipse.major*num.cos(theta)
-    y = 2*ellipse.minor*num.sin(theta)
-    X = num.cos(ellipse.angle)*x - num.sin(ellipse.angle)*y
-    Y = num.sin(ellipse.angle)*x + num.cos(ellipse.angle)*y
-    X += ellipse.center.x
-    Y += ellipse.center.y
-    h = plot(X,Y,format,**params)
-    return h
-
 def ellipsepixels(ellipse,bounds):
     # convert axes to covariance matrix
     S = ell2cov(ellipse.major,ellipse.minor,ellipse.angle)
