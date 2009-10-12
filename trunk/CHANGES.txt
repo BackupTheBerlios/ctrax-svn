@@ -1,3 +1,23 @@
+2009-10-05 Kristin Branson
+
+* Fixed bug in WriteMAT. 
+
+2009-10-02 Kristin Branson
+
+* If all clusters in gmmupdate ended up with priors < epsilon, then normalizing the priors resulted in priors being set to nan. Fixed so that we don't divide by zero, and flag as small (bug noted by Alex Vaughan). 
+
+* Print statements in non-interactive mode changed to stdout instead of stderr.
+
+* Created a list "recycledids" field of ann_file so that ids for spurious trajectories that are deleted are recycled. 
+
+2009-10-01 Kristin Branson
+
+* Changed ann_data, ann_file format so that entire trajectories are not stored in memory, but instead only a chunk are stored. Currently, this chunk is hardcoded to be 1000 frames. At some point, we should let this be modified in some advanced parameters. 
+
+* Merged ReadSettings and ReadAnnHeader into one basic function call -- ReadSettings calls ReadAnnHeader and specifes not to read in the background model or the start frame. 
+
+* Fixed bug in ReadAnnHeader/ReadSettings: bool(value) always returns True if value is a string; changed to bool(int(value)) (bug fix noted by Alex Vaughan).
+
 2009-09-19 Kristin Branson
 
 * Moved many debugging "print" statements to "if DEBUG: print"

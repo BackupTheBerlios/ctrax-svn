@@ -1,3 +1,7 @@
+% h = drawflyo(trk,varargin)
+% h = drawflyo(x,y,theta,quartermaj,quartermin,varargin)
+% draw triangle corresponding to fly position
+% extra arguments will be fed to plot
 function varargout = drawflyo(x,y,varargin)
 
 % draw an isosceles triangle with center (x,y)

@@ -16,6 +16,9 @@ names = varargin(1:2:end);
 for i = 1:2:length(params),
   
   % check if it matches names{j}
+  if ~ischar(params{i}),
+    error('Input %d is not a string.',i);
+  end
   if ~any(strcmpi(params{i},names)),
     warning('myparse:unknownParameterName','Unknown parameter name: %s, ignoring\n',params{i});
   end

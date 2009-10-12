@@ -14,18 +14,29 @@ if nargin < 3,
   hax = gca;
 end
 
-axes(hax);
-chil = get(hax,'children');
+chil = findobj(hax,'-property','xdata','-and','-property','ydata','-and','-not','type','hggroup');
 %oktypes = {'line','patch','text','hggroup'};
-ax = axis;
 for i = 1:length(chil),
-  if isprop(chil(i),'xdata'),
-    x = get(chil(i),'xdata');
-    y = get(chil(i),'ydata');
-    set(chil(i),'xdata',x*factorx);
-    set(chil(i),'ydata',y*factory);
+  if chil(i) == hax,
+    continue;
   end
+  x = get(chil(i),'xdata');
+  y = get(chil(i),'ydata');
+  set(chil(i),'xdata',x*factorx);
+  set(chil(i),'ydata',y*factory);
 end
+chil = findobj(hax,'-property','position','-and','units','data');
+%oktypes = {'line','patch','text','hggroup'};
+for i = 1:length(chil),
+  if chil(i) == hax,
+    continue;
+  end
+  pos = get(chil(i),'position');
+  pos(1) = pos(1)*factorx;
+  pos(2) = pos(2)*factory;
+  set(chil(i),'position',pos);
+end
+ax = axis;
 ax(1:2) = ax(1:2)*factorx;
 ax(3:4) = ax(3:4)*factory;
 axis(ax);
