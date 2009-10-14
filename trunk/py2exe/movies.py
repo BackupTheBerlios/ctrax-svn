@@ -10,8 +10,7 @@ import os
 from params import params
 from draw import annotate_bmp
 import pyglet.media as media
-
-DEBUG = False
+from version import DEBUG_MOVIES as DEBUG
 
 # version of sbfmf for writing
 __version__ = "0.3b"
@@ -172,8 +171,8 @@ class Movie:
 
         self.writesbfmf_framestarts[:i+1] = inmovie.h_mov.framelocs[:i+1]
 
-        print "copied framestarts: "
-        print str(self.writesbfmf_framestarts[:i+1])
+        if DEBUG: print "copied framestarts: "
+        if DEBUG: print str(self.writesbfmf_framestarts[:i+1])
 
         # seek to the first frame
         inmovie.h_mov.seek(0)
@@ -181,13 +180,13 @@ class Movie:
         # copy in pages of size pagesize
         pagesize = int(2**20)
         for j in range(firstaddr,lastaddr,pagesize):
-            print "writing page at %d"%inmovie.h_mov.file.tell()
+            if DEBUG: print "writing page at %d"%inmovie.h_mov.file.tell()
             buf = inmovie.h_mov.read_some_bytes(pagesize)
             self.outfile.write(buf)
 
         # write last page
         if j < lastaddr:
-            print "writing page at %d"%inmovie.h_mov.file.tell()
+            if DEBUG: print "writing page at %d"%inmovie.h_mov.file.tell()
             buf = inmovie.h_mov.read_some_bytes(int(lastaddr-pagesize))
             self.outfile.write(buf)
 
@@ -211,7 +210,7 @@ class Movie:
         # write the index
         indexloc = self.outfile.tell()
         nframeswrite = frame - params.start_frame + 1
-        print "writing index, nframeswrite = %d"%nframeswrite
+        if DEBUG: print "writing index, nframeswrite = %d"%nframeswrite
         for i in range(nframeswrite):
             self.outfile.write(struct.pack("<Q",self.writesbfmf_framestarts[i]))
 
@@ -257,7 +256,7 @@ class Movie:
         self.writesbfmf_nframesloc = self.outfile.tell()
         self.outfile.write(struct.pack("<2I",int(self.nframescompress),int(difference_mode)))
 
-        print "writeheader: nframescompress = " + str(self.nframescompress)
+        if DEBUG: print "writeheader: nframescompress = " + str(self.nframescompress)
 
         # compute the location of the standard deviation image
         stdloc = self.outfile.tell() + struct.calcsize("B")*self.nr*self.nc
@@ -279,7 +278,7 @@ class Movie:
 
     def writesbfmf_writeframe(self,isfore,im,stamp,currframe):
 
-        print "writing frame %d"%currframe
+        if DEBUG: print "writing frame %d"%currframe
 
         tmp = isfore.copy()
         tmp.shape = (self.nr*self.nc,)
@@ -295,7 +294,7 @@ class Movie:
         j = currframe - params.start_frame
         self.writesbfmf_framestarts[j] = self.outfile.tell()
 
-        print "stored in framestarts[%d]"%j
+        if DEBUG: print "stored in framestarts[%d]"%j
 
         # write number of pixels and time stamp
         self.outfile.write(struct.pack("<Id",n,stamp))
@@ -526,7 +525,7 @@ class Avi:
 
     def old_read_header( self ):
 
-        print "reading chunk header"
+        if DEBUG: print "reading chunk header"
         # RIFF header
         file_type, riff_size = struct.unpack( '4sI', self.file.read( 8 ) )
         assert file_type == 'RIFF'
@@ -539,7 +538,7 @@ class Avi:
         avi_str, avi_note = struct.unpack( '4sI', self.file.read( 8 ) )
         assert avi_str == 'avih'
 
-        print "1"
+        if DEBUG: print "1"
 
         # AVI header
         avi_header = self.file.read( 56 )
@@ -563,7 +562,7 @@ class Avi:
             raise TypeError( "file must contain only one data stream" )
         if avi_buf_size != 0: self.buf_size = avi_buf_size
 
-        print "2"
+        if DEBUG: print "2"
 
         # stream header
         stream_list, stream_listsize, stream_listtype = \
@@ -591,7 +590,7 @@ class Avi:
         #vids DIB  0 0 0 100 10000 0 99 1310720 100 0 0 0 1280 1024
         #vids DIB  0 0 0 1 50 0 301 235200 0 0 0 0 560 420
         
-        print "3"
+        if DEBUG: print "3"
 
         if fccType != 'vids':
             raise TypeError( "stream type must be video" )
@@ -601,24 +600,24 @@ class Avi:
             print "video must be uncompressed; found fccHandler %s" % fccHandler
             raise ValueError( "video must be uncompressed; found fccHandler %s" % fccHandler)
             # raise TypeError( "video must be uncompressed" )
-        print "stream_buf_size = " + str(stream_buf_size)
+        if DEBUG: print "stream_buf_size = " + str(stream_buf_size)
         if stream_buf_size != 0:
             if hasattr( self, 'buf_size' ):
-                print "buf_size = %d should = stream_buf_size = %d"%(self.buf_size,stream_buf_size)
+                if DEBUG: print "buf_size = %d should = stream_buf_size = %d"%(self.buf_size,stream_buf_size)
                 assert self.buf_size == stream_buf_size
             else:
                 self.buf_size = stream_buf_size
 
         # bitmap header
 
-        print "3.5"
+        if DEBUG: print "3.5"
 
         bmp_str, bmp_note = struct.unpack( '4sI', self.file.read( 8 ) )
-        print "bmp_str = " + str(bmp_str)
+        if DEBUG: print "bmp_str = " + str(bmp_str)
 
         assert bmp_str == 'strf'
 
-        print "4"
+        if DEBUG: print "4"
 
         bmp_header = self.file.read( 40 )
         self.bmp_size, \
@@ -644,7 +643,7 @@ class Avi:
             # just a guess -- should be OK if 8-bit grayscale
             self.buf_size = self.height * self.width
 
-        print "5"
+        if DEBUG: print "5"
 
         # skip extra header crap
         movie_list = ''
@@ -674,7 +673,7 @@ class Avi:
         # beginning of data blocks
         self.data_start = self.file.tell()
 
-        print "6"
+        if DEBUG: print "6"
         
         # attempt to do frame-size vs width check here:
         this_frame_id, frame_size = struct.unpack( '4sI', self.file.read( 8 ) )
@@ -697,7 +696,7 @@ class Avi:
             else:
                 raise ValueError("apparent new width is not integral; mod = %d" % (frame_size % self.height))
         
-        print "8"
+        if DEBUG: print "8"
 
         
         # end read_header()
@@ -855,7 +854,7 @@ class CompressedAvi:
         self.frame_delay_us = 1e6 / self.fps
         self._estimate_keyframe_period()
         self.n_frames = int(num.floor(self.duration_seconds * self.fps))
-        print "n_frames estimated to be %d"%self.n_frames
+        if DEBUG: print "n_frames estimated to be %d"%self.n_frames
         
         # added to help masquerade as FMF file:
         self.filename = filename
@@ -1128,7 +1127,7 @@ class CompressedAvi:
             raise ValueError( "Could not compute the fps in the compressed movie" )
 
         self.fps = float(i) / (ts1-ts0)
-        print 'Estimated frames-per-second = %f'%self.fps
+        if DEBUG: print 'Estimated frames-per-second = %f'%self.fps
         
     def _estimate_keyframe_period(self):
 
@@ -1166,7 +1165,7 @@ class CompressedAvi:
         if DEBUG: print "i = %d, i0 = %d"%(i,i0)
         self.keyframe_period = i - i0
         self.keyframe_period_s = self.keyframe_period / self.fps
-        print "Estimated keyframe period = " + str(self.keyframe_period)
+        if DEBUG: print "Estimated keyframe period = " + str(self.keyframe_period)
 
     def get_n_frames( self ):
         return self.n_frames

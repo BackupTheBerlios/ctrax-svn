@@ -6,7 +6,7 @@ import imops as imops
 import pyglet.gl as gl
 #import warnings
 
-from pygarrayimage.arrayimage import ArrayInterfaceImage
+from arrayimage import ArrayInterfaceImage
 
 import wxglvideo as vid
 

@@ -6,8 +6,7 @@ import estconncomps as est
 import kcluster
 import matchidentities
 #import pylab as mpl
-
-DEBUG = False
+from version import DEBUG_HINDSIGHT as DEBUG
 
 class MyDictionary(dict):
     def __init__(self,emptyval=None):
@@ -186,12 +185,12 @@ class Hindsight:
             
     def fix_spuriousdetection(self,id,t2):
 
-        print 'testing to see if death of id=%d in frame t2=%d is from a spurious detection'%(id,t2)
+        if DEBUG: print 'testing to see if death of id=%d in frame t2=%d is from a spurious detection'%(id,t2)
 
         t1 = self.milestones.getbirthframe(id)
         lifespan = t2 - t1
         if lifespan > params.spuriousdetection_length:
-            print 'lifespan longer than %d, not spurious, not deleting'%params.spuriousdetection_length
+            if DEBUG: print 'lifespan longer than %d, not spurious, not deleting'%params.spuriousdetection_length
             return False
         #elif (type(t1) is not num.dtype('int')) or \
         #     (type(t2) is not num.dtype('int')):
@@ -203,6 +202,8 @@ class Hindsight:
         # delete this track
         for t in range(int(t1),int(t2)):
             tmp = self.tracks[t].pop(id)
+        # recycle this id
+        self.tracks.RecycleId(id)
         self.milestones.deleteid(id)
         if DEBUG: print 'deleted track for id=%d with life span=%d'%(id,lifespan)
 
@@ -284,6 +285,8 @@ class Hindsight:
 
         # remove id2 from all data structures
         self.milestones.deleteid(id2)
+        # recycle this id
+        self.tracks.RecycleId(id2)
 
         # reset death of id1 as d2
         self.milestones.setdeath(id1,d2)
@@ -481,7 +484,9 @@ class Hindsight:
 
             # delete id3
             self.milestones.deleteid(id3)
-            
+            # recycle this id
+            self.tracks.RecycleId(id3)
+
             # set id1 to die when id2 died
             self.milestones.setdeath(id1,d2)
             
@@ -504,7 +509,9 @@ class Hindsight:
                 
             # delete id3
             self.milestones.deleteid(id3)
-            
+            # recycle this id
+            self.tracks.RecycleId(id3)
+
             # id1 now dies when id3 died
             self.milestones.setdeath(id1,d3)
 
@@ -624,6 +631,8 @@ class Hindsight:
                                                self.milestones.getdeathframe(lastborn)))
         # delete lastborn
         self.milestones.deleteid(lastborn)
+        # recycle this id
+        self.tracks.RecycleId(lastborn)
 
         return True
 
@@ -1043,6 +1052,6 @@ def computemergepenalty(ellipses,i,j,L,dfore):
     dforemerge = 1 - dforemerge[newforemerge]
     dforemerge[dforemerge<0] = 0
     mergepenalty = num.sum(dforemerge)
-    print 'mergepenalty = ' + str(mergepenalty)
+    if DEBUG: print 'mergepenalty = ' + str(mergepenalty)
     #print 'in computemergepenalty, ellipsemerge is: ' + str(ellipsemerge)
     return (mergepenalty,ellipsemerge)

@@ -1148,7 +1148,7 @@ def main():
     if int(os.environ.get('CTRAX_NO_REDIRECT','0')):
         args = (0,)
         kw = {}
-        print "there is output!"
+        #print "there is output!"
         sys.stdout.flush()
     else:
         # redirect to a window

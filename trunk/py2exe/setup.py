@@ -11,7 +11,7 @@ import py2exe
 # include directories for hungarian
 numpyincludedirs = numpy.get_include()
 
-this_version = '0.1.4.1'
+this_version = '0.1.5'
 
 # add all of the .xrc and .bmp files
 Ctrax_package_data = [ f[6:] for f in glob.glob('*.xrc')]+\
@@ -31,7 +31,7 @@ setup( console=[{"script": 'Ctrax.py',
        description="The Caltech Multiple Fly Tracker",
        author="Caltech ethomics project",
        author_email="branson@caltech.edu",
-       url="http://www.dickinson.caltech.edu/Research/Ctrax",
+       url="http://www.dickinson.caltech.edu/Ctrax",
        #entry_points = {'console_scripts': ['Ctrax=Ctrax:main']},
        package_data = {'Ctrax':Ctrax_package_data},
        #eager_resources=eager_resources,

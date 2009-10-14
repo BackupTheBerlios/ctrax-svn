@@ -22,6 +22,7 @@ $ cp C:/Python25/Lib/site-packages/motmot.imops-0.5.2-py2.5-win32/motmot/imops/i
 $ cp C:/Python25/Lib/site-packages/motmot.wxglvideo-0.6.1.dev_r481-py2.5/motmot/wxglvideo/wxglvideo.py .
 $ cp C:/Python25/Lib/site-packages/motmot.wxglvideo-0.6.1.dev_r481-py2.5/motmot/wxglvideo/simple_overlay.py .
 $ cp C:/Python25/Lib/site-packages/motmot.wxvalidatedtext-0.5.1.dev_r480-py2.5/motmot/wxvalidatedtext/wxvalidatedtext.py .
+$ cp C:\Python25\Lib\site-packages\motmot\wxvideo\wxvideo.py .
 
 4) Remove all references to setuptools, pkg_resources
 $ python removepkgresources.py

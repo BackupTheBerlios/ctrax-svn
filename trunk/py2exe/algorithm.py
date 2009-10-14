@@ -33,38 +33,38 @@ class CtraxAlgorithm (settings.AppWithSettings):
 
         ## initialization ##
 
+        if DEBUG: print "Tracking from frame %d..."%self.start_frame
+        if DEBUG: print "Last frame tracked = %d"%self.ann_file.lastframetracked
+
+
         # maximum number of frames we will look back to fix errors
         self.maxlookback = max(params.lostdetection_length,
                                params.spuriousdetection_length,
                                params.mergeddetection_length,
                                params.splitdetection_length)
 
-        # initialize annotation file
-        self.ann_file = annot.AnnotationFile( self.ann_filename, params.version, True )
-        self.ann_file.WriteAnnHeader( params.start_frame, self.bg_imgs )
-
-        # if we haven't done any tracking yet
-        if (self.ann_data is None) or (len(self.ann_data) == 0):
-            self.ann_data = []
-            params.nids = 0
-
-        # write the current tracks to file
-        for ff in range(len(self.ann_data)-self.maxlookback):
-            self.ann_file.write_ellipses(self.ann_data[ff])
-        self.lastframewritten = max(-1,len(self.ann_data)-self.maxlookback-1)
-
-        wx.Yield()
+        if params.interactive:
+            wx.Yield()
 
         # initialize hindsight data structures
-        self.hindsight = hindsight.Hindsight(self.ann_data,self.bg_imgs)
+
+        if DEBUG: print "Initializing hindsight structures"
+        self.hindsight = hindsight.Hindsight(self.ann_file,self.bg_imgs)
         self.hindsight.initialize_milestones()
+        if DEBUG: print "Done initializing hindsight structures"
 
         self.break_flag = False
 
-        #print 'In Track, just before main loop: self.start_frame = %d, params.start_frame = %d, len(ann_data) = %d'%(self.start_frame,params.start_frame,len(self.ann_data))
+        if DEBUG: print "Initializing buffer for tracking"
+        self.ann_file.InitializeBufferForTracking(self.start_frame)
 
         for self.start_frame in range(self.start_frame,self.n_frames):
+
+            if DEBUG: print "Tracking frame %d / %d"%(self.start_frame,self.n_frames-1)
         
+            #if DEBUG:
+            #    break
+
             if self.break_flag:
                 break
 
@@ -74,6 +74,7 @@ class CtraxAlgorithm (settings.AppWithSettings):
             try:
                 (self.dfore,self.isfore) = self.bg_imgs.sub_bg( self.start_frame )
             except:
+                # catch all error types here, and just break out of loop
                 break
 
             # write to sbfmf
@@ -83,8 +84,6 @@ class CtraxAlgorithm (settings.AppWithSettings):
                                                  self.bg_imgs.curr_stamp,
                                                  self.start_frame)
             
-            #print 'time to perform background subtraction: '+str(time.time() - last_time)
-
             # process gui events
             if params.interactive:
                 wx.Yield()
@@ -105,37 +104,36 @@ class CtraxAlgorithm (settings.AppWithSettings):
                 break
 
             # match target identities to observations
-            if len( self.ann_data ) > 1:
-                flies = ell.find_flies( self.ann_data[-2],
-                                        self.ann_data[-1],
+            if len( self.ann_file ) > 1:
+                flies = ell.find_flies( self.ann_file[-2],
+                                        self.ann_file[-1],
                                         self.ellipses )
-            elif len( self.ann_data ) == 1:
-                flies = ell.find_flies( self.ann_data[0],
-                                        self.ann_data[0],
+            elif len( self.ann_file ) == 1:
+                flies = ell.find_flies( self.ann_file[0],
+                                        self.ann_file[0],
                                         self.ellipses )
             else:
                 flies = ell.TargetList()
                 for i,obs in enumerate(self.ellipses):
                     if obs.isEmpty():
-                        print 'empty observation'
+                        if DEBUG: print 'empty observation'
                     else:
-                        obs.identity = params.nids
+                        newid = self.ann_file.GetNewId()
+                        obs.identity = newid
                         flies.append(obs)
-                        params.nids+=1
+
+            if DEBUG: print "Done with frame %d, appending to ann_file"%self.start_frame
 
             # save to ann_data
-            self.ann_data.append( flies )
+            self.ann_file.append( flies )
+
+            if DEBUG: print "Added to ann_file, now running fixerrors"
 
             # fix any errors using hindsight
             self.hindsight.fixerrors()
             #print 'time to fix errors: '+str(time.time() - last_time)
 
-            # write to file
-            if (self.ann_data is not None) and \
-                   (len(self.ann_data) > self.maxlookback+self.lastframewritten):
-                self.lastframewritten = self.lastframewritten + 1
-                self.ann_file.write_ellipses(self.ann_data[self.lastframewritten])
-            #print 'In Track, after writing: self.start_frame = %d, params.start_frame = %d, len(ann_data) = %d'%(self.start_frame,params.start_frame,len(self.ann_data))
+            
 
             # draw?
             if params.request_refresh or (params.do_refresh and ((self.start_frame % params.framesbetweenrefresh) == 0)):
@@ -143,7 +141,7 @@ class CtraxAlgorithm (settings.AppWithSettings):
                     if self.start_frame:
                         self.ShowCurrentFrame()
                 else:
-                    sys.stderr.write("Frame %d / %d\n"%(self.start_frame,self.n_frames))
+                    print "Frame %d / %d\n"%(self.start_frame,self.n_frames)
                 params.request_refresh = False
 
             # process gui events
@@ -158,11 +156,7 @@ class CtraxAlgorithm (settings.AppWithSettings):
     def Finish(self):
 
         # write the rest of the frames to file
-        for ff in range(self.lastframewritten+1,len(self.ann_data)):
-            self.ann_file.write_ellipses(self.ann_data[ff])
-        self.lastframewritten = len(self.ann_data)-1
-        # close the file
-        self.ann_file.file.close()
+        self.ann_file.finish_writing()
 
     # enddef: Track()
 
@@ -172,15 +166,6 @@ class CtraxAlgorithm (settings.AppWithSettings):
 
         # stop algorithm
         self.break_flag = True
-
-    def InitTrackingState(self):
-
-	# initialize tracking state
-        self.tracking = True
-        self.ann_data = []
-        params.nids = 0
-        params.start_frame = 0
-        self.start_frame = 0
 
     def DoAllPreprocessing(self):
 
@@ -218,29 +203,46 @@ class CtraxAlgorithm (settings.AppWithSettings):
         if not params.interactive:
             self.RestoreStdio()
 
-        sys.stderr.write("Performing preprocessing...\n")
+        print "Performing preprocessing...\n"
 	self.DoAllPreprocessing()
 
-        sys.stderr.write("Done preprocessing, beginning tracking...\n")
+        print "Done preprocessing, beginning tracking...\n"
 
         # begin tracking
         if params.interactive:
             self.UpdateToolBar('started')
-        sys.stderr.write("Tracking...\n")
-        self.Track()
 
-        sys.stderr.write("Choosing Orientations...\n")
+        # write sbfmf header
+        if self.dowritesbfmf:
+            # open an sbfmf file if necessary
+            self.movie.writesbfmf_start(self.bg_imgs,
+                                        self.writesbfmf_filename)
+
+        print "Tracking..."
+        try:
+            self.Track()
+        except:
+            print "Error during Track"
+            raise
+        print "Done tracking"
+
+        # write the sbfmf index and close the sbfmf file
+        if self.dowritesbfmf and self.movie.writesbfmf_isopen():
+            self.movie.writesbfmf_close(self.start_frame)
+
+        print "Choosing Orientations..."
         # choose orientations
-        self.choose_orientations = chooseorientations.ChooseOrientations(self.frame,self.ann_data,interactive=False)
-        self.choose_orientations.ChooseOrientations()
+        self.choose_orientations = chooseorientations.ChooseOrientations(self.frame,interactive=False)
+        self.choose_orientations.ChooseOrientations(self.ann_file)
 
         # save to a .mat file
         (basename,ext) = os.path.splitext(self.filename)
-        if self.matfilename is None:
+        if not(hasattr(self,'matfilename')) or self.matfilename is None:
             savename = basename + '.mat'
         else:
             savename = self.matfilename
-        sys.stderr.write("Saving to mat file "+savename+"...\n")
+        print "Saving to mat file "+savename+"...\n"
 
-        self.ann_file.WriteMAT( savename, self.ann_data )
-        sys.stderr.write("Done\n")
+        self.ann_file.WriteMAT( savename )
+        print "Done\n"
+

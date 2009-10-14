@@ -24,6 +24,10 @@ import bg
 import draw
 import ellipsesk as ell
 
+ID_PRINTINTERVALS = 837487
+ID_PRINTBUFFEREL = 837488
+ID_PRINTFRAME = 837489
+
 class AppWithSettings( wx.App ):
     """Cannot be used alone -- this class only exists
     to keep settings GUI code together in one file."""
@@ -36,7 +40,16 @@ class AppWithSettings( wx.App ):
 
         # make references to useful objects
         self.menu = self.frame.GetMenuBar()
-        if DEBUG: self.menu.Append( wx.Menu(), "DEBUG" )
+        if DEBUG: 
+            self.debugmenu = wx.Menu()
+            self.debugmenu.Append(ID_PRINTINTERVALS,"Print Intervals",
+                                  "Print frame intervals tracked, buffered, and written.")
+            self.debugmenu.Append(ID_PRINTBUFFEREL,"Print Buffer...",
+                                  "Print ellipses stored at specified element of buffer.")
+            self.debugmenu.Append(ID_PRINTFRAME,"Print Frame...",
+                                  "Pring ellipses for specified frame.")
+            self.menu.Append( self.debugmenu, "DEBUG" )
+            
         self.status = xrc.XRCCTRL( self.frame, "bar_status" )
         self.framenumber_text = xrc.XRCCTRL( self.frame, "text_framenumber" )
         self.num_flies_text = xrc.XRCCTRL( self.frame, "text_num_flies" )
@@ -110,6 +123,13 @@ class AppWithSettings( wx.App ):
         self.frame.Bind( wx.EVT_MENU, self.OnTailLength, id=xrc.XRCID("menu_playback_tails") )
         self.frame.Bind( wx.EVT_MENU, self.OnCheckDim, id=xrc.XRCID("menu_playback_dim") )
         self.frame.Bind( wx.EVT_MENU, self.OnCheckZoom, id=xrc.XRCID("menu_settings_zoom") )
+
+        # DEBUG
+        if DEBUG:
+            self.frame.Bind( wx.EVT_MENU, self.OnDebugPrintIntervals,id=ID_PRINTINTERVALS )
+            self.frame.Bind( wx.EVT_MENU, self.OnDebugPrintBufferElement,id=ID_PRINTBUFFEREL )
+            self.frame.Bind( wx.EVT_MENU, self.OnDebugPrintFrame,id=ID_PRINTFRAME )
+
         # stats menu
         #self.frame.Bind( wx.EVT_MENU, self.OnStats, id=xrc.XRCID("menu_stats_vel") )
         #self.frame.Bind( wx.EVT_MENU, self.OnStats, id=xrc.XRCID("menu_stats_orn") )
@@ -377,6 +397,10 @@ class AppWithSettings( wx.App ):
     def OnSettingsBGModel( self, evt ):
         """Open window for bg model settings."""
 
+        if params.movie.type == 'sbfmf':
+            resp = wx.MessageBox( "Background Model is already set for SBFMF files, and cannot be changed", "Cannot Change Background Model", wx.OK )
+            return
+
         # set up bg window
         if not hasattr( self.bg_imgs, 'modeldlg' ):
             self.bg_imgs.modeldlg = bg.BgSettingsDialog( self.frame, self.bg_imgs )
@@ -416,7 +440,7 @@ class AppWithSettings( wx.App ):
             return
 
         # create window
-        self.choose_orientations = chooseorientations.ChooseOrientations(self.frame,self.ann_data)
+        self.choose_orientations = chooseorientations.ChooseOrientations(self.frame)
         self.choose_orientations.frame.Bind(wx.EVT_CLOSE,self.OnQuitChooseOrientations)
         self.choose_orientations.frame.Bind(wx.EVT_BUTTON,self.OnQuitChooseOrientations, id=xrc.XRCID("ID_CANCEL") )
         self.choose_orientations.frame.Bind(wx.EVT_BUTTON,self.ChooseOrientations, id=xrc.XRCID("ID_OK") )
@@ -439,10 +463,10 @@ class AppWithSettings( wx.App ):
         self.choose_orientations.frame.Destroy()
         delattr( self, 'choose_orientations' )
         self.choose_orientations_window_open = False
-        self.RewriteTracks()
+        #self.RewriteTracks()
 
     def ChooseOrientations(self, evt):
-        self.choose_orientations.ChooseOrientations()
+        self.ann_file = self.choose_orientations.ChooseOrientations(self.ann_file)
         self.OnQuitChooseOrientations(evt)
 
     def OnResizeBG( self, evt ):
@@ -512,10 +536,10 @@ class AppWithSettings( wx.App ):
 
     def MouseClick(self,evt):
 
-        if not self.zoommode:
-            return
-
-        if self.ann_data is None:
+        if not self.zoommode or \
+                not self.ann_file.IsAnnData or \
+                self.start_frame > self.ann_file.lastframetracked or \
+                self.start_frame < self.ann_file.firstframetracked:
             return
 
         # check to see if zoom window open
@@ -530,10 +554,9 @@ class AppWithSettings( wx.App ):
 
         # determine closest target
         mind = num.inf
-        drawframe = self.start_frame - params.start_frame
-        if drawframe >= len(self.ann_data):
-            drawframe = -1
-        for i,v in self.ann_data[drawframe].iteritems():
+            
+        ells = self.ann_file.get_frame(self.start_frame)
+        for i,v in ells.iteritems():
             d = (v.center.x-x)**2 + (v.center.y-y)**2
             if d <= mind:
                 mini = i
@@ -548,7 +571,7 @@ class AppWithSettings( wx.App ):
                 self.OnCheckZoom(evt)
                 window = 0
 
-            self.ZoomTarget(self.ann_data[drawframe][mini],window)
+            self.ZoomTarget(ells[mini],window)
 
     def ZoomTarget(self,targ,window):
 
@@ -766,6 +789,42 @@ class AppWithSettings( wx.App ):
         wx.EndBusyCursor()
 
         return True
+
+    def OnDebugPrintIntervals(self,evt):
+        print "DEBUG INTERVALS: framestracked = [%d,%d], framesbuffered = [%d,%d], frameswritten = [%d,%d]"%(self.ann_file.firstframetracked,self.ann_file.lastframetracked,self.ann_file.firstframebuffered,self.ann_file.lastframebuffered,self.ann_file.firstframewritten,self.ann_file.lastframewritten)
+        sys.stdout.flush()
+
+    def OnDebugPrintBufferElement(self,evt):
+        q = wx.TextEntryDialog(self.frame,"Buffer has %d elements, corresponding to frames %d through %d"%(len(self.ann_file.buffer),self.ann_file.firstframebuffered,self.ann_file.lastframebuffered),"Choose buffer element","0")
+        q.ShowModal()
+        v = q.GetValue()
+        try:
+            i = int(v)
+            if i < 0 or i >= len(self.ann_file.buffer):
+                raise NotImplementedError
+
+        except:
+            print "DEBUG BUFFER: Must enter integer between 0 and %d"%(len(self.ann_file.buffer)-1)
+        else:
+            print "DEBUG BUFFER: buffer[%d] (frame %d) = "%(i,i+self.ann_file.firstframebuffered) + str(self.ann_file.buffer[i])
+        sys.stdout.flush()
+
+    def OnDebugPrintFrame(self,evt):
+        q = wx.TextEntryDialog(self.frame,"Frames tracked: %d through %d ([%d,%d] in buffer)"%(self.ann_file.firstframetracked,self.ann_file.lastframetracked,self.ann_file.firstframebuffered,self.ann_file.lastframebuffered),"Choose frame to print","0")
+        q.ShowModal()
+        v = q.GetValue()
+        try:
+            i = int(v)
+            if i < self.ann_file.firstframetracked or \
+                    i > self.ann_file.lastframetracked:
+                raise NotImplementedError
+        except:
+            print "DEBUG FRAME: Must enter integer between %d and %d"%(self.ann_file.firstframetracked,self.ann_file.lastframetracked)
+        else:
+            print "DEBUG FRAME: Frame %d = "%i + str(self.ann_file.get_frame(i))
+        sys.stdout.flush()
+
+
 
 def str222tuples( string ):
     """Converts string into two 2-tuples."""

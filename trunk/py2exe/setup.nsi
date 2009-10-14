@@ -12,7 +12,7 @@ Name "Ctrax-0.1"
 CRCCheck On
 
 ;Output File Name
-OutFile "Ctrax-0.1.exe"
+OutFile "Ctrax-0.1-installer.exe"
 Icon 'Ctraxicon.ico'
 
 ;The Default Installation Directory

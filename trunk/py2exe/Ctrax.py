@@ -70,6 +70,18 @@ class CtraxApp( algorithm.CtraxAlgorithm ): # eventually inherits from wx.App
 	# open movie, ann file
 	self.OpenMovieAndAnn()
 
+        if params.interactive:
+            print "******** Ctrax Warning and Error Messages ********"
+            print "Ctrax is currently under development, and you may "
+            print "encounter bugs with the program, or correct usage "
+            print "may not be obvious. Error and warning messages "
+            print "will appear in this window. If you have trouble "
+            print "and are contacting the Ctrax mailing list "
+            print "(see http://groups.google.com/group/ctrax ), "
+            print "be sure to copy and paste the relevant messages "
+            print "from this window into your email."
+            print "******************** Ctrax ***********************\n"
+
 	# make sure everything is drawn the right size
         self.OnResize( None )
 
@@ -83,17 +95,19 @@ class CtraxApp( algorithm.CtraxAlgorithm ): # eventually inherits from wx.App
 	Opens the movie and annotation file. If the movie name is not set on the command
 	line, then the filee dialog is brought up. Same for the annotation file name.
 	"""
-        # open movie from command line
         if (not hasattr(self,'filename')) or (self.filename is None):
+            # choose movie if not already specifed
             self.OnOpen( None )
         else:
             if (not hasattr(self,'ann_filename')) or (self.ann_filename is None):
+                # choose ann file if not already specified
                 self.ChooseAnnFile()
-            try:
-                self.OpenMovie()
-                self.UpdateStatusMovie()
-            except:
-                self.n_frames = 0
+            #try:
+            self.OpenMovie()
+            self.UpdateStatusMovie()
+            #except:
+            #    print "Could not open movie"
+            #    self.n_frames = 0
 
 
     def PrintUsage(self):
@@ -101,7 +115,7 @@ class CtraxApp( algorithm.CtraxAlgorithm ): # eventually inherits from wx.App
 	Print command line arguments for Ctrax.
 	"""
         self.RestoreStdio()
-        sys.stderr.write("Ctrax:\n\
+        print "Ctrax:\n\
 Optional Command Line Arguments:\n\
 --Interactive={True,False}\n\
 --Input=<movie.fmf>\n\
@@ -124,7 +138,7 @@ AutoEstimateShape=True, AutoDetectCircularArena=True\n\
 If CompressMovie not set, then a compressed SBFMF will not\n\
 be created by default.\n\
 If Matfile is not set, then <basename>.mat will be used\n\
-instead, where <basename> is the base name of the movie.\n")
+instead, where <basename> is the base name of the movie.\n"
 
     def ParseCommandLine(self):
 	"""
@@ -152,6 +166,9 @@ instead, where <basename> is the base name of the movie.\n")
             if name.lower() == '--interactive':
                 if value.lower() == 'false':
                     params.interactive = False
+                    # if we were redirecting to an output window,
+                    # restore stdio to the command line prompt
+                    self.RestoreStdio()
             elif name.lower() == '--input':
                 self.filename = value
                 (self.dir,self.file) = os.path.split(value)
@@ -220,79 +237,21 @@ instead, where <basename> is the base name of the movie.\n")
         print "DoAll..."
         self.DoAll()
 
-    def CheckAnnotation( self ):
-        """Test if annotation file exists for current movie. Set self.ann_file.
-        Read annotation data if user desires."""
-        try:
-            # read file
-            self.ann_file = annot.AnnotationFile( self.ann_filename, __version__ )
-        except:
-            print "Failed when reading annotation file: " + self.ann_filename
-            self.ann_file = None
-            self.ann_data = None
-            return False
-
-        #try:
-        if params.interactive and not params.batch_executing and \
-               wx.MessageBox( "Read old annotation data?", "Read?", wx.YES_NO ) == wx.YES:
-            self.ReadAnnotationData()
-            # enable controls
-	    self.EnableControls()
-            #self.menu.Enable( xrc.XRCID("menu_playback_show_ann"), True )
-            #self.menu.Enable( xrc.XRCID("menu_file_export"), True )
-            #self.menu.Enable( xrc.XRCID("menu_file_save_avi"), True )
-            #self.menu.Enable( xrc.XRCID("menu_choose_orientations"), True )
-            return True
-        #except: pass
-
-        self.ann_data = None
-
-        # disable controls
-        #self.menu.Check( xrc.XRCID("menu_playback_show_ann"), False )
-        #self.menu.Enable( xrc.XRCID("menu_playback_show_ann"), False )
-	self.EnableControls()
-        #self.menu.Enable( xrc.XRCID("menu_file_export"), False )
-        #self.menu.Enable( xrc.XRCID("menu_file_save_avi"), False )
-        #self.menu.Enable( xrc.XRCID("menu_choose_orientations"), False )
-        return False
-
-    def RewriteTracks( self ):
-        annot.RewriteTracks(self.ann_filename,self.ann_data)
-
-    def ReadAnnotationData( self ):
-        """Read all annotation data from current ann_file."""
-
-        if params.interactive:
-            start_color = self.status.GetBackgroundColour()
-            self.status.SetBackgroundColour( params.status_blue )
-            self.status.SetStatusText( "reading annotation data from file",
-                                       params.status_box )
-            wx.BeginBusyCursor()
-            wx.Yield()
-
-        self.ann_data = self.ann_file.GetAnnotation( params.interactive, self.bg_imgs )
-        if params.interactive:
-            self.status.SetBackgroundColour( start_color )
-            self.status.SetStatusText( "", params.status_box )
-            self.menu.Check( xrc.XRCID("menu_playback_show_ann"), True )
-            wx.EndBusyCursor()
-            wx.Yield()
+    #def RewriteTracks( self ):
+    #    annot.RewriteTracks(self.ann_filename,self.ann_data)
 
     def LoadSettings( self ):
 	"""
 	Load parameter values from another annotation file
 	"""
+
+        doreadbgmodel = not( params.interactive or self.IsBGModel())
         try:
-            tmpannfile = annot.AnnotationFile(self.settingsfilename,__version__,False)
+            annot.LoadSettings(self.settingsfilename,self.bg_imgs,
+                               doreadbgmodel=doreadbgmodel)
         except:
-            print 'error reading annotation file'
+            print 'Could not read annotation file ' + self.settingsfilename
             return
-        tmpannfile.file = open( tmpannfile.filename, mode="rb" )
-        if params.interactive or self.IsBGModel():
-            tmpannfile.ReadSettings()
-        else:
-            tmpannfile.ReadAnnHeader( self.bg_imgs )
-        tmpannfile.file.close()
 
     def OpenMovie( self ):
         """Attempt to open a movie given the current filename."""
@@ -312,64 +271,61 @@ instead, where <basename> is the base name of the movie.\n")
                 print "Could not open the movie " + self.filename
             raise
 
-            #if params.interactive:
-            #    self.menu.Enable( xrc.XRCID("menu_track_start"), False )
-            #    self.menu.Enable( xrc.XRCID("menu_track_resume"), False )
-            #    self.menu.Enable( xrc.XRCID("menu_track_resume_here"), False )
-            #    self.menu.Enable( xrc.XRCID("menu_load_settings"), False )
-            #    #self.menu.Enable( xrc.XRCID("menu_track_play"), False )
-            #    self.menu.Enable( xrc.XRCID("menu_settings_bg"), False )
-            #    self.menu.Enable( xrc.XRCID("menu_settings_bg_model"), False )
-            #    self.menu.Enable( xrc.XRCID("menu_settings_tracking"), False )
-            #    self.menu.Enable( xrc.XRCID("menu_compute_background"), False )
-            #    self.menu.Enable( xrc.XRCID("menu_compute_shape"), False )
-            #    self.slider.Enable( False )
-        else:
             self.movie.filename = self.filename
-            params.movie_name = self.filename
-            self.n_frames = self.movie.get_n_frames()
-            self.img_size = [self.movie.get_height(),self.movie.get_width()]
-            # get a pointer to the "Ctraxmain" child
-            if params.interactive:
-                img = num.zeros((self.img_size[0],self.img_size[1]),dtype=num.uint8)
-                sys.stdout.flush()
-                self.img_wind.update_image_and_drawings("Ctraxmain",
-                                                        img,
-                                                        format="MONO8")
-                sys.stdout.flush()
-                self.img_wind_child = self.img_wind.get_child_canvas("Ctraxmain")
-                # mouse click
-                self.img_wind_child.Bind(wx.EVT_LEFT_DOWN,self.MouseClick)
+        params.movie_name = self.filename
+        self.n_frames = self.movie.get_n_frames()
+        self.img_size = [self.movie.get_height(),self.movie.get_width()]
+        # get a pointer to the "Ctraxmain" child
+        if params.interactive:
+            img = num.zeros((self.img_size[0],self.img_size[1]),dtype=num.uint8)
+            sys.stdout.flush()
+            self.img_wind.update_image_and_drawings("Ctraxmain",
+                                                    img,
+                                                    format="MONO8")
+            sys.stdout.flush()
+            self.img_wind_child = self.img_wind.get_child_canvas("Ctraxmain")
+            # mouse click
+            self.img_wind_child.Bind(wx.EVT_LEFT_DOWN,self.MouseClick)
 
-            # setup background-subtraction pieces
-            self.bg_imgs = bg.BackgroundCalculator( self.movie )
+        # setup background-subtraction pieces
+        self.bg_imgs = bg.BackgroundCalculator( self.movie )
 
-            # enable commands
-            #if params.interactive:
-            #    self.menu.Enable( xrc.XRCID("menu_load_settings"), True )
-            #    self.menu.Enable( xrc.XRCID("menu_track_start"), True )
-            #    #self.menu.Enable( xrc.XRCID("menu_track_play"), True )
-            #    self.menu.Enable( xrc.XRCID("menu_settings_bg"), True )
-            #    self.menu.Enable( xrc.XRCID("menu_settings_bg_model"), True )
-            #    self.menu.Enable( xrc.XRCID("menu_settings_tracking"), True )
-            #    self.menu.Enable( xrc.XRCID("menu_compute_background"), True )
-            #    self.menu.Enable( xrc.XRCID("menu_compute_shape"), True )
-            #    self.slider.Enable( True )
-
-            # attempt to open annotation file
-            #self.ann_filename = self.filename + '.ann'
-	    self.CheckAnnotation()
-            #if self.CheckAnnotation():
-            #    if params.interactive:
-            #        self.menu.Check( xrc.XRCID("menu_playback_show_ann"), True )
-            #        if (self.ann_data is not None) and (len(self.ann_data) > 0):
-            #            self.menu.Enable(xrc.XRCID("menu_track_resume"), True )
-            #            self.menu.Enable(xrc.XRCID("menu_track_resume_here"), True )
+        while True:
+            # open annotation file, read header if readable, read
+            # tracks if user wants to load tracks
 
             if params.interactive:
-                self.ShowCurrentFrame()
+                start_color = self.status.GetBackgroundColour()
+                self.status.SetBackgroundColour( params.status_blue )
+                self.status.SetStatusText( "Reading annotation from file",
+                                           params.status_box )
+                wx.BeginBusyCursor()
+                wx.Yield()
 
-	self.EnableControls()
+            self.ann_file = annot.AnnotationFile( self.ann_filename,
+                                                  self.bg_imgs)
+
+            if params.interactive:
+                self.status.SetBackgroundColour( start_color )
+                self.status.SetStatusText( "", params.status_box )
+                wx.EndBusyCursor()
+                wx.Yield()
+
+            # we put this in a loop in case user does not want to overwrite
+            # tracks, in which case a new annotation file name will be
+            # asked for
+            if not (self.ann_file.filename is None):
+                break
+            # note that this should not happen if not in interactive mode
+            self.ChooseAnnFile()
+
+        if params.interactive and self.ann_file.IsAnnData():
+            self.menu.Check( xrc.XRCID("menu_playback_show_ann"), True )
+
+        if params.interactive:
+            self.ShowCurrentFrame()
+
+        self.EnableControls()
 
         if params.interactive:
 	    self.InitializeFrameSlider()
@@ -377,7 +333,7 @@ instead, where <basename> is the base name of the movie.\n")
     def ChooseAnnFile(self,evt=None):
         # choose an annotation file
         defaultDir = self.dir
-        defaultFile = self.filename + '.ann'
+        defaultFile = self.file + '.ann'
         dlg = wx.FileDialog( self.frame, "Annotation File", defaultDir, defaultFile, "Annotation files (*.ann)|*.ann", wx.SAVE )
 
         if dlg.ShowModal() == wx.ID_OK:
@@ -436,12 +392,12 @@ instead, where <basename> is the base name of the movie.\n")
 
     def OnSave( self, evt, dosavestamps=False ):
         """Choose filename to save annotation data as MAT-file."""
-        if self.ann_data is None:
+        if not self.ann_file.IsAnnData():
             if params.interactive:
                 wx.MessageBox( "No valid annotation\nexists for this movie\nor no movie is loaded.",
                                "Error", wx.ICON_ERROR )
             else:
-                print "not saving -- no data"
+                print "Not saving -- no data"
             return
 
         defaultDir = self.save_dir
@@ -461,7 +417,7 @@ instead, where <basename> is the base name of the movie.\n")
             wx.BeginBusyCursor()
             wx.Yield()
 
-            self.ann_file.WriteMAT( filename, self.ann_data, dosavestamps )
+            self.ann_file.WriteMAT( filename, dosavestamps )
 
             self.status.SetBackgroundColour( start_color )
             self.status.SetStatusText( "", params.status_box )
@@ -472,15 +428,15 @@ instead, where <basename> is the base name of the movie.\n")
 
     def OnSaveAvi( self, evt ):
         """Choose filename to save tracks as AVI-file."""
-        if self.ann_data is None:
+        if not self.ann_file.IsAnnData():
             if params.interactive:
                 wx.MessageBox( "No valid annotation\nexists for this movie\nor no movie is loaded.",
                                "Error", wx.ICON_ERROR )
             else:
-                print "not saving -- no data"
+                print "Not saving -- no data"
             return
 
-        dlg = wx.TextEntryDialog(self.frame,"Frames to output to AVI file: (startframe:endframe): ","Save as AVI-file","%d:%d"%(params.start_frame,params.start_frame+len(self.ann_data)-1))
+        dlg = wx.TextEntryDialog(self.frame,"Frames to output to AVI file: (startframe:endframe): ","Save as AVI-file","%d:%d"%(self.ann_file.firstframetracked,self.ann_file.lastframetracked))
         isgood = False
         while isgood == False:
             if dlg.ShowModal() == wx.ID_OK:
@@ -522,7 +478,7 @@ instead, where <basename> is the base name of the movie.\n")
             wx.BeginBusyCursor()
             wx.Yield()
 
-            movies.write_results_to_avi(self.movie,self.ann_data,filename,framestart,frameend)
+            movies.write_results_to_avi(self.movie,self.ann_file,filename,framestart,frameend)
 
             self.status.SetBackgroundColour( start_color )
             self.status.SetStatusText( "", params.status_box )
@@ -544,9 +500,8 @@ instead, where <basename> is the base name of the movie.\n")
             issbfmf = False
 
 	annready = movieready and \
-	    hasattr(self,'ann_data') and \
-	    (self.ann_data is not None) and \
-	    (len(self.ann_data) > 0)
+	    hasattr(self,'ann_file') and \
+            self.ann_file.IsAnnData()
 
 	isplaying = hasattr(self,'play_break') and not self.play_break
 
@@ -629,16 +584,21 @@ instead, where <basename> is the base name of the movie.\n")
         self.framenumber_text.SetValue( "%05d"%(self.start_frame) )
 
 	# draw_frame is the frame number relative to when tracking was started
-        if self.ann_data is not None and self.ann_file is not None and (framenumber >= 0):
-            draw_frame = framenumber - params.start_frame
-            if draw_frame >= len(self.ann_data): draw_frame = -1
-        else:
-            draw_frame = -1
+        dodrawann = self.ann_file.IsAnnData() and \
+            framenumber >= self.ann_file.firstframetracked and \
+            framenumber <= self.ann_file.lastframetracked
 
-        # update small ellipse windows
-        if self.menu.IsChecked( xrc.XRCID("menu_settings_zoom") ) and draw_frame >= 0:
-            self.zoom_window.SetData(self.ann_data[draw_frame],frame)
-            self.zoom_window.Redraw()
+        if dodrawann:
+
+            # first frame of tail of trajectory
+            tailframe = max(self.ann_file.firstframetracked,
+                            framenumber-params.tail_length)
+            dataframes = self.ann_file.get_frames(tailframe,framenumber)
+
+            # update small ellipse windows
+            if self.menu.IsChecked( xrc.XRCID("menu_settings_zoom") ):
+                self.zoom_window.SetData(dataframes[-1],frame)
+                self.zoom_window.Redraw()
 
         # dim frame
         if self.menu.IsChecked( xrc.XRCID("menu_playback_dim") ):
@@ -647,11 +607,10 @@ instead, where <basename> is the base name of the movie.\n")
         # annotate image
         frame8 = imagesk.double2mono8(frame,donormalize=False)
         if self.menu.IsChecked( xrc.XRCID("menu_playback_show_ann") ) \
-                and draw_frame >= 0:
-            ellipses = self.ann_data[draw_frame]
+                and dodrawann:
+            ellipses = dataframes[-1]
             old_pts = []
-            early_frame = int(max( 0,draw_frame - params.tail_length ))
-            for dataframe in self.ann_data[early_frame:draw_frame+1]:
+            for dataframe in dataframes:
                 these_pts = []
                 for ellipse in dataframe.itervalues():
                     these_pts.append( (ellipse.center.x, ellipse.center.y, ellipse.identity) )
@@ -718,6 +677,14 @@ instead, where <basename> is the base name of the movie.\n")
         if self.menu.GetLabel( xrc.XRCID("menu_track_start") ) == const.TRACK_STOP:
             self.OnStopTracking( None ) # quit in mid-operation
         self.play_break = True
+        try:
+            if not self.ann_file.file.closed:
+                self.ann_file.file.close()
+                if DEBUG: print "Closed annotation file"
+            else:
+                if DEBUG: print "Annotation file already closed"
+        except:
+            pass
         self.WriteUserfile()
         self.alive = False
         self.frame.Destroy()
@@ -782,20 +749,23 @@ instead, where <basename> is the base name of the movie.\n")
         if isshapemodel == False:
             return
 
+        # should never come up
+        #if not hasattr(self,'ann_file'):
+        #    self.ann_file = annot.AnnotationFile( self.ann_filename, params.version, True )
+
         # will data be lost?
-        if params.interactive and (self.ann_data is not None) and (len(self.ann_data) > 0):
+        if params.interactive and hasattr(self,'ann_file') and \
+                self.ann_file.IsAnnData():
            if evt.GetId() == xrc.XRCID("menu_track_start"): 
-               msgtxt = 'Frames %d to %d have been tracked.\nErase these results and start tracking over?'%(params.start_frame,params.start_frame+len(self.ann_data)-1)
+               msgtxt = 'Frames %d to %d have been tracked.\nErase these results and start tracking over?'%(self.ann_file.firstframetracked,self.ann_file.lastframetracked)
                if wx.MessageBox( msgtxt, "Erase trajectories and start tracking?", wx.OK|wx.CANCEL ) == wx.CANCEL:
                    return
            elif evt.GetId() == xrc.XRCID("menu_track_resume_here"):
-               last_tracked = params.start_frame + len(self.ann_data) - 1
-               if last_tracked > self.start_frame:
-                   msgtxt = 'Frames %d to %d have been tracked.\nRestarting tracking at frame %d will cause old trajectories from %d to %d to be erased.\nErase these results and restart tracking in the current frame?'%(params.start_frame,last_tracked,self.start_frame,self.start_frame,last_tracked)
-               if wx.MessageBox( msgtxt, "Erase trajectories and start tracking?", wx.OK|wx.CANCEL ) == wx.CANCEL:
-                   return
-        # end check for trajectory erasure
-                   
+               if self.ann_file.lastframetracked >= self.start_frame:
+                   msgtxt = 'Frames %d to %d have been tracked.\nRestarting tracking at frame %d will cause old trajectories from %d to %d to be erased.\nErase these results and restart tracking in the current frame?'%(self.ann_file.firstframetracked,self.ann_file.lastframetracked,self.start_frame,self.start_frame,self.ann_file.lastframetracked)
+                   if wx.MessageBox( msgtxt, "Erase trajectories and start tracking?", wx.OK|wx.CANCEL ) == wx.CANCEL:
+                       return
+        # end check for trajectory overwriting
 
         # set tracking flag
         self.tracking = True
@@ -808,38 +778,19 @@ instead, where <basename> is the base name of the movie.\n")
 
 	self.EnableControls()
 
-        #self.menu.Enable( xrc.XRCID("menu_track_resume"), False )
-        #self.menu.Enable( xrc.XRCID("menu_track_resume_here"), False )
-        #self.menu.Enable( xrc.XRCID("menu_playback_show_ann"), True )
-        #self.menu.Enable( xrc.XRCID("menu_choose_orientations"), False )
-        #self.menu.Enable( xrc.XRCID("menu_file_export"), True )
-        #self.menu.Enable( xrc.XRCID("menu_file_save_avi"), True )
-        #self.menu.Enable( xrc.XRCID("menu_load_settings"), False )
-        #self.menu.Enable( xrc.XRCID("menu_settings_bg"), False )
-        #self.menu.Enable( xrc.XRCID("menu_settings_bg_model"), False )
-        #self.menu.Enable( xrc.XRCID("menu_settings_tracking"), False )
-        ##self.menu.Enable( xrc.XRCID("menu_track_play"), False )
-        #self.menu.Enable( xrc.XRCID("menu_compute_background"), False )
-        #self.menu.Enable( xrc.XRCID("menu_compute_shape"), False )
-        #self.slider.Enable( False )
-
         wx.Yield() # refresh GUI
 
-        # reinitialize if start tracking, as opposed to resume tracking
+        # crop data
         if evt.GetId() == xrc.XRCID("menu_track_resume"):
-            # remove the last frame in case writing was interrupted
-            if len(self.ann_data) == 1:
-                self.ann_data = []
-                params.nids = 0
-            elif len(self.ann_data) > 1:
-                ids = set([])
-                # remove last frame
-                self.ann_data = self.ann_data[:-1]
-                # set ids
-                for t in range(len(self.ann_data)):
-                    ids |= set(self.ann_data[t].keys())
-                params.nids = max(ids) + 1
-            self.start_frame = params.start_frame + len(self.ann_data)
+            # if resuming tracking, we will keep the tracks from 
+            # frames firstframetracked to lastframetracked-1 
+            # (remove last frame in case writing the last frame 
+            # was interrupted)
+            self.start_frame = self.ann_file.lastframetracked
+            if DEBUG: print "start_frame = " + str(self.start_frame)
+            if DEBUG: print "cropping annotation file to frames %d through %d"%(self.ann_file.firstframetracked,self.ann_file.lastframetracked-1)
+            self.ann_file.InitializeData(self.ann_file.firstframetracked,
+                                         self.ann_file.lastframetracked-1)
             
             # restart writing to the sbfmf
             if self.dowritesbfmf:
@@ -859,26 +810,16 @@ instead, where <basename> is the base name of the movie.\n")
 
         elif evt.GetId() == xrc.XRCID("menu_track_resume_here"):
 	    # if resuming here, then erase parts of track after current frame
-            # remove the last frame in case writing was interrupted
-            if len(self.ann_data) == 1:
-                self.ann_data = []
-                params.nids = 0
-                self.start_frame = params.start_frame
-            elif len(self.ann_data) > 1:
-                ids = set([])
-                # set start frame to be the minimum of the current frame
-                # and the last frame tracked
-                lasttracked = params.start_frame + len(self.ann_data)
-                if lasttracked < self.start_frame:
-                    self.start_frame = lasttracked
-                    self.ann_data = self.ann_data[:-1]
-                else:
-                    nkeep = self.start_frame - params.start_frame
-                    self.ann_data = self.ann_data[:nkeep]
-                # set ids
-                for t in range(len(self.ann_data)):
-                    ids |= set(self.ann_data[t].keys())
-                params.nids = max(ids) + 1
+
+            # the latest possible frame to start tracking on is 
+            # lastframetracked
+            if self.start_frame > self.ann_file.lastframetracked:
+                print "Restarting tracking at frame %d (current frame > last frame tracked)"%self.ann_file.lastframetracked
+                self.start_frame = self.ann_file.lastframetracked
+
+            # crop to the frames before the current frame
+            self.ann_file.InitializeData(self.ann_file.firstframetracked,self.start_frame-1)
+            
             # restart writing to the sbfmf
             if self.dowritesbfmf:
                 try:
@@ -899,10 +840,12 @@ instead, where <basename> is the base name of the movie.\n")
 
             # start(over) tracking
 
-            self.ann_data = []
-            params.nids = 0
+            #self.ann_data = []
+            #params.nids = 0
             params.start_frame = self.start_frame
 
+            # empty annotations
+            self.ann_file.InitializeData(self.start_frame,self.start_frame-1)
             if self.dowritesbfmf:
                 # open an sbfmf file if necessary
                 self.movie.writesbfmf_start(self.bg_imgs,
@@ -918,29 +861,11 @@ instead, where <basename> is the base name of the movie.\n")
 	    self.menu.SetLabel( xrc.XRCID("menu_track_start"), const.TRACK_START )
 
 	    self.EnableControls()
-            #if hasattr(self,'ann_data') and \
-            #       (self.ann_data is not None) and \
-            #       (len(self.ann_data) > 0):
-            #    self.menu.Enable(xrc.XRCID("menu_track_resume"),True)
-            #    self.menu.Enable(xrc.XRCID("menu_track_resume_here"),True)
-            #    self.menu.Enable( xrc.XRCID("menu_playback_show_ann"), True )
-            #    self.menu.Enable( xrc.XRCID("menu_choose_orientations"), True )
-            #    self.menu.Enable( xrc.XRCID("menu_file_export"), True )
-            #    self.menu.Enable( xrc.XRCID("menu_file_save_avi"), True )
-            #self.menu.Enable( xrc.XRCID("menu_track_start"), True )
-            #self.menu.Enable( xrc.XRCID("menu_load_settings"), True )
-            #self.menu.Enable( xrc.XRCID("menu_settings_bg"), True )
-            #self.menu.Enable( xrc.XRCID("menu_settings_bg_model"), True )
-            #self.menu.Enable( xrc.XRCID("menu_settings_tracking"), True )
-            ##self.menu.Enable( xrc.XRCID("menu_track_play"), True )
-            #self.menu.Enable( xrc.XRCID("menu_compute_background"), True )
-            #self.menu.Enable( xrc.XRCID("menu_compute_shape"), True )
-            #self.slider.Enable( True )
-            if self.ann_data is not None and len( self.ann_data ) < 1:
-                self.CheckAnnotation()
-            else:
-                self.ann_file = annot.AnnotationFile( self.ann_filename, __version__ )
-                # don't re-read ann_data!
+            
+            #if self.ann_data is not None and len( self.ann_data ) < 1:
+            #    self.CheckAnnotation()
+            #else:
+            #    self.ann_file = annot.AnnotationFile( self.ann_filename, __version__ )
 
     def OnComputeBg(self,evt):
         start_color = self.status.GetBackgroundColour()
@@ -1209,106 +1134,6 @@ instead, where <basename> is the base name of the movie.\n")
         """Batch statistics box checked. Force re-read of annotation data."""
         self.batch_data = None # currently irrelevant
 
-    def OnStats( self, evt ):
-        """Make a plot of data from the annotation file."""
-        if self.ann_file is None:
-            # TODO: could allow batch stats not including this movie
-            if params.interactive:
-                wx.MessageBox( "No valid annotation file\nexists for this movie\nor no movie is loaded.",
-                               "Error", wx.ICON_ERROR )
-            else:
-                print "no valid annotation file exists"
-            return
-
-        start_color = self.status.GetBackgroundColour()
-        self.status.SetBackgroundColour( params.status_blue )
-        wx.BeginBusyCursor()
-        wx.Yield()
-
-        # if batch, read data from files
-        if self.batch is not None and \
-               self.menu.IsChecked( xrc.XRCID("menu_stats_batch") ) \
-               and True:#self.batch_data is None: # would have to reset this somehow when batch changes
-            batch_stats = True
-            self.status.SetStatusText( "reading annotation data from files",
-                                       params.status_box )
-            self.batch_data = []
-            start_filename = self.status.GetStatusText( params.file_box )
-            for filename in self.batch.file_list:
-                self.status.SetStatusText( filename, params.file_box )
-                wx.Yield()
-                this_filename = filename + '.ann'
-                try:
-                    this_file = annot.AnnotationFile( this_filename, __version__ )
-                except:
-                    if params.interactive:
-                        wx.MessageBox( "No valid annotation file exists for\n%s\n...skipping"%this_filename, "Warning", wx.ICON_WARNING )
-                    else:
-                        print "no valid annotation file for %s, skipping"%this_filename
-                else:
-                    this_data = this_file.GetAnnotation()
-                    for datum in this_data:
-                        self.batch_data.append( datum )
-            self.status.SetStatusText( start_filename, params.file_box )
-        else:
-            batch_stats = False
-
-        # make new frame for plotting
-        self.status.SetStatusText( "analyzing", params.status_box )
-        wx.Yield()
-
-        # make panel with appropriate methods
-        if evt.GetId() == xrc.XRCID( "menu_stats_vel" ):
-            frame = wx.Frame( None, -1, "velocity (%d bins)"%draw.const.vel_bins )
-            if batch_stats:
-                panel = draw.VelPlotPanel( frame, self.batch_data,
-                                           "velocity (%d files)"%len(self.batch.file_list),
-                                           params.max_jump )
-            else:
-                panel = draw.VelPlotPanel( frame, self.ann_data,
-                                           "velocity (%s)"%self.file,
-                                           params.max_jump )
-        elif evt.GetId() == xrc.XRCID( "menu_stats_orn" ):
-            frame = wx.Frame( None, -1, "orientation (%d bins)"%draw.const.orn_bins )
-            if batch_stats:
-                panel = draw.OrnPlotPanel( frame, self.batch_data,
-                                           "orientation (%d files)"%len(self.batch.file_list) )
-            else:
-                panel = draw.OrnPlotPanel( frame, self.ann_data,
-                                           "orientation (%s)"%self.file )
-        elif evt.GetId() == xrc.XRCID( "menu_stats_space" ):
-            frame = wx.Frame( None, -1, "space (%d bins)"%draw.const.space_bins )
-            if batch_stats:
-                panel = draw.SpacePlotPanel( frame, self.batch_data,
-                                             "space (%d files)"%len(self.batch.file_list) )
-            else:
-                panel = draw.SpacePlotPanel( frame, self.ann_data,
-                                             "space (%s)"%self.file )
-        elif evt.GetId() == xrc.XRCID( "menu_stats_pos" ):
-            frame = wx.Frame( None, -1, "position (bins %d pixels)"%draw.const.pos_binsize )
-            if batch_stats:
-                panel = draw.PosPlotPanel( frame, self.batch_data,
-                                           "position (%d files)"%len(self.batch.file_list),
-                                           self.movie.get_width(),
-                                           self.movie.get_height() )
-            else:
-                panel = draw.PosPlotPanel( frame, self.ann_data,
-                                           "position (%s)"%self.file,
-                                           self.movie.get_width(),
-                                           self.movie.get_height() )
-
-        # add panel to frame and show it
-        sizer = wx.BoxSizer( wx.HORIZONTAL )
-        panel.SetSizer( sizer )
-        sizer.SetItemMinSize( panel, 100, 100 )
-        panel.Fit()
-        panel._SetSize()
-        frame.Show()
-
-        self.status.SetBackgroundColour( start_color )
-        self.status.SetStatusText( "", params.status_box )
-        wx.EndBusyCursor()
-
     def OnHelp( self, evt ):
         """Help requested. Popup box with website."""
         wx.MessageBox( "Documentation available at\nhttp://www.dickinson.caltech.edu/ctrax", "Help" )
@@ -1323,12 +1148,13 @@ def main():
     if int(os.environ.get('CTRAX_NO_REDIRECT','0')):
         args = (0,)
         kw = {}
-        print "there is output!"
+        #print "there is output!"
         sys.stdout.flush()
     else:
+        # redirect to a window
         args = ()
-        kw = dict(redirect=True,filename='Ctrax.log')
-    
+        kw = dict(redirect=True,filename='')
+
     app = CtraxApp( *args, **kw )
     app.MainLoop()
 
