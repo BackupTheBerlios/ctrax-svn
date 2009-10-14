@@ -1,7 +1,7 @@
 __version__ = "0.1.4.2"
 
-DEBUG = True
+DEBUG = False
 DEBUG_ESTCONNCOMPS = False
 DEBUG_HINDSIGHT = False
 DEBUG_MOVIES = False
-DEBUG_ANN = True
+DEBUG_ANN = False
