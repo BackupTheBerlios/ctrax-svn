@@ -98,7 +98,6 @@ class Movie:
 
     def get_frame( self, framenumber ):
         """Return numpy array containing frame data."""
-
         # check to see if we have buffered this frame
         if framenumber == self.bufferedframe_num:
             return (self.bufferedframe_im.copy(),self.bufferedframe_stamp)
@@ -124,7 +123,6 @@ class Movie:
         finally:
             pass
             #self.lock.release()
-
 
     def get_n_frames( self ): return self.h_mov.get_n_frames()
     def get_width( self ): return self.h_mov.get_width()

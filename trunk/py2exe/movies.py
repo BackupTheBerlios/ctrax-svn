@@ -91,9 +91,17 @@ class Movie:
             else:
                 if params.interactive:
                     wx.MessageBox("Your movie is most likely compressed. Out-of-order frame access (e.g. dragging the frame slider toolbars around) will be slow. At this time, the frame chosen to be displayed may be off by one or two frames, i.e. may not line up perfectly with computed trajectories.","Warning",wx.ICON_WARNING)
+        # add a buffer of the current frame
+        self.bufferedframe_im = None
+        self.bufferedframe_stamp = None
+        self.bufferedframe_num = None
 
     def get_frame( self, framenumber ):
         """Return numpy array containing frame data."""
+        # check to see if we have buffered this frame
+        if framenumber == self.bufferedframe_num:
+            return (self.bufferedframe_im.copy(),self.bufferedframe_stamp)
+
         #self.lock.acquire()
         try:
             try: frame, stamp = self.h_mov.get_frame( framenumber )
@@ -106,6 +114,11 @@ class Movie:
                     wx.MessageBox( "Error reading frame %d"%(framenumber), "Error", wx.ICON_ERROR )
                 raise
             else:
+                # store the current frame in the buffer
+                self.bufferedframe_im = frame.copy()
+                self.bufferedframe_stamp = stamp
+                self.bufferedframe_num = framenumber
+
                 return frame, stamp
         finally:
             pass
