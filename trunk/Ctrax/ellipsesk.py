@@ -140,7 +140,7 @@ class Ellipse:
         if self.isEmpty():
             s = "[]"
         else:
-            s = "[id=%d: center="%self.identity + self.center.__print__()
+            s = "[id=:"+str(self.identity)+" center="+self.center.__print__()
             s += ", axis lengths=" + self.size.__print__()
             s += ", angle=%.3f, area=%.1f]"%(self.angle,self.area)
         return s
@@ -786,7 +786,7 @@ def draw_ellipses_bmp( img, targets, thickness=1, step=10*num.pi/180., colors=pa
 
     return bmp
 
-def find_flies( old0, old1, obs ):
+def find_flies( old0, old1, obs, ann_file=None ):
     """All arguments are EllipseLists. Returns an EllipseList."""
     # possibly matchidentities should be smart enough to deal with this case
     # instead of handling it specially here
@@ -835,8 +835,11 @@ def find_flies( old0, old1, obs ):
     # append the targets that didn't match any observation
     for oo in range( len(obs) ):
         if unass_obs[oo]:
-            obs[oo].identity = params.nids
-            params.nids+=1
+            if ann_file is None:
+                obs[oo].identity = params.nids
+                params.nids+=1
+            else:
+                obs[oo].identity = ann_file.GetNewId()
             flies.append( obs[oo] )
             
     if params.print_crap:

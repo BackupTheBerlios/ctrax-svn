@@ -1,3 +1,8 @@
+2009-10-26 Kristin Branson
+
+* Fixed bug in annfiles.GetNewIds.
+* Changed movie class so that it buffers a copy of the current frame. 
+
 2009-10-05 Kristin Branson
 
 * Fixed bug in WriteMAT. 

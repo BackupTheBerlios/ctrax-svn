@@ -18,6 +18,7 @@ import numpy as num
 import imagesk
 import copy
 from matchidentities import cvpred
+import sys
 
 import pkg_resources # part of setuptools
 RSRC_FILE = pkg_resources.resource_filename( __name__, "tracking_settings.xrc" )
@@ -138,7 +139,10 @@ class TrackingSettings:
         self.zoomout_id = xrc.XRCID('zoomout')
         self.info_id = xrc.XRCID('moreinfo')
         self.toolbar.AddSeparator()
-        self.info_text = wx.TextCtrl(self.toolbar, -1, 'Observation Info', size=(300,20),style=wx.TE_READONLY|wx.TE_CENTRE)
+        if sys.platform == 'win32':
+          self.info_text = wx.TextCtrl(self.toolbar, -1, 'Observation Info', pos=(80,0),size=(300,20),style=wx.TE_READONLY|wx.TE_CENTRE)
+        else:
+          self.info_text = wx.TextCtrl(self.toolbar, -1, 'Observation Info', size=(300,20),style=wx.TE_READONLY|wx.TE_CENTRE)
         self.info_text.SetValue('Observation Info')
         #self.info_text.SetEditable(False)
         self.toolbar.AddControl(self.info_text)

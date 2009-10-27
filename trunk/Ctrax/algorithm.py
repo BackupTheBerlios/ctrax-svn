@@ -107,11 +107,13 @@ class CtraxAlgorithm (settings.AppWithSettings):
             if len( self.ann_file ) > 1:
                 flies = ell.find_flies( self.ann_file[-2],
                                         self.ann_file[-1],
-                                        self.ellipses )
+                                        self.ellipses,
+                                        self.ann_file)
             elif len( self.ann_file ) == 1:
                 flies = ell.find_flies( self.ann_file[0],
                                         self.ann_file[0],
-                                        self.ellipses )
+                                        self.ellipses,
+                                        self.ann_file)
             else:
                 flies = ell.TargetList()
                 for i,obs in enumerate(self.ellipses):

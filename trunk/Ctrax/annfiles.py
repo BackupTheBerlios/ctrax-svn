@@ -511,7 +511,7 @@ class AnnotationFile:
 
     def add_frame(self,ellipses):
 
-        if DEBUG: print "add_frame: %d, framestracked = [%d,%d], framesbuffered = [%d,%d], frameswritten = [%d,%d]"%(self.lastframetracked+1,self.firstframetracked,self.lastframetracked,self.firstframebuffered,self.lastframebuffered,self.firstframewritten,self.lastframewritten)
+        if DEBUG: print "add_frame: %d, initially framestracked = [%d,%d], framesbuffered = [%d,%d], frameswritten = [%d,%d]"%(self.lastframetracked+1,self.firstframetracked,self.lastframetracked,self.firstframebuffered,self.lastframebuffered,self.firstframewritten,self.lastframewritten)
 
         # write to file:
         # we will be adding frame n+1, so we can write
@@ -534,11 +534,11 @@ class AnnotationFile:
             self.n += 1
 
         self.buffer.append(ellipses)
-        if DEBUG: print "buffer length = %d, n = %d"%(len(self.buffer),self.n)
-        if DEBUG: print "Adding to end of buffer[%d] (frame = %d): "%(len(self.buffer)-1,self.lastframebuffered) + str(ellipses)
+        if DEBUG: print "after adding buffer length = %d, n = %d"%(len(self.buffer),self.n)
         self.lastframebuffered += 1
         self.lastframetracked += 1
         self.nframestracked += 1
+        if DEBUG: print "Added to end of buffer[%d] (frame = %d), nflies = %d: "%(len(self.buffer)-1,self.lastframebuffered,len(ellipses)) + str(ellipses)
         if DEBUG: print "framestracked: [%d,%d], frameswritten: [%d,%d], framesbuffered: [%d,%d], nframestracked: %d, n: %d"%(self.firstframetracked,self.lastframetracked,self.firstframewritten,self.lastframewritten,self.firstframebuffered,self.lastframebuffered,self.nframestracked,self.n)
 
         self.isdatawritten = True
@@ -1160,9 +1160,11 @@ class AnnotationFile:
             newid = params.nids
             if DEBUG: print "Used new id %d"%newid
             params.nids+=1
+        return newid
 
     def RecycleId(self,id):
         self.recycledids.append(id)
+        if DEBUG: print "Recycling id %d"%id
 
     def rename_file(self,newfilename=None):
         oldfile = self.file
