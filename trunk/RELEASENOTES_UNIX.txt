@@ -27,8 +27,8 @@ our project homepage:
 
 Files:
 
-The zipped file Ctrax-VERSION.zip contains all the source code for
-Ctrax. 
+Ctrax-VERSION-py2.5-linux-i686.egg is the Python 2.5 egg for 32-bit
+Linux systems. 
 
 ***********************************************************************
 

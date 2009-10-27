@@ -27,9 +27,17 @@ our project homepage:
 
 Installation on Windows:
 
-Ctrax-<version>-installer.exe is the standalone installer for Ctrax. It will install Ctrax as well as all its dependencies. If you are not an avid Python programmer, we recommend you download and install this version. To install, download, double-click, then follow the directions. Ctrax shortcuts will be added to your Start Menu and Desktop. By default, Ctrax is installed to C:\Program Files. 
+Ctrax-VERSION-installer.exe is the standalone installer for Ctrax. It
+will install Ctrax as well as all its dependencies. If you are not an
+avid Python programmer, we recommend you download and install this
+version. To install, download, double-click, then follow the
+directions. Ctrax shortcuts will be added to your Start Menu and
+Desktop. By default, Ctrax is installed to C:\Program Files. 
 
-For the Python developer: Windows installer (Ctrax-<version>-py2.5-win32.exe) and egg (Ctrax-<version>-py2.5-win32.egg) are also available if you do not want to install all Ctrax's dependencies (see homepage for details). 
+For the Python developer: Windows installer
+(Ctrax-VERSION-py2.5-win32.exe) and egg
+(Ctrax-VERSION-py2.5-win32.egg) are also available if you do not want
+to install all Ctrax's dependencies (see homepage for details). 
 
 ***********************************************************************
 
