@@ -1092,8 +1092,8 @@ class AnnotationFile:
             msgtxt = 'Saving to a mat file will require loading all %d frames into memory, which may require a prohibitive amount of RAM. '%nframes
             if params.interactive:
                 a = wx.MessageBox(msgtxt + 'Proceed?',"Store to MAT file?",
-                                  wx.YES|wx.CANCEL)
-                if a == wx.CANCEL:
+                                  wx.YES|wx.NO)
+                if a == wx.NO:
                     return
             else:
                 print msgtxt

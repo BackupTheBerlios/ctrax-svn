@@ -104,7 +104,9 @@ function savefig(fname, varargin)
 	op_dbg=		false;												% Default value.
 	
 	% Compression
-	compr=			[' -dUseFlateCompression=true -dLZWEncodePages=true -dCompatibilityLevel=1.6' ...
+  % KB: changed compatibility level from 1.6 to 1.4 (original:
+  % -dCompatibilityLevel=1.6)
+	compr=			[' -dUseFlateCompression=true -dLZWEncodePages=true -dCompatibilityLevel=1.4' ...
 					 ' -dAutoFilterColorImages=false -dAutoFilterGrayImages=false ' ...
 					 ' -dColorImageFilter=%s -dGrayImageFilter=%s'];	% Compression.
 	lossless=		sprintf (compr, '/FlateEncode', '/FlateEncode');
