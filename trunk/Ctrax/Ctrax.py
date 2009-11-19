@@ -317,6 +317,7 @@ instead, where <basename> is the base name of the movie.\n"
             if not (self.ann_file.filename is None):
                 break
             # note that this should not happen if not in interactive mode
+            # or in batch mode
             self.ChooseAnnFile()
 
         if params.interactive and self.ann_file.IsAnnData():
