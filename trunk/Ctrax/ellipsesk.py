@@ -365,7 +365,9 @@ def find_ellipses2( dfore , bw, dofix=True ):
 def est_shape( bg, tracking_settings_frame=None ):
     """Estimate fly shape from a bunch of sample frames."""
 
-    interactive = params.interactive and tracking_settings_frame is not None
+    interactive = params.interactive and \
+                  tracking_settings_frame is not None and \
+                  (not params.batch_executing)
     if interactive:
         progressbar = \
             wx.ProgressDialog('Computing Shape Model',

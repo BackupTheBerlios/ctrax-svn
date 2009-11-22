@@ -203,7 +203,7 @@ class BackgroundCalculator:
         nframes = bg_lastframe - params.bg_firstframe + 1
         n_bg_frames = min(nframes,params.n_bg_frames)
 
-        if params.interactive:
+        if params.interactive and not params.batch_executing:
 
             # be prepared to cancel
             isbackup = False
@@ -232,7 +232,7 @@ class BackgroundCalculator:
         nframesused = 0
         for i in range(params.bg_firstframe,bg_lastframe+1,nframesskip):
 
-            if params.interactive:
+            if params.interactive and not params.batch_executing:
                 (keepgoing,skip) = progressbar.Update(value=nframesused+1,newmsg='Reading in frame %d (%d / %d)'%(i+1,nframesused,n_bg_frames))
                 if not keepgoing:
                     progressbar.Destroy()
@@ -261,7 +261,7 @@ class BackgroundCalculator:
         # actually compute variance, std
         self.std = num.sqrt(self.std - self.mean**2)
         
-        if params.interactive:
+        if params.interactive and not params.batch_executing:
             progressbar.Destroy()
 
         return True
@@ -300,7 +300,7 @@ class BackgroundCalculator:
         buffersize = nrsmall*nc*nframes
 
         # prepare for cancel
-        if params.interactive:
+        if params.interactive and not params.batch_executing:
             isbackup = False
             if hasattr(self,'med'):
                 med0 = self.med.copy()
@@ -341,7 +341,7 @@ class BackgroundCalculator:
             frame = params.bg_firstframe
             for i in range(nframes):
 
-                if params.interactive:
+                if params.interactive and not params.batch_executing:
                     (keepgoing,skip) = progressbar.Update(value=offseti*nframes + i,newmsg='Reading in piece of frame %d (%d / %d), offset = %d (%d / %d)'%(frame,i+1,nframes,rowoffset,offseti+1,noffsets))
                     if not keepgoing:
                         progressbar.Destroy()
@@ -395,7 +395,7 @@ class BackgroundCalculator:
         MADTOSTDFACTOR = 1.482602
         self.mad *= MADTOSTDFACTOR
 
-        if params.interactive:
+        if params.interactive and not params.batch_executing:
             progressbar.Destroy()
         return True
         
@@ -468,7 +468,7 @@ class BackgroundCalculator:
         # need to seek forward more
         seekperframelast = bytesperchunk*nframesskip-nbytessmalllast
 
-        if params.interactive:
+        if params.interactive and not params.batch_executing:
             # be prepared to cancel
             isbackup = False
             if hasattr(self,'med'):
@@ -516,7 +516,7 @@ class BackgroundCalculator:
             # loop through frames
             for i in range(nframes):
 
-                if params.interactive:
+                if params.interactive and not params.batch_executing:
                     (keepgoing,skip) = progressbar.Update(value=offseti*nframes + i,newmsg='Reading in piece of frame %d / %d, offset = %d (%d / %d)'%(i+1,nframes,imageoffset,offseti+1,noffsets))
                     if not keepgoing:
                         progressbar.Destroy()
@@ -581,7 +581,7 @@ class BackgroundCalculator:
         self.mad.shape = params.movie_size
         self.med.shape = params.movie_size
 
-        if params.interactive:
+        if params.interactive and not params.batch_executing:
             progressbar.Destroy()
 
         return True

@@ -137,7 +137,8 @@ class ChooseOrientations:
         for t in range(N):
             ells = self.targets[t]
             for (id,ell) in ells.iteritems():
-                ells[id].angle = self.newtheta[id][t-startframes[id]]
+                if id in self.newtheta:
+                    ells[id].angle = self.newtheta[id][t-startframes[id]]
             self.out_ann_file.append(ells)
 
         if DEBUG: print "Calling finish_writing"

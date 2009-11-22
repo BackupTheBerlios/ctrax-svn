@@ -231,11 +231,11 @@ class CtraxAlgorithm (settings.AppWithSettings):
         # write the sbfmf index and close the sbfmf file
         if self.dowritesbfmf and self.movie.writesbfmf_isopen():
             self.movie.writesbfmf_close(self.start_frame)
-
+        
         print "Choosing Orientations..."
         # choose orientations
         self.choose_orientations = chooseorientations.ChooseOrientations(self.frame,interactive=False)
-        self.choose_orientations.ChooseOrientations(self.ann_file)
+        self.ann_file = self.choose_orientations.ChooseOrientations(self.ann_file)
 
         # save to a .mat file
         (basename,ext) = os.path.splitext(self.filename)
