@@ -309,7 +309,17 @@ if ~alreadyconverted || didsomething,
     delete(tmpname);
   else
     fprintf('Saving converted data to file %s.\nUse this mat file instead of %s in the future\n',savename,inputmatname);
-    copyfile(matname,savename);
+    try
+       copyfile(matname,savename);
+    catch le
+       if strcmp( le.identifier, 'MATLAB:COPYFILE:OSError' )
+          % this can happen if there's a symlink somewhere in the path, so don't puke
+          warning( le.message )
+       else
+          disp( le.identifier )
+          rethrow( le )          
+       end
+    end
     didsave = save_tracks(trx,savename,'doappend',true);
     if ~didsave,
       return;
