@@ -1,5 +1,6 @@
-function sbfmf_write_frame(fp,stamp,idx,val)
+function frameloc = sbfmf_write_frame(fp,stamp,idx,val)
 
+frameloc = ftell(fp);
 npixels = length(idx);
 fwrite(fp,npixels,'uint32');
 fwrite(fp,stamp,'double');
