@@ -3,7 +3,7 @@ import numpy as num
 from params import params
 import ellipsesk as ell
 import estconncomps as est
-import kcluster
+import kcluster2d as kcluster
 import matchidentities
 #import pylab as mpl
 from version import DEBUG_HINDSIGHT as DEBUG

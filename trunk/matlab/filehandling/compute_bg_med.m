@@ -25,6 +25,7 @@ mad = zeros(nr1,nc1);
 % we don't want to store more than maxmem bytes in memory at any one time
 ncperiter = min(floor(maxmem / (bgnframes * nr1 * 8) ),nc1);
 % starts of new blocks to read
+coff = roi(1)-1;
 cstart = 1:ncperiter:nc1+1;
 if cstart(end) < nc1+1,
   cstart(end+1) = nc1+1;
@@ -46,7 +47,7 @@ for iter = 1:niters,
   for ii = 1:bgnframes,
     tt = framessample(ii);
     im1 = double(rgb2gray(readframe(tt)));
-    imbuf(:,1:nccurr,ii) = im1(roi(3):roi(4),c0:c1);
+    imbuf(:,1:nccurr,ii) = im1(roi(3):roi(4),coff+c0:coff+c1);
   end
   
   med(:,c0:c1) = median(imbuf(:,1:nccurr,:),3);

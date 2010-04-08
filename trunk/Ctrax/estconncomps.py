@@ -2,7 +2,7 @@ import numpy as num
 from ellipsesk import *
 #from pylab import *
 import scipy.ndimage as meas
-import kcluster
+import kcluster2d as kcluster
 #from kcluster import gmm
 from params import params
 # this uses its own debug

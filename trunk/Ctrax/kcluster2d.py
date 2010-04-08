@@ -1,7 +1,9 @@
 import numpy as num
 import scipy.cluster.vq as vq
-import scipy.linalg.decomp as decomp
+#import scipy.linalg.decomp as decomp
 from version import DEBUG
+
+d = 2
 
 def clusterdistfun(x,c):
     n = x.shape[0]
@@ -14,8 +16,8 @@ def clusterdistfun(x,c):
 def furthestfirst(x,k,mu0=None,start='mean'):
     # number of data points
     n = x.shape[0]
-    # data dimensionality
-    d = x.shape[1]
+    # data dimensionality: always 2
+    # d = x.shape[1]
     
     # returned centers
     mu = num.zeros((k,d))
@@ -53,7 +55,8 @@ def furthestfirst(x,k,mu0=None,start='mean'):
 def gmminit(x,k,weights=None,kmeansiter=20,kmeansthresh=.001):
 
     n = x.shape[0]
-    d = x.shape[1]
+    # 2d
+    #d = x.shape[1]
     
     # initialize using furthest-first clustering
     (mu,idx) = furthestfirst(x,k,start='random')
@@ -103,8 +106,8 @@ def gmminit(x,k,weights=None,kmeansiter=20,kmeansthresh=.001):
 def gmm(x,k,weights=None,nreplicates=10,kmeansiter=20,kmeansthresh=.001,emiters=100,emthresh=.001,mincov=.01):
     # number of data points
     n = x.shape[0]
-    # dimensionality of each data point
-    d = x.shape[1]
+    # dimensionality of each data point: 2d
+    #d = x.shape[1]
     # initialize min error
     minerr = num.inf
 
@@ -131,8 +134,8 @@ def gmmmemberships(mu,S,priors,x,weights=1,initcovars=None):
 
     # number of data points
     n = x.shape[0]
-    # dimensionality of data
-    d = x.shape[1]
+    # dimensionality of data: 2d
+    #d = x.shape[1]
     # number of clusters
     k = mu.shape[0]
 
@@ -140,7 +143,8 @@ def gmmmemberships(mu,S,priors,x,weights=1,initcovars=None):
     gamma = num.zeros((n,k))
 
     # normalization constant
-    normal = (2.0*num.pi)**(num.double(d)/2.0)
+    normal = 2*num.pi
+    #normal = (2.0*num.pi)**(num.double(d)/2.0)
     #print 'd = %d, normal = %f' % (d,normal)
     #print 'mu = '
     #print mu
@@ -160,18 +164,20 @@ def gmmmemberships(mu,S,priors,x,weights=1,initcovars=None):
         diffs = x - mu[j,:]
         #print 'diffs = '
         #print diffs
-        try:
-            c = decomp.cholesky(S[:,:,j])
-        except num.linalg.linalg.LinAlgError:
+
+        zz = S[0,0,j]*S[1,1,j] - S[0,1,j]**2
+        if zz <= 0:
             if DEBUG: print 'S[:,:,%d] = '%j + str(S[:,:,j]) + ' is singular'
             if DEBUG: print 'Reverting to initcovars[:,:,%d] = '%j + str(initcovars[:,:,j])
             S[:,:,j] = initcovars[:,:,j]
-            c = decomp.cholesky(S[:,:,j])
-        #print 'chol(S[:,:,%d]) = '%j + str(c)
-        temp = num.transpose(num.linalg.solve(num.transpose(c),num.transpose(diffs)))
-        #print 'temp = '
-        #print temp
-        gamma[:,j] = num.exp(-.5*num.sum(temp**2,axis=1))/(normal*num.prod(num.diag(c)))
+            zz = S[0,0,j]*S[1,1,j] - S[0,1,j]**2
+
+        temp = (diffs[:,0]**2*S[1,1,j]
+                - 2*diffs[:,0]*diffs[:,1]*S[0,1,j]
+                + diffs[:,1]**2*S[0,0,j]) / zz
+
+        gamma[:,j] = num.exp(-.5*temp)/(normal*num.sqrt(zz))
+        #gamma[:,j] = num.exp(-.5*temp)/(normal*num.prod(num.diag(c)))
         #print 'gamma[:,%d] = ' % j
         #print gamma[:,j]
 
@@ -204,8 +210,8 @@ def gmmupdate(mu,S,priors,gamma,x,weights=1,mincov=.01,initcovars=None):
     n = gamma.shape[0]
     # number of clusters
     k = gamma.shape[1]
-    # dimensionality of data
-    d = x.shape[1]
+    # dimensionality of data: 2d
+    #d = x.shape[1]
 
     gamma *= weights.reshape(n,1)
 
@@ -329,7 +335,8 @@ def fixsmallpriors(x,mu,S,priors,initcovars,gamma):
         return
 
     n = x.shape[0]
-    d = x.shape[1]
+    # 2d
+    #d = x.shape[1]
     k = mu.shape[0]
 
     # loop through all small priors

@@ -263,7 +263,7 @@ for t = startframe:endframe,
   j = t - startframe + 1;
   
   if verbose >= 1 && mod(t,100) == 0,
-    fprintf('Compressing frame %d of %d\n',i,endframe-startframe+1);
+    fprintf('Compressing frame %d of %d\n',j,endframe-startframe+1);
     if j > 1,
       for i = 1:nrois,
         fprintf('Average number of points stored for ROI %d = %d\n',...

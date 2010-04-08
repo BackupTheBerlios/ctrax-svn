@@ -34,6 +34,9 @@ version. To install, download, double-click, then follow the
 directions. Ctrax shortcuts will be added to your Start Menu and
 Desktop. By default, Ctrax is installed to C:\Program Files. 
 
+** New in version 0.1.5.2 ** 
+The installer script has been updated to work better with Windows 7. A shortcut to Ctrax is now placed in the directory "Ctrax" in the Start menu (the shortcut was previously placed directly in the Start menu) . If you have an older version of Ctrax running, I recommend you first uninstall it, making sure in Vista/7 that the Ctrax shortcut actually gets deleted. Then, install the new version to avoid having two versions of Ctrax running on your machine.
+
 For the Python developer: Windows installer
 (Ctrax-VERSION-py2.5-win32.exe) and egg
 (Ctrax-VERSION-py2.5-win32.egg) are also available if you do not want
