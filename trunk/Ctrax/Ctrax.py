@@ -347,7 +347,7 @@ instead, where <basename> is the base name of the movie.\n"
     def OnOpen( self, evt ):
         """Movie file selection dialog."""
 
-        dlg = wx.FileDialog( self.frame, "Open movie", self.dir, "", "FlyMovieFormat files (*.fmf)|*.fmf|audio-video interleave files (*.avi)|*.avi|StaticBackgroundFlyMovieFormat Files (*.sbfmf)|*.sbfmf|Any (*)|*", wx.OPEN )
+        dlg = wx.FileDialog( self.frame, "Open movie", self.dir, "", "FlyMovieFormat files (*.fmf)|*.fmf|audio-video interleave files (*.avi)|*.avi|StaticBackgroundFlyMovieFormat Files (*.sbfmf)|*.sbfmf|MicroFlyMovieFormat Files (*.ufmf)|*.ufmf|Any (*)|*", wx.OPEN )
 
         didchoose = dlg.ShowModal() == wx.ID_OK
 

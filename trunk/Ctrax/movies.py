@@ -22,6 +22,7 @@ try:
     from FlyMovieFormat import NoMoreFramesException
 except ImportError:
     class NoMoreFramesException (Exception): pass
+import motmot.ufmf.ufmf as ufmf
 
 #import motmot.imops.imops as imops # part of Motmot
 
@@ -59,6 +60,30 @@ class Movie:
             except IOError:
                 if self.interactive:
                     wx.MessageBox( "I/O error opening \"%s\""%(filename), "Error", wx.ICON_ERROR )
+                raise
+        elif ext == '.ufmf':
+            self.type = 'ufmf'
+            try:
+                self.h_mov = ufmf.FlyMovieEmulator(filename)
+            except NameError:
+                if self.interactive:
+                    wx.MessageBox( "Couldn't open \"%s\"\n(maybe UFMF is not installed?)"%(filename), "Error", wx.ICON_ERROR )
+                raise
+            except IOError:
+                if self.interactive:
+                    wx.MessageBox( "I/O error opening \"%s\""%(filename), "Error", wx.ICON_ERROR )
+                raise
+            except ufmf.ShortUfmfFileError:
+                if self.interactive:
+                    wx.MessageBox( "Error opening \"%s\". Short ufmf file."%(filename), "Error", wx.ICON_ERROR )
+                raise
+            except ufmf.CorruptIndexError:
+                if self.interactive:
+                    wx.MessageBox( "Error opening \"%s\". Corrupt file index."%(filename), "Error", wx.ICON_ERROR )
+                raise
+            except ufmf.InvalidMovieFileException:
+                if self.interactive:
+                    wx.MessageBox( "Error opening \"%s\". Invalid movie file."%(filename), "Error", wx.ICON_ERROR )
                 raise
         # read AVI
         elif ext == '.avi':
