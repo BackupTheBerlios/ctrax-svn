@@ -7,6 +7,7 @@ import kcluster2d as kcluster
 import matchidentities
 #import pylab as mpl
 from version import DEBUG_HINDSIGHT as DEBUG
+import sys
 
 class MyDictionary(dict):
     def __init__(self,emptyval=None):
@@ -38,9 +39,10 @@ class Milestones:
             self.update(tracks,t)
 
     def update(self,tracks,t=None):
-        if DEBUG: print 'start of update: target2birth = ' + str(self.target2birth)
         if t is None:
             t = len(tracks)-1
+        if DEBUG: print 'start of update, t = %d: target2birth = '%t + str(self.target2birth)
+        if DEBUG: print '                         target2death = ' + str(self.target2death)
         if t < 0:
             newborns = set([])
             newdeaths = set([])
@@ -72,6 +74,9 @@ class Milestones:
                 self.target2death[id] = t
                 if DEBUG: print 'target2death[%d] set to %d'%(id,t)
         if DEBUG: print 'end of update: target2birth = ' + str(self.target2birth)
+        if DEBUG: print '               target2death = ' + str(self.target2death)
+        if DEBUG: sys.stdout.flush()
+
     def getbirths(self,t):
         return self.frame2births[t]
     def getdeaths(self,t):
@@ -205,7 +210,7 @@ class Hindsight:
         # recycle this id
         self.tracks.RecycleId(id)
         self.milestones.deleteid(id)
-        if DEBUG: print 'deleted track for id=%d with life span=%d'%(id,lifespan)
+        if DEBUG: print '*** deleted track for id=%d with life span=%d'%(id,lifespan)
 
         return True
 
@@ -268,6 +273,7 @@ class Hindsight:
         # by interpolating
         start = self.tracks[t1-1][id1]
         end = self.tracks[t2][id2]
+        if DEBUG: print "matching id1=%d in frame t1-1=%d and id2=%d in frame t2=%d"%(id1,t1-1,id2,t2)
         for t in range(t1,t2):
             self.tracks[t][id1] = ellipseinterpolate(start,end,t-t1+1,t2-t)
 
@@ -291,7 +297,7 @@ class Hindsight:
         # reset death of id1 as d2
         self.milestones.setdeath(id1,d2)
 
-        if DEBUG: print 'fixing lost detection: id1=%d lost in frame t1=%d, found again in frame t2=%d with id2=%d'%(id1,t1,t2,id2)
+        if DEBUG: print '*** fixing lost detection: id1=%d lost in frame t1=%d, found again in frame t2=%d with id2=%d'%(id1,t1,t2,id2)
 
         return True
 
@@ -401,7 +407,7 @@ class Hindsight:
 
         # fix
 
-        if DEBUG: print 'splitting id2=%d into id1=%d and id2=%d from frames t1=%d to t2-1=%d, replacing id3=%d'%(id2,id1,id2,t1,t2-1,id3)
+        if DEBUG: print '*** fixing merged detection by splitting id2=%d into id1=%d and id2=%d from frames t1=%d to t2-1=%d, replacing id3=%d'%(id2,id1,id2,t1,t2-1,id3)
 
         # store old tracks in case we need them
         oldtracks = {}
@@ -594,7 +600,7 @@ class Hindsight:
         t1 = pair[1]
         merged_target = merged_targets[pair]
 
-        if DEBUG: print 'choosing to merge with id2=%d from frame t1=%d to t2=%d, cost is %.2f'%(id2,t1,t2,mergecost)
+        if DEBUG: print '*** fixing split detection %d by choosing to merge with id2=%d from frame t1=%d to t2=%d, cost is %.2f'%(id1,id2,t1,t2,mergecost)
 
         # which target is born last? we will delete that target
         if self.milestones.getbirthframe(id1) < self.milestones.getbirthframe(id2):

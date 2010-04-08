@@ -1,7 +1,8 @@
-__version__ = "0.1.5.2"
+__version__ = "0.1.5.3"
 
 DEBUG = False
 DEBUG_ESTCONNCOMPS = False
 DEBUG_HINDSIGHT = False
 DEBUG_MOVIES = False
 DEBUG_ANN = False
+DEBUG_REPEATABLE_BEHAVIOR = False
