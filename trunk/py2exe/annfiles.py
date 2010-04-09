@@ -86,42 +86,44 @@ class AnnotationFile:
             return
 
         # check if filename exists
-        if not os.path.isfile(filename):
-            # if not, then create the file
-            print "Annotation file %s does not exist yet, not opening existing annotation"%filename
-            self.file = open(filename,'wb+')
-            params.nids = 0
-            return
+##        if not os.path.isfile(filename):
+##            # if not, then create the file
+##            print "Annotation file %s does not exist yet, not opening existing annotation"%filename
+##            self.file = open(filename,'wb+')
+##            params.nids = 0
+##            return
 
-        if DEBUG: print "Annotation file exists"
+##        if DEBUG: print "Annotation file exists"
+        # checked below instead... allow additional parameters to be set
 
         # open the file for reading
-        self.file = open(filename,'rb+')
+        newfile = False
         try:
-            if DEBUG: print "Checking annotation header..."
-            # check the annotation header
-            self.CheckAnnHeader()
-            if DEBUG: print "Done checking annotation header."
-        except InvalidFileFormatException:
-            if params.interactive:
-                # make sure it is okay to overwrite this file
-                msgtxt = "Annotation file %s exists, but could not parse the header. Overwrite?"%filename
-                if wx.MessageBox(msgtxt,"Overwrite %s?"%filename,wx.OK|wx.CANCEL) == wx.CANCEL:
-                    self.filename = None
-                    # do not reset params.nids
-                    return
-            self.file.close()
-            # overwrite
+            self.file = open(filename,'rb+')
+        except IOError:
             self.file = open(filename,'wb+')
-            params.nids = 0
-            return
+            newfile = True
+
+        # check the annotation header
+        if not newfile:
+            try:
+                if DEBUG: print "Checking annotation header..."
+                self.CheckAnnHeader()
+                if DEBUG: print "Done checking annotation header."
+            except InvalidFileFormatException:
+                if params.interactive and not params.batch_executing:
+                    # make sure it is okay to overwrite this file
+                    msgtxt = "Annotation file %s exists, but could not parse the header. Overwrite?"%filename
+                    if wx.MessageBox(msgtxt,"Overwrite %s?"%filename,wx.OK|wx.CANCEL) == wx.CANCEL:
+                        self.filename = None
+                        # do not reset params.nids
+                        return
+                self.file.close()
+                # overwrite
+                self.file = open(filename,'wb+')
+                newfile = True
 
         params.nids = 0
-
-        # read in the header
-        if doreadheader:
-            self.ReadAnnHeader()
-        # if we don't read it, we will still be at the correct file location from call to CheckAnnHeader
 
         # update nbuffer
         # maximum number of frames we'll need to consider at a time
@@ -136,9 +138,15 @@ class AnnotationFile:
 
         if DEBUG: print "nbuffer = %d, lookupinterval = %d"%(self.nbuffer,self.lookupinterval)
 
-        # in non-interactive mode, we will not read in the trajectories
-        if not params.interactive:
+        # in non-interactive mode or for brand-new annotation files,
+        # we will not read in the trajectories
+        if (not params.interactive) or params.batch_executing or newfile:
             return
+
+        # read in the header
+        if doreadheader:
+            self.ReadAnnHeader()
+        # if we don't read it, we will still be at the correct file location from call to CheckAnnHeader
         
         # check if we want to read in the trajectories from this file
         msgtxt = "Read old trajectories from %s? Choosing not to read will cause the trajectories in this file to be overwritten."%filename
@@ -1090,7 +1098,7 @@ class AnnotationFile:
         # we are going to store everything in memory. this may be prohibitive
         if self.nbuffer < nframes:
             msgtxt = 'Saving to a mat file will require loading all %d frames into memory, which may require a prohibitive amount of RAM. '%nframes
-            if params.interactive:
+            if params.interactive and not params.batch_executing:
                 a = wx.MessageBox(msgtxt + 'Proceed?',"Store to MAT file?",
                                   wx.YES|wx.NO)
                 if a == wx.NO:

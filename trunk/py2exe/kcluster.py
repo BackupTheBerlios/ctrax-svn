@@ -5,11 +5,10 @@ from version import DEBUG
 
 def clusterdistfun(x,c):
     n = x.shape[0]
-    d = x.shape[1]
     nclusts = c.shape[0]
     D = num.zeros((nclusts,n))
     for i in range(nclusts):
-        D[i,:] = num.sum((x - num.tile(c[i,:],[n,1]))**2,axis=1)
+        D[i,:] = num.sum((x - c[i,:])**2,axis=1)
     return D
 
 def furthestfirst(x,k,mu0=None,start='mean'):
@@ -39,14 +38,14 @@ def furthestfirst(x,k,mu0=None,start='mean'):
 
     for i in range(1,k):
         # compute distance to all centers from all points
-        Dall[i-1,:] = num.sum((x - num.tile(mu[i-1,:],[n,1]))**2,axis=1)
+        Dall[i-1,:] = num.sum((x - mu[i-1,:])**2,axis=1)
         # compute the minimum distance from all points to the centers
         D = num.amin(Dall,axis=0)
         # choose the point furthest from all centers as the next center
         j = num.argmax(D)
         mu[i,:] = x[j,:]
 
-    Dall[k-1,:] = num.sum((x - num.tile(mu[k-1,:],[n,1]))**2,axis=1)
+    Dall[k-1,:] = num.sum((x - mu[k-1,:])**2,axis=1)
     idx = num.argmin(Dall,axis=0)
 
     return (mu,idx)
@@ -79,20 +78,20 @@ def gmminit(x,k,weights=None,kmeansiter=20,kmeansthresh=.001):
             # compute mean for each cluster
             mu[i,:] = num.mean(x[idx==i,:],axis=0)
             # compute covariance for each cluster
-            diffs = x[idx==i,:] - num.tile(mu[i,:].reshape(1,d),[nidx,1])
+            diffs = x[idx==i,:] - mu[i,:].reshape(1,d)
             S[:,:,i] = num.dot(num.transpose(diffs),diffs) / priors[i]
     else:
         # replicate weights
-        weights = num.tile(weights.reshape(n,1),[1,d])
+        weights = weights.reshape(n,1)
         for i in range(k):
             # compute prior for each cluster
             nidx = num.sum(num.double(idx==i))
-            priors[i] = num.sum(weights[idx==i,0])
+            priors[i] = num.sum(weights[idx==i])
             # compute mean for each cluster
-            mu[i,:] = num.sum(weights[idx==i,:]*x[idx==i,:],axis=0)/priors[i]
+            mu[i,:] = num.sum(weights[idx==i]*x[idx==i,:],axis=0)/priors[i]
             # compute covariance for each cluster
-            diffs = x[idx==i,:] - num.tile(mu[i,:].reshape(1,d),[nidx,1])
-            diffs *= num.sqrt(weights[idx==i,:])
+            diffs = x[idx==i,:] - mu[i,:].reshape(1,d)
+            diffs *= num.sqrt(weights[idx==i])
             S[:,:,i] = num.dot(num.transpose(diffs),diffs) / priors[i]
 
     # normalize priors
@@ -158,7 +157,7 @@ def gmmmemberships(mu,S,priors,x,weights=1,initcovars=None):
         #print 'j = %d' % j
         #print 'mu[%d,:] = '%j + str(mu[j,:])
         #print 'S[:,:,%d] = '%j + str(S[:,:,j])
-        diffs = x - num.tile(mu[j,:],[n,1])
+        diffs = x - mu[j,:]
         #print 'diffs = '
         #print diffs
         try:
@@ -177,7 +176,7 @@ def gmmmemberships(mu,S,priors,x,weights=1,initcovars=None):
         #print gamma[:,j]
 
     # include prior
-    gamma *= num.tile(priors,[n,1])
+    gamma *= priors
     #print 'after including prior, gamma = '
     #print gamma
 
@@ -190,7 +189,7 @@ def gmmmemberships(mu,S,priors,x,weights=1,initcovars=None):
     #print s
     # make sure we don't divide by 0
     s[s==0] = 1
-    gamma /= num.tile(s.reshape(n,1),[1,k])
+    gamma /= s.reshape(n,1)
     #print 'gamma = '
     #print gamma
     
@@ -208,7 +207,7 @@ def gmmupdate(mu,S,priors,gamma,x,weights=1,mincov=.01,initcovars=None):
     # dimensionality of data
     d = x.shape[1]
 
-    gamma *= num.tile(weights.reshape(n,1),[1,k])
+    gamma *= weights.reshape(n,1)
 
     # update the priors (note that it has not been normalized yet)
     priors[:] = num.sum(gamma,axis=0)
@@ -219,8 +218,8 @@ def gmmupdate(mu,S,priors,gamma,x,weights=1,mincov=.01,initcovars=None):
         issmall = priors < .01
         issmall = issmall.any()
     else:
-        if DEBUG: print "All priors are too small, reinitiallizing"
-        issmall = True
+        if DEBUG: print "All priors are too small, reinitializing"
+        issmall = num.array((1,)).any() # num.bool_ NOT bool
     #print 'updated priors to ' + str(priors)
 
     # if any prior is to small, then reinitialize that cluster
@@ -231,7 +230,7 @@ def gmmupdate(mu,S,priors,gamma,x,weights=1,mincov=.01,initcovars=None):
         priors /= num.sum(priors)
         if DEBUG: print 'after fixsmallpriors, priors is ' + str(priors)
 
-    issmall = issmall.any()
+    #issmall = issmall.any()
     if issmall:
         if DEBUG: 
             print 'outside fixsmallpriors'
@@ -244,14 +243,14 @@ def gmmupdate(mu,S,priors,gamma,x,weights=1,mincov=.01,initcovars=None):
 
     for i in range(k):
         # update the means
-        mu[i,:] = num.sum(num.tile(gamma[:,i].reshape(n,1),[1,d])*x,axis=0)/Z[i]
+        mu[i,:] = num.sum(gamma[:,i].reshape(n,1)*x,axis=0)/Z[i]
         if DEBUG:
             if issmall: 
                 print 'updated mu[%d,:] to '%i + str(mu[i,:])
         # update the covariances
-        diffs = x - num.tile(mu[i,:],[n,1])
+        diffs = x - mu[i,:]
         #if issmall: print 'diffs = ' + str(diffs)
-        diffs *= num.tile(num.sqrt(gamma[:,i].reshape(n,1)),[1,d])
+        diffs *= num.sqrt(gamma[:,i].reshape(n,1))
         #if issmall: print 'weighted diffs = ' + str(diffs)
         S[:,:,i] = (num.dot(num.transpose(diffs),diffs)) / Z[i]
         if DEBUG:
@@ -340,7 +339,7 @@ def fixsmallpriors(x,mu,S,priors,initcovars,gamma):
         if DEBUG: print 'fixing cluster %d with small prior = %f: '%(i,priors[i])
 
         # compute mixture density of each data point
-        p = num.sum(gamma*num.tile(priors,[n,1]),axis=1)
+        p = num.sum(gamma*priors,axis=1)
 
         #print 'samples: '
         #print x
@@ -378,8 +377,8 @@ def fixsmallpriors(x,mu,S,priors,initcovars,gamma):
 #weights = num.hstack((10*num.ones(n0),num.ones(n1)))
 #std0 = 1
 #std1 = 1
-#x0 = num.random.standard_normal(size=(n0,d))*std0 + num.tile(mu0,[n0,1])
-#x1 = num.random.standard_normal(size=(n1,d))*std1 + num.tile(mu1,[n1,1])
+#x0 = num.random.standard_normal(size=(n0,d))*std0 + mu0
+#x1 = num.random.standard_normal(size=(n1,d))*std1 + mu1
 #x = num.vstack((x0,x1))
 #(mu,S,priors,err) = gmm(x,k,weights=weights)
 #print 'centers = '

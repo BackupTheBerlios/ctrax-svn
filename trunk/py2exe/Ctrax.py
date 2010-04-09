@@ -55,7 +55,6 @@ class CtraxApp( algorithm.CtraxAlgorithm ): # eventually inherits from wx.App
 	"""
 	Start up the Ctrax GUI
 	"""
-
         # parse commandline
         self.ParseCommandLine()
 
@@ -317,6 +316,7 @@ instead, where <basename> is the base name of the movie.\n"
             if not (self.ann_file.filename is None):
                 break
             # note that this should not happen if not in interactive mode
+            # or in batch mode
             self.ChooseAnnFile()
 
         if params.interactive and self.ann_file.IsAnnData():
@@ -347,7 +347,7 @@ instead, where <basename> is the base name of the movie.\n"
     def OnOpen( self, evt ):
         """Movie file selection dialog."""
 
-        dlg = wx.FileDialog( self.frame, "Open movie", self.dir, "", "FlyMovieFormat files (*.fmf)|*.fmf|audio-video interleave files (*.avi)|*.avi|StaticBackgroundFlyMovieFormat Files (*.sbfmf)|*.sbfmf|Any (*)|*", wx.OPEN )
+        dlg = wx.FileDialog( self.frame, "Open movie", self.dir, "", "FlyMovieFormat files (*.fmf)|*.fmf|audio-video interleave files (*.avi)|*.avi|StaticBackgroundFlyMovieFormat Files (*.sbfmf)|*.sbfmf|MicroFlyMovieFormat Files (*.ufmf)|*.ufmf|Any (*)|*", wx.OPEN )
 
         didchoose = dlg.ShowModal() == wx.ID_OK
 
