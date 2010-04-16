@@ -11,10 +11,11 @@ except ImportError:
 from distutils.sysconfig import get_python_inc
 from setuptools.dist import Distribution
 import numpy
-import numpy.numarray as nn
+#import numpy.numarray as nn
 import os, glob
 import sys
 from distutils import version
+from Cython.Distutils import build_ext
 
 #from distutils.core import setup
 #import py2exe
@@ -75,6 +76,7 @@ setup( name="Ctrax",
        packages=['Ctrax'],
        entry_points = {'console_scripts': ['Ctrax=Ctrax:main']},
        package_dir={'Ctrax': 'Ctrax'},
+       cmdclass = {'build_ext': build_ext},
        #py_modules=['Ctrax.colormapk','Ctrax.imagesk',
        #            'Ctrax.houghcircles','Ctrax.setarena'],
        package_data = {'Ctrax':Ctrax_package_data},
@@ -88,6 +90,8 @@ setup( name="Ctrax",
                               include_dirs=[numpyincludedirs,]),
                     Extension('houghcircles_C',
                               ['houghcircles/houghcircles_C.c'],
-                              include_dirs=[numpyincludedirs,])
+                              include_dirs=[numpyincludedirs,]),
+                    Extension("kcluster2d", ["Ctrax/kcluster2d_cython.pyx"],
+                              include_dirs=[numpyincludedirs,]),
                     ],
        **kws)

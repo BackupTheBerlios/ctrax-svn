@@ -733,6 +733,7 @@ class AnnotationFile:
 
         # observation parameters
         self.file.write('minbackthresh:%.2f\n'%params.minbackthresh)
+        self.file.write('maxclustersperblob:%d\n'%params.maxclustersperblob)
         self.file.write('maxpenaltymerge:%.2f\n'%params.maxpenaltymerge)
         self.file.write('maxareadelete:%.2f\n'%params.maxareadelete)
         self.file.write('minareaignore:%.2f\n'%params.minareaignore)
@@ -983,6 +984,8 @@ class AnnotationFile:
                 params.max_velocity_angle_weight = float(value)
             elif parameter == 'minbackthresh':
                 params.minbackthresh = float(value)
+            elif parameter == 'maxclustersperblob':
+                params.maxclustersperblob = int(value)
             elif parameter == 'maxpenaltymerge':
                 params.maxpenaltymerge = float(value)
             elif parameter == 'maxareadelete':
@@ -1067,13 +1070,25 @@ class AnnotationFile:
 
         for ff in range( len(fly_sep)/self.n_fields ):
             # parse data from line
-            new_ellipse = ell.Ellipse( centerX=float(fly_sep[self.n_fields*ff]),
-                                       centerY=float(fly_sep[self.n_fields*ff+1]),
-                                       sizeW=float(fly_sep[self.n_fields*ff+2]),
-                                       sizeH=float(fly_sep[self.n_fields*ff+3]),
-                                       angle=float(fly_sep[self.n_fields*ff+4]),
-                                       identity=int(fly_sep[self.n_fields*ff+5]) )
-
+            try:
+                new_ellipse = ell.Ellipse( centerX=float(fly_sep[self.n_fields*ff]),
+                                           centerY=float(fly_sep[self.n_fields*ff+1]),
+                                           sizeW=float(fly_sep[self.n_fields*ff+2]),
+                                           sizeH=float(fly_sep[self.n_fields*ff+3]),
+                                           angle=float(fly_sep[self.n_fields*ff+4]),
+                                           identity=int(fly_sep[self.n_fields*ff+5]) )
+            except ValueError:
+                msgtxt = "Could not read ellipse %d, skipping"%ff
+                #if params.interactive and not params.batch_executing:
+                #    wx.MessageBox( msgtxt,"Error", wx.ICON_ERROR )
+                #else:
+                print msgtxt
+                new_ellipse = ell.Ellipse( centerX=0,
+                                           centerY=0,
+                                           sizeW=1,
+                                           sizeH=1,
+                                           angle=0,
+                                           identity=int(fly_sep[self.n_fields*ff+5]) )
             ellipses.append( new_ellipse )
 
         return ellipses

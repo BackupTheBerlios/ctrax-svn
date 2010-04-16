@@ -8,7 +8,7 @@ d = 2
 def clusterdistfun(x,c):
     n = x.shape[0]
     nclusts = c.shape[0]
-    D = num.zeros((nclusts,n))
+    D = num.empty((nclusts,n))
     for i in range(nclusts):
         D[i,:] = num.sum((x - c[i,:])**2,axis=1)
     return D
@@ -20,7 +20,7 @@ def furthestfirst(x,k,mu0=None,start='mean'):
     # d = x.shape[1]
     
     # returned centers
-    mu = num.zeros((k,d))
+    mu = num.empty((k,d))
     
     # initialize first center
     if num.any(mu0) == False:
@@ -29,13 +29,12 @@ def furthestfirst(x,k,mu0=None,start='mean'):
             mu[0,:] = num.mean(x,axis=0)
         else:
             # choose a random point to be the first center
-            i = num.floor(num.random.uniform(0,1,1)*n)[0]
-            mu[0,:] = x[i,:]
+            mu[0,:] = x[num.random.randint(0,x.shape[0],1)[0],:]
     else:
         mu[0,:] = mu0
     
     # initialize distance to all centers to be infinity
-    Dall = num.zeros((k,n))
+    Dall = num.empty((k,n))
     Dall[:] = num.inf
 
     for i in range(1,k):
@@ -57,7 +56,7 @@ def gmminit(x,k,weights=None,kmeansiter=20,kmeansthresh=.001):
     n = x.shape[0]
     # 2d
     #d = x.shape[1]
-    
+
     # initialize using furthest-first clustering
     (mu,idx) = furthestfirst(x,k,start='random')
 
@@ -69,8 +68,8 @@ def gmminit(x,k,weights=None,kmeansiter=20,kmeansthresh=.001):
     idx = num.argmin(D,axis=0)
 
     # allocate covariance and priors
-    S = num.zeros((d,d,k))
-    priors = num.zeros(k)
+    S = num.empty((d,d,k))
+    priors = num.empty(k)
 
     if num.any(weights) == False:
         # unweighted
@@ -124,7 +123,8 @@ def gmm(x,k,weights=None,nreplicates=10,kmeansiter=20,kmeansthresh=.001,emiters=
 
         # optimize fit using EM
         (mu,S,priors,gamma,err) = gmmem(x,mu,S,priors,weights,emiters,emthresh,mincov)
-        if err < minerr:
+
+        if rep == 0 or err < minerr:
             mubest = mu
             Sbest = S
             priorsbest = priors
@@ -145,7 +145,7 @@ def gmmmemberships(mu,S,priors,x,weights=1,initcovars=None):
     k = mu.shape[0]
 
     # allocate output
-    gamma = num.zeros((n,k))
+    gamma = num.empty((n,k))
 
     # normalization constant
     normal = 2*num.pi
@@ -193,7 +193,6 @@ def gmmmemberships(mu,S,priors,x,weights=1,initcovars=None):
 
     # compute negative log likelihood
     e = -num.sum(num.log(num.sum(gamma,axis=1))*weights)
-    #print 'e = %f' % e
     
     s = num.sum(gamma,axis=1)
     #print 's = '
@@ -221,7 +220,7 @@ def gmmupdate(mu,S,priors,gamma,x,weights=1,mincov=.01,initcovars=None):
     gamma *= weights.reshape(n,1)
 
     # update the priors (note that it has not been normalized yet)
-    priors[:] = num.sum(gamma,axis=0)
+    priors = num.sum(gamma,axis=0)
     Z = priors.copy()
     sumpriors = num.sum(priors)
     if sumpriors > 0:
@@ -230,13 +229,13 @@ def gmmupdate(mu,S,priors,gamma,x,weights=1,mincov=.01,initcovars=None):
         issmall = issmall.any()
     else:
         if DEBUG: print "All priors are too small, reinitializing"
-        issmall = num.array((1,)).any() # num.bool_ NOT bool
+        issmall = True # num.bool_ NOT bool
     #print 'updated priors to ' + str(priors)
 
     # if any prior is to small, then reinitialize that cluster
     if issmall:
         fixsmallpriors(x,mu,S,priors,initcovars,gamma)
-        priors[:] = num.sum(gamma,axis=0)
+        priors = num.sum(gamma,axis=0)
         Z = priors.copy()
         priors /= num.sum(priors)
         if DEBUG: print 'after fixsmallpriors, priors is ' + str(priors)
@@ -269,14 +268,14 @@ def gmmupdate(mu,S,priors,gamma,x,weights=1,mincov=.01,initcovars=None):
                 print 'updated S[:,:,%d] to [%.4f,%.4f;%.4f,%.4f]'%(i,S[0,0,i],S[0,1,i],S[1,0,i],S[1,1,i])
         # make sure covariance is not too small
         if mincov > 0:
-            [D,V] = num.linalg.eig(S[:,:,i])
-            if num.min(D) < mincov:
+            # hard-coded 2x2
+            eigval_T = S[0,0,i] + S[1,1,i]
+            mineigval = eigval_T - num.sqrt(eigval_T**2/4 - S[1,1,i])
+            if mineigval < mincov:
                 S[:,:,i] = initcovars[:,:,i]
                 if DEBUG: 
-                    print 'mineigval = %.4f'%num.min(D)
+                    print 'mineigval = %.4f'%mineigval
                     print 'reinitializing covariance'
-                    print 'D = '
-                    print D
                     print 'initcovars[:,:,%d] = [%.4f,%.4f;%.4f,%.4f]'%(i,initcovars[0,0,i],initcovars[0,1,i],initcovars[1,0,i],initcovars[1,1,i])
                 
 def gmmem(x,mu0,S0,priors0,weights=None,niters=100,thresh=.001,mincov=.01):
@@ -293,14 +292,17 @@ def gmmem(x,mu0,S0,priors0,weights=None,niters=100,thresh=.001,mincov=.01):
         for i in range(S.shape[2]):
             #print 'S initially is: '
             #print S[:,:,i]
-            D, U = num.linalg.eig(S[:,:,i])
-            #print "U = " + str(U)
-            #print 'D = ' + str(D)
-            D[D<mincov] = mincov
-            #print 'D = ' + str(D)
-            S[:,:,i] = num.dot(num.dot(U,num.diag(D)),U.transpose())
-            #print 'S is now: '
-            #print S[:,:,i]
+            eigval_T = S[0,0,i] + S[1,1,i]
+            mineigval = eigval_T - num.sqrt(eigval_T**2/4 - S[1,1,i])
+            if num.isnan(mineigval) or mineigval < mincov:
+                D, U = num.linalg.eig(S[:,:,i])
+                if DEBUG: print "initial S[:,:,%d] is singular"%i
+                if DEBUG: print "S[:,:,%d] = "%i
+                if DEBUG: print str(S[:,:,i])
+                D[D<mincov] = mincov
+                S[:,:,i] = num.dot(num.dot(U,num.diag(D)),U.transpose())
+                if DEBUG: print 'S[:,:,%d] reinitialized to: '%i
+                if DEBUG: print S[:,:,i]
     initcovars = S.copy()
 
     for iter in range(niters):
@@ -378,7 +380,7 @@ def fixsmallpriors(x,mu,S,priors,initcovars,gamma):
             print 'priors = ' + str(priors)
 
         # update gamma
-        [gamma[:],newe] = gmmmemberships(mu,S,priors,x,1,initcovars)
+        [gamma,newe] = gmmmemberships(mu,S,priors,x,1,initcovars)
 
 #n0 = 100
 #n1 = 100

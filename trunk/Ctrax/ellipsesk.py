@@ -405,9 +405,9 @@ def est_shape( bg, tracking_settings_frame=None ):
         return False
 
     # grab ellipse info
-    major = num.zeros( (n_ell) )
-    minor = num.zeros( (n_ell) )
-    area = num.zeros( (n_ell) )
+    major = num.empty( (n_ell) )
+    minor = num.empty( (n_ell) )
+    area = num.empty( (n_ell) )
     for i in range(len(ellipses)):
         major[i] = ellipses[i].size.height
         minor[i] = ellipses[i].size.width
@@ -813,7 +813,7 @@ def find_flies( old0, old1, obs, ann_file=None ):
     vals = []
     for i in targ.itervalues():
         vals.append(i)
-    cost = num.zeros( (len(obs), len(targ)) )
+    cost = num.empty( (len(obs), len(targ)) )
     for i, observation in enumerate( obs ):
         for j, target in enumerate( vals ):
             if target.isDummy():

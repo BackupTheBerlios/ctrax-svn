@@ -128,6 +128,7 @@ class TrackingSettings:
         self.min_area_ignore_input = self.control('min_area_ignore')
         self.max_penalty_merge_input = self.control('max_penalty_merge')
         self.lower_thresh_input = self.control('lower_thresh')
+        self.maxclustersperblob_input = self.control('maxclustersperblob')
         self.done_input = self.control('done')
         self.img_panel = self.control('img_panel')
         self.frame_scrollbar = self.control('frame_scrollbar')
@@ -201,6 +202,7 @@ class TrackingSettings:
         self.center_dampen_input.SetValue(str(params.params.dampen))
         self.angle_dampen_input.SetValue(str(params.params.angle_dampen))
         self.lower_thresh_input.SetValue(str(params.params.minbackthresh))
+        self.maxclustersperblob_input.SetValue(str(params.params.maxclustersperblob))
         self.frame_scrollbar.SetThumbPosition(self.show_frame)
         self.frame_scrollbar.SetScrollbar(self.show_frame,0,params.params.n_frames-1,30)
         self.img_chosen = SHOW_UNFILTERED_OBSERVATIONS
@@ -262,8 +264,8 @@ class TrackingSettings:
 
         # observation
 
-        self.bindctrl(('max_area_delete','min_area_ignore','max_penalty_merge','lower_thresh'),
-                      ('float','float','float','float'),self.SetObservation)
+        self.bindctrl(('max_area_delete','min_area_ignore','max_penalty_merge','lower_thresh','maxclustersperblob'),
+                      ('float','float','float','float','int'),self.SetObservation)
 
 
         # hindsight
@@ -546,11 +548,15 @@ class TrackingSettings:
         params.params.minareaignore = float(self.min_area_ignore_input.GetValue())
         params.params.maxpenaltymerge = float(self.max_penalty_merge_input.GetValue())
         minbackthresh = float(self.lower_thresh_input.GetValue())
+        maxclustersperblob = int(self.maxclustersperblob_input.GetValue())
         if minbackthresh > 0 and minbackthresh <= 1:
             params.params.minbackthresh = minbackthresh
         else:
             self.lower_thresh_input.GetValue(params.params.minbackthresh)
-
+        if maxclustersperblob >= 1:
+          params.params.maxclustersperblob = maxclustersperblob
+        else:
+          self.maxclustersperblob_input.GetValue(params.params.maxclustersperblob)
         self.RegisterParamChange()
         self.ShowImage()
 

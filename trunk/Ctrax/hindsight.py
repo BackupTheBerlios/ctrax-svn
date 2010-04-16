@@ -971,17 +971,17 @@ def splitobservation(bw,dfore,k,init):
     (r,c) = num.where(bw)
 
     if DEBUG: print 'number of pixels in component being split: %d'%len(r)
-    x = num.hstack((c.reshape(c.size,1),r.reshape(r.size,1)))
-    w = dfore[bw]
+    x = num.hstack((c.reshape(c.size,1),r.reshape(r.size,1))).astype(kcluster.DTYPE)
+    w = dfore[bw].astype(kcluster.DTYPE)
     if DEBUG: print 'data being clustered: '
     if DEBUG: print x
     if DEBUG: print 'with weights: '
     if DEBUG: print w
 
     # create means and covariance matrices to initialize
-    mu0 = num.zeros((k,2))
-    S0 = num.zeros((k,2,2))
-    priors0 = num.zeros(k)
+    mu0 = num.zeros((k,2),dtype=kcluster.DTYPE)
+    S0 = num.zeros((k,2,2),dtype=kcluster.DTYPE)
+    priors0 = num.zeros(k,dtype=kcluster.DTYPE)
     for i in range(k):
         if DEBUG: print 'predicted ellipse %d: '%i + str(init[i])
         mu0[i,0] = init[i].x

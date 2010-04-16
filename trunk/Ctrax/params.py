@@ -249,6 +249,8 @@ class Parameters:
         self.have_computed_shape = False
         # foreground background thresh set to minbackthresh when trying to increase target area
         self.minbackthresh = 1.
+        # maximum number of clusters to split a foreground connected component into during the forward pass
+        self.maxclustersperblob = 5
         # maximum penalty for merging together two ccs
         self.maxpenaltymerge = 40
         # maximum area of deleted target

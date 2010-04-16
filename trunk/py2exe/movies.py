@@ -22,7 +22,7 @@ try:
     from FlyMovieFormat import NoMoreFramesException
 except ImportError:
     class NoMoreFramesException (Exception): pass
-import motmot.ufmf.ufmf as ufmf
+import ufmf
 
 #import motmot.imops.imops as imops # part of Motmot
 

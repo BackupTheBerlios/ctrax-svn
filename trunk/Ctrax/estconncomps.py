@@ -488,8 +488,8 @@ def trysplit(ellipses,i,isdone,L,dfore):
 
     # get datapoints
     (r,c) = num.where(L==i+1)
-    x = num.hstack((c.reshape(c.size,1),r.reshape(r.size,1)))
-    w = dfore[L==i+1]
+    x = num.hstack((c.reshape(c.size,1),r.reshape(r.size,1))).astype(kcluster.DTYPE)
+    w = dfore[L==i+1].astype(kcluster.DTYPE)
     ndata = r.size
 
     ## try increasing threshold
@@ -551,9 +551,9 @@ def trysplit(ellipses,i,isdone,L,dfore):
         # by raising the threshold, use this as initialization for GMM
 
         # get clusters for each cc
-        mu = num.zeros([ncomponents,2])
-        S = num.zeros([2,2,ncomponents])
-        priors = num.zeros(ncomponents)
+        mu = num.zeros([ncomponents,2],dtype=kcluster.DTYPE)
+        S = num.zeros([2,2,ncomponents],dtype=kcluster.DTYPE)
+        priors = num.zeros(ncomponents,dtype=kcluster.DTYPE)
         for j in range(ncomponents):
             BWI = Lbox == (j+1)
             wj = dforebox[BWI]
@@ -652,7 +652,9 @@ def trysplit(ellipses,i,isdone,L,dfore):
         # try splitting into more clusters
         ncomponents = 2
         while True:
-            if DEBUG: print 'ncomponents = %d'%ncomponents
+            if ncomponents > params.maxclustersperblob:
+                if DEBUG: print "not trying to create %d > maxclustersperblob = %d clusters"%(ncomponents,params.maxclustersperblob)
+                break
             (mu,S,priors,gamma,negloglik) = kcluster.gmm(x,ncomponents,weights=w,kmeansthresh=.1,emthresh=.1,mincov=.25)
             #(mu,S,priors,gamma,negloglik) = gmm(x,ncomponents,weights=w,nreplicates=4,kmeansiter=10,kmeansthresh=.1,emiters=10,emthresh=.1)
             if DEBUG: print 'negloglik = %.2f'%negloglik

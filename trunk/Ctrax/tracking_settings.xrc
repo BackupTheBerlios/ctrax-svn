@@ -190,14 +190,12 @@
                           <object class="sizeritem">
                             <object class="wxBoxSizer">
                               <orient>wxHORIZONTAL</orient>
-                              
                               <object class="sizeritem">
                                 <object class="wxTextCtrl" name="min_area">
                                   <tooltip>Lower bound on fly area (pixels-squared)</tooltip>
                                   <help>Lower bound on fly area (pixels-squared)</help>
                                 </object>
                               </object>
-                              
                               <object class="sizeritem">
                                 <object class="wxTextCtrl" name="mean_area">
                                   <tooltip>Mean fly area (pixels-squared)</tooltip>
@@ -220,14 +218,12 @@
                           <object class="sizeritem">
                             <object class="wxBoxSizer">
                               <orient>wxHORIZONTAL</orient>
-                              
                               <object class="sizeritem">
                                 <object class="wxTextCtrl" name="min_major">
                                   <tooltip>Lower bound on major axis length (pixels)</tooltip>
                                   <help>Lower bound on major axis length (pixels)</help>
                                 </object>
                               </object>
-                              
                               <object class="sizeritem">
                                 <object class="wxTextCtrl" name="mean_major">
                                   <tooltip>Mean major axis length</tooltip>
@@ -245,20 +241,17 @@
                                   <label>  Major axis length</label>
                                 </object>
                               </object>
-                            
                             </object>
                           </object>
                           <object class="sizeritem">
                             <object class="wxBoxSizer">
                               <orient>wxHORIZONTAL</orient>
-                              
                               <object class="sizeritem">
                                 <object class="wxTextCtrl" name="min_minor">
                                   <tooltip>Lower bound on minor axis length (pixels)</tooltip>
                                   <help>Lower bound on minor axis length (pixels)</help>
                                 </object>
                               </object>
-                              
                               <object class="sizeritem">
                                 <object class="wxTextCtrl" name="mean_minor">
                                   <tooltip>Mean minor axis length (pixels)</tooltip>
@@ -276,20 +269,17 @@
                                   <label>  Minor axis length</label>
                                 </object>
                               </object>
-                            
                             </object>
                           </object>
                           <object class="sizeritem">
                             <object class="wxBoxSizer">
                               <orient>wxHORIZONTAL</orient>
-                              
                               <object class="sizeritem">
                                 <object class="wxTextCtrl" name="min_ecc">
                                   <tooltip>Lower bound on eccentricity (minor / major axis length)</tooltip>
                                   <help>Lower bound on eccentricity (minor / major axis length)</help>
                                 </object>
                               </object>
-                              
                               <object class="sizeritem">
                                 <object class="wxTextCtrl" name="mean_ecc">
                                   <tooltip>Mean eccentricity (minor / major axis length)</tooltip>
@@ -307,10 +297,8 @@
                                   <label>  Eccentricity</label>
                                 </object>
                               </object>
-                            
                             </object>
                           </object>
-                        
                         </object>
                         <size>360,160</size>
                         <style>wxTAB_TRAVERSAL</style>
@@ -592,6 +580,41 @@
                       <object class="wxStaticText">
                         <size>400,50</size>
                         <label>If the area of a connected component is small, we will try to lower the foreground/background threshold to include more pixels in the connected component. We lower the threshold to Lower Thresh times the current threshold. </label>
+                        <font>
+                          <size>8</size>
+                          <style>normal</style>
+                          <weight>normal</weight>
+                          <underlined>0</underlined>
+                          <family>swiss</family>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticLine">
+                        <size>400,5</size>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxBoxSizer">
+                        <orient>wxHORIZONTAL</orient>
+                        <object class="sizeritem">
+                          <object class="wxStaticText">
+                            <size>300,20</size>
+                            <label>Max Clusters per Blob: </label>
+                          </object>
+                        </object>
+                        <object class="sizeritem">
+                          <object class="wxTextCtrl" name="maxclustersperblob">
+                            <value>10</value>
+                          </object>
+                        </object>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticText">
+                        <size>400,50</size>
+                        <label>Maximum number of clusters Ctrax will try to split a connected component into during the forward pass.</label>
                         <font>
                           <size>8</size>
                           <style>normal</style>

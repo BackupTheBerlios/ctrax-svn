@@ -1,3 +1,52 @@
+2009-04-11 Kristin Branson
+
+* Version 0.1.5.3 released.
+
+2010-04-08 Kristin Branson
+
+* Migrated updates to py2exe version
+
+2010-04-08 Kristin Branson
+
+* Added support for ufmf reading. Ctrax now requires motmot.ufmf.ufmf. 
+
+2010-04-08 Kristin Branson
+
+* Started debugging error in hindsight.py, so far have just added DEBUG print statements. Upped version number for release. 
+
+2010-04-07 Kristin Branson
+
+* Replaced kcluster.py with kcluster2d.py -- hard-coded GMM EM for 2d data, removed tiles where unnecessary. Should be much faster now.
+
+2010-01-23 Kristin Branson
+
+* Added Matlab routine for selecting parts of arrays that may go beyond the edge of the array. 
+
+2010-01-23 Kristin Branson
+
+* Added routines for creating sbfmfs from avis. 
+
+2010-11-24 John Bender
+
+* fixed a subtle type error occurring in some code branches:
+File "build/bdist.linux-i686/egg/Ctrax/kcluster.py", line 234, in gmmupdate
+AttributeError: 'bool' object has no attribute 'any'
+
+2010-11-24 John Bender
+
+* small error-handling fix when copying converted files
+this could theoretically lead to downstream errors but will stop one I'm getting now!
+
+2010-11-22 John Bender
+
+* fixed batch-processing bugs
+* made UI less interactive in batch mode
+
+2010-11-19 John Bender
+
+* Don't prompt for ann_file overwrites when in batch mode.
+* Fixed batch-mode crash related to incomplete initialization of AnnotationFile. However, this raises a new error b/c algorithm.DoAll calls annfiles.WriteMAT after calling chooseorientations.ChooseOrientations, which closes the ann_file and doesn't reopen it.
+
 2009-10-29 Kristin Branson
 
 * Version 0.1.5.2 released.
