@@ -6,9 +6,9 @@ cimport cython
 DTYPE = num.float64
 ctypedef num.float64_t DTYPE_t
 cdef unsigned int d = 2
-cdef bint DEBUG
-cdef bint DEBUG_REPEATABLE_BEHAVIOR
-from version import DEBUG, DEBUG_REPEATABLE_BEHAVIOR
+cdef bint DEBUG = False
+cdef bint DEBUG_REPEATABLE_BEHAVIOR = False
+#from version import DEBUG, DEBUG_REPEATABLE_BEHAVIOR
 cdef DTYPE_t MINPRIOR = .01
 
 cdef inline DTYPE_t square(DTYPE_t x):

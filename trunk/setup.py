@@ -1,21 +1,14 @@
 #!/usr/bin/env python
 
-try:
-    from setuptools import setup, Extension
-except ImportError:
-    print 'Installing setuptools ...'
-    import ez_setup
-    ez_setup.use_setuptools()
-    from setuptools import setup, Extension
-    print 'Done installing setuptools.'
-from distutils.sysconfig import get_python_inc
-from setuptools.dist import Distribution
+from setuptools import setup, Extension
+from Cython.Distutils import build_ext
+#from distutils.sysconfig import get_python_inc
+#from setuptools.dist import Distribution
 import numpy
 #import numpy.numarray as nn
 import os, glob
 import sys
-from distutils import version
-from Cython.Distutils import build_ext
+#from distutils import version
 
 #from distutils.core import setup
 #import py2exe
@@ -24,27 +17,6 @@ from Cython.Distutils import build_ext
 numpyincludedirs = numpy.get_include()
 #numarrayincludedirs = nn.get_numarray_include_dirs()
 #includedirs = numarrayincludedirs+[numpyincludedirs,]
-
-kws = {}
-if int(os.getenv( 'DIABLE_INSTALL_REQUIRES','1' )):
-    print "Setuptools install_requires disabled"
-else:
-    # commented wx, numpy, scipy, PIL out because eggs are not 
-    # available for them. From now on, DISABLE_INSTALL_REQUIRES
-    # is by default 1
-    print "Checking requirements using Setuptools install_requires"
-    install_requires=[#'wxPython>=2.8',
-                      #'numpy>=1.0.3',
-                      #'scipy',
-                      #'PIL>=1.1.6',
-                      'motmot.wxvideo>=0.5.2.dev',
-                      'motmot.wxglvideo>=0.6.1.dev',
-                      'motmot.wxvalidatedtext',
-                      'motmot.imops',
-                      'pygarrayimage',
-                      'pyglet>=1.0',
-                      ]
-    kws['install_requires'] = install_requires
 
 # read version number from version file
 path = os.path.abspath( os.curdir )
@@ -75,8 +47,8 @@ setup( name="Ctrax",
        url="http://www.dickinson.caltech.edu/Ctrax",
        packages=['Ctrax'],
        entry_points = {'console_scripts': ['Ctrax=Ctrax:main']},
-       package_dir={'Ctrax': 'Ctrax'},
        cmdclass = {'build_ext': build_ext},
+       package_dir={'Ctrax': 'Ctrax'},
        #py_modules=['Ctrax.colormapk','Ctrax.imagesk',
        #            'Ctrax.houghcircles','Ctrax.setarena'],
        package_data = {'Ctrax':Ctrax_package_data},
@@ -91,7 +63,8 @@ setup( name="Ctrax",
                     Extension('houghcircles_C',
                               ['houghcircles/houghcircles_C.c'],
                               include_dirs=[numpyincludedirs,]),
-                    Extension("kcluster2d", ["Ctrax/kcluster2d_cython.pyx"],
+                    Extension('kcluster2d',
+                              ['kcluster2d/kcluster2d_cython.pyx'],
                               include_dirs=[numpyincludedirs,]),
-                    ],
-       **kws)
+                    ]
+       )
