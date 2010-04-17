@@ -1,3 +1,23 @@
+2009-04-17 Kristin Branson
+
+* Version 0.1.5.4 released. 
+
+2009-04-17 Kristin Branson
+
+* Made py2exe version easier to maintain, hopefully. 
+
+2009-04-17 Kristin Branson
+
+* Migrated changes to py2exe. 
+
+2009-04-17 Kristin Branson
+
+* Re-organized code and data file locations. Stripped pkg_resources and setuptools from code. Now, Ctrax does not run from anywhere with the command "Ctrax" but instead with the command "Ctrax-script.py". Need to see how this affects things in Linux. 
+
+2009-04-16 Kristin Branson
+
+* Used Cython to speed up kcluster2d code. 
+
 2009-04-11 Kristin Branson
 
 * Version 0.1.5.3 released.
