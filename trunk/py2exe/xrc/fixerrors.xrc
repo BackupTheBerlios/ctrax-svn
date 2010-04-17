@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resource>
+  <object class="wxFrame" name="fixerrors_frame">
+    <title>Fix Tracking Errors</title>
+    <object class="wxBoxSizer">
+      <orient>wxHORIZONTAL</orient>
+      <object class="sizeritem">
+        <object class="wxPanel" name="automatic_page">
+          <object class="wxBoxSizer">
+            <orient>wxVERTICAL</orient>
+            <object class="sizeritem">
+              <object class="wxStaticText">
+                <label>Suspicious Events:</label>
+                <font>
+                  <size>10</size>
+                  <family>swiss</family>
+                  <style>normal</style>
+                  <weight>bold</weight>
+                  <underlined>0</underlined>
+                  <face>Sans</face>
+                </font>
+              </object>
+            </object>
+            <object class="sizeritem">
+              <object class="wxCheckBox" name="undetected_checkbox">
+                <label>Target is not detected for a few frames.</label>
+                <checked>1</checked>
+              </object>
+              <flag>wxEXPAND</flag>
+            </object>
+            <object class="sizeritem">
+              <object class="wxStaticText">
+                <label>Symptom: A target track dies, then &quot;a few&quot; frames later a new track is born &quot;near&quot; the old tracks predicted position. 
+Fix: Interpolate between the last tracked position and the new tracked position to connect the tracks. </label>
+                <size>400,50</size>
+              </object>
+            </object>
+            <object class="sizeritem">
+              <object class="wxPanel" name="undetected_panel">
+                <object class="wxBoxSizer">
+                  <orient>wxVERTICAL</orient>
+                  <object class="sizeritem">
+                    <object class="wxBoxSizer">
+                      <orient>wxHORIZONTAL</orient>
+                      <object class="sizeritem">
+                        <object class="wxStaticText">
+                          <label>Maximum number of frames undetected:  </label>
+                          <size>300,14</size>
+                        </object>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="undetected_nframes">
+                          <value>1</value>
+                        </object>
+                      </object>
+                    </object>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxBoxSizer">
+                      <orient>wxHORIZONTAL</orient>
+                      <object class="sizeritem">
+                        <object class="wxStaticText">
+                          <label>Maximum distance from predicted target position:  </label>
+                          <size>300,14</size>
+                        </object>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="undetected_max_distance">
+                          <value>1</value>
+                        </object>
+                      </object>
+                    </object>
+                  </object>
+                </object>
+                <enabled>1</enabled>
+              </object>
+              <flag>wxGROW</flag>
+            </object>
+            <object class="sizeritem">
+              <object class="wxStaticLine">
+                <size>395,10</size>
+              </object>
+            </object>
+            <object class="sizeritem">
+              <object class="wxCheckBox" name="spurious_checkbox">
+                <label>Detections from noise. </label>
+                <checked>1</checked>
+              </object>
+              <flag>wxEXPAND</flag>
+            </object>
+            <object class="sizeritem">
+              <object class="wxStaticText">
+                <label>Symptom: A short-lived track corresponding to noise, reflections. 
+Fix: Delete track. </label>
+                <size>400,28</size>
+              </object>
+            </object>
+            <object class="sizeritem">
+              <object class="wxPanel" name="spurious_panel">
+                <object class="wxBoxSizer">
+                  <orient>wxVERTICAL</orient>
+                  <object class="sizeritem">
+                    <object class="wxBoxSizer">
+                      <orient>wxHORIZONTAL</orient>
+                      <object class="sizeritem">
+                        <object class="wxStaticText">
+                          <label>Maximum number of frames in track:  </label>
+                          <size>300,14</size>
+                        </object>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="spurious_nframes">
+                          <value>1</value>
+                        </object>
+                      </object>
+                    </object>
+                  </object>
+                </object>
+                <enabled>1</enabled>
+              </object>
+              <flag>wxGROW</flag>
+            </object>
+            <object class="sizeritem">
+              <object class="wxStaticLine">
+                <size>395,10</size>
+              </object>
+            </object>
+            <object class="sizeritem">
+              <object class="wxCheckBox" name="split_checkbox">
+                <label>A single target is split into multiple detections.</label>
+                <checked>1</checked>
+              </object>
+              <flag>wxEXPAND</flag>
+            </object>
+            <object class="sizeritem">
+              <object class="wxStaticText">
+                <label>Symptom: A new target track is born &quot;near&quot; another target. Only one of the tracks remains after &quot;a few&quot; frames. 
+Fix: Merge two tracks into a single track. </label>
+                <size>400,40</size>
+              </object>
+            </object>
+            <object class="sizeritem">
+              <object class="wxPanel" name="split_panel">
+                <object class="wxBoxSizer">
+                  <orient>wxVERTICAL</orient>
+                  <object class="sizeritem">
+                    <object class="wxBoxSizer">
+                      <orient>wxHORIZONTAL</orient>
+                      <object class="sizeritem">
+                        <object class="wxStaticText">
+                          <label>Maximum number of frames split:  </label>
+                          <size>300,14</size>
+                        </object>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="split_nframes">
+                          <value>1</value>
+                        </object>
+                      </object>
+                    </object>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxBoxSizer">
+                      <orient>wxHORIZONTAL</orient>
+                      <object class="sizeritem">
+                        <object class="wxStaticText">
+                          <label>Maximum distance between targets:  </label>
+                          <size>300,14</size>
+                        </object>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="split_max_distance">
+                          <value>1</value>
+                        </object>
+                      </object>
+                    </object>
+                  </object>
+                </object>
+                <enabled>1</enabled>
+              </object>
+              <flag>wxGROW</flag>
+            </object>
+            <object class="sizeritem">
+              <object class="wxStaticLine">
+                <size>395,10</size>
+              </object>
+            </object>
+            <object class="sizeritem">
+              <object class="wxCheckBox" name="merged_checkbox">
+                <label>Multiple targets are merged into a single detection. </label>
+                <checked>1</checked>
+              </object>
+              <flag>wxEXPAND</flag>
+            </object>
+            <object class="sizeritem">
+              <object class="wxStaticText">
+                <label>Symptom: A target track dies &quot;near&quot; another target. &quot;A few&quot; frames later, a new track is born &quot;near&quot; this track. 
+Fix: Split the observations when only one track is visible into two. </label>
+                <size>400,28</size>
+              </object>
+            </object>
+            <object class="sizeritem">
+              <object class="wxPanel" name="merged_panel">
+                <object class="wxBoxSizer">
+                  <orient>wxVERTICAL</orient>
+                  <object class="sizeritem">
+                    <object class="wxBoxSizer">
+                      <orient>wxHORIZONTAL</orient>
+                      <object class="sizeritem">
+                        <object class="wxStaticText">
+                          <label>Maximum number of frames with only one track detected.:  </label>
+                          <size>300,14</size>
+                        </object>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="merged_nframes">
+                          <value>1</value>
+                        </object>
+                      </object>
+                    </object>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxBoxSizer">
+                      <orient>wxHORIZONTAL</orient>
+                      <object class="sizeritem">
+                        <object class="wxStaticText">
+                          <label>Max dist between predicted position and observed target:  </label>
+                          <size>300,12</size>
+                        </object>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="merged_max_distance">
+                          <value>1</value>
+                        </object>
+                      </object>
+                    </object>
+                  </object>
+                </object>
+                <enabled>1</enabled>
+              </object>
+              <flag>wxGROW</flag>
+            </object>
+            <object class="sizeritem">
+              <object class="wxStaticLine">
+                <size>395,10</size>
+              </object>
+            </object>
+            <object class="sizeritem">
+              <object class="wxButton" name="automatic_detect">
+                <label>Detect Now</label>
+                <default>1</default>
+              </object>
+              <flag>wxALIGN_CENTRE</flag>
+            </object>
+          </object>
+          <style>wxTAB_TRAVERSAL</style>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxPanel">
+          <object class="wxBoxSizer">
+            <orient>wxVERTICAL</orient>
+            <object class="sizeritem">
+              <object class="wxToolBar" name="toolbar">
+                <dontattachtoframe>1</dontattachtoframe>
+                <object class="tool" name="zoomin">
+                  <bitmap>zoom-in.bmp</bitmap>
+                  <radio>1</radio>
+                  <toggle>1</toggle>
+                  <tooltip>Zoom In</tooltip>
+                </object>
+                <object class="tool" name="zoomout">
+                  <bitmap>zoom-out.bmp</bitmap>
+                  <radio>1</radio>
+                  <toggle>1</toggle>
+                  <tooltip>Zoom Out</tooltip>
+                </object>
+                <object class="tool" name="delete_track">
+                  <bitmap>trash.bmp</bitmap>
+                  <tooltip>Delete track</tooltip>
+                  <longhelp>Delete selected track</longhelp>
+                </object>
+              </object>
+            </object>
+            <object class="sizeritem">
+              <object class="wxPanel" name="img_panel"/>
+              <flag>wxEXPAND</flag>
+              <minsize>400,400</minsize>
+            </object>
+            <object class="sizeritem">
+              <object class="wxScrollBar" name="frame_scrollbar">
+                <size>380,20</size>
+                <style>wxSB_HORIZONTAL</style>
+              </object>
+              <flag>wxALIGN_CENTRE</flag>
+            </object>
+          </object>
+        </object>
+        <flag>wxEXPAND</flag>
+      </object>
+    </object>
+  </object>
+</resource>

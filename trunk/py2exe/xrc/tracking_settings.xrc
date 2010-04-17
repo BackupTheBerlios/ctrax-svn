@@ -1,0 +1,962 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resource>
+  <object class="wxFrame" name="trackingframe">
+    <title>Tracking Parameters</title>
+    <object class="wxBoxSizer">
+      <orient>wxHORIZONTAL</orient>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxVERTICAL</orient>
+          <object class="sizeritem">
+            <object class="wxNotebook">
+              <object class="notebookpage">
+                <label>Shape</label>
+                <object class="wxPanel" name="shape_panel">
+                  <object class="wxBoxSizer">
+                    <orient>wxVERTICAL</orient>
+                    <object class="sizeritem">
+                      <object class="wxRadioButton" name="automatic_bounds">
+                        <label>Automatically Compute Bounds on Shape</label>
+                        <font>
+                          <size>10</size>
+                          <family>swiss</family>
+                          <style>normal</style>
+                          <weight>bold</weight>
+                          <underlined>0</underlined>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                    <object class="spacer">
+                      <size>0,10</size>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxPanel" name="automatic_panel">
+                        <object class="wxBoxSizer">
+                          <orient>wxVERTICAL</orient>
+                          <object class="sizeritem">
+                            <object class="wxBoxSizer">
+                              <orient>wxHORIZONTAL</orient>
+                              <object class="sizeritem">
+                                <object class="wxStaticText">
+                                  <label>Number of standard deviations: </label>
+                                  <size>280,20</size>
+                                </object>
+                                <flag>wxALIGN_CENTRE_VERTICAL</flag>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="nstd_shape"/>
+                              </object>
+                            </object>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxStaticText">
+                              <label>Upper/lower bounds on shape (area, major and minor axis lengths, eccentricity) are computing as +/- nstd standard deviations from the mean. </label>
+                              <size>360,40</size>
+                              <font>
+                                <size>8</size>
+                                <family>swiss</family>
+                                <style>normal</style>
+                                <weight>normal</weight>
+                                <underlined>0</underlined>
+                                <face>Sans</face>
+                              </font>
+                            </object>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxStaticLine">
+                              <size>360,5</size>
+                              <style>wxLI_HORIZONTAL</style>
+                            </object>
+                            <flag>wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxBoxSizer">
+                              <orient>wxHORIZONTAL</orient>
+                              <object class="sizeritem">
+                                <object class="wxStaticText">
+                                  <label>Number of Frames: </label>
+                                  <size>280,20</size>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="nframes_shape"/>
+                              </object>
+                            </object>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxStaticText">
+                              <label>Number of frames used to estimate bounds.</label>
+                              <size>360,16</size>
+                              <font>
+                                <size>8</size>
+                                <family>swiss</family>
+                                <style>normal</style>
+                                <weight>normal</weight>
+                                <underlined>0</underlined>
+                                <face>Sans</face>
+                              </font>
+                            </object>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxStaticLine">
+                              <size>360,5</size>
+                              <style>wxLI_HORIZONTAL</style>
+                            </object>
+                            <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL</flag>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxButton" name="compute_shape">
+                              <label>Compute Bounds Now</label>
+                              <enabled>1</enabled>
+                              <focused>1</focused>
+                            </object>
+                            <flag>wxALIGN_CENTRE_HORIZONTAL</flag>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxStaticText" name="automatic_shape_text">
+                              <label>Bounds on shape not up to date. </label>
+                              <font>
+                                <size>9</size>
+                                <family>swiss</family>
+                                <style>italic</style>
+                                <weight>normal</weight>
+                                <underlined>0</underlined>
+                                <face>Sans</face>
+                              </font>
+                            </object>
+                            <flag>wxALIGN_CENTRE_HORIZONTAL</flag>
+                          </object>
+                        </object>
+                        <size>360,160</size>
+                        <style>wxTAB_TRAVERSAL</style>
+                        <enabled>1</enabled>
+                      </object>
+                      <flag>wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticLine">
+                        <size>400,20</size>
+                        <style>wxLI_HORIZONTAL</style>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxRadioButton" name="manual_bounds">
+                        <label>Manually Set Bounds on Shape</label>
+                        <font>
+                          <size>10</size>
+                          <family>swiss</family>
+                          <style>normal</style>
+                          <weight>bold</weight>
+                          <underlined>0</underlined>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                      <border>10</border>
+                    </object>
+                    <object class="spacer">
+                      <size>0,10</size>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxPanel" name="manual_panel">
+                        <object class="wxBoxSizer">
+                          <orient>wxVERTICAL</orient>
+                          <object class="sizeritem">
+                            <object class="wxBoxSizer">
+                              <object class="sizeritem">
+                                <object class="wxStaticText">
+                                  <size>80,20</size>
+                                  <label>Minimum</label>
+                                  <style>wxALIGN_CENTRE</style>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxStaticText">
+                                  <size>80,20</size>
+                                  <label>Mean</label>
+                                  <style>wxALIGN_CENTRE</style>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxStaticText">
+                                  <size>80,20</size>
+                                  <label>Maximum</label>
+                                  <style>wxALIGN_CENTRE</style>
+                                </object>
+                              </object>
+                              <orient>wxHORIZONTAL</orient>
+                            </object>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxBoxSizer">
+                              <orient>wxHORIZONTAL</orient>
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="min_area">
+                                  <tooltip>Lower bound on fly area (pixels-squared)</tooltip>
+                                  <help>Lower bound on fly area (pixels-squared)</help>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="mean_area">
+                                  <tooltip>Mean fly area (pixels-squared)</tooltip>
+                                  <help>Mean fly area (pixels-squared)</help>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="max_area">
+                                  <tooltip>Upper bound on fly area (pixels-squared)</tooltip>
+                                  <help>Upper bound on fly area (pixels-squared)</help>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxStaticText">
+                                  <label>  Area of Target</label>
+                                </object>
+                              </object>
+                            </object>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxBoxSizer">
+                              <orient>wxHORIZONTAL</orient>
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="min_major">
+                                  <tooltip>Lower bound on major axis length (pixels)</tooltip>
+                                  <help>Lower bound on major axis length (pixels)</help>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="mean_major">
+                                  <tooltip>Mean major axis length</tooltip>
+                                  <help>Mean major axis length</help>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="max_major">
+                                  <tooltip>Upper bound on major axis length</tooltip>
+                                  <help>Upper bound on major axis length</help>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxStaticText">
+                                  <label>  Major axis length</label>
+                                </object>
+                              </object>
+                            </object>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxBoxSizer">
+                              <orient>wxHORIZONTAL</orient>
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="min_minor">
+                                  <tooltip>Lower bound on minor axis length (pixels)</tooltip>
+                                  <help>Lower bound on minor axis length (pixels)</help>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="mean_minor">
+                                  <tooltip>Mean minor axis length (pixels)</tooltip>
+                                  <help>Mean minor axis length (pixels)</help>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="max_minor">
+                                  <tooltip>Upper bound on minor axis length (pixels)</tooltip>
+                                  <help>Upper bound on minor axis length (pixels)</help>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxStaticText">
+                                  <label>  Minor axis length</label>
+                                </object>
+                              </object>
+                            </object>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxBoxSizer">
+                              <orient>wxHORIZONTAL</orient>
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="min_ecc">
+                                  <tooltip>Lower bound on eccentricity (minor / major axis length)</tooltip>
+                                  <help>Lower bound on eccentricity (minor / major axis length)</help>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="mean_ecc">
+                                  <tooltip>Mean eccentricity (minor / major axis length)</tooltip>
+                                  <help>Mean eccentricity (minor / major axis length)</help>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="max_ecc">
+                                  <tooltip>Upper bound on eccentricity (minor / major axis length)</tooltip>
+                                  <help>Upper bound on eccentricity (minor / major axis length)</help>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxStaticText">
+                                  <label>  Eccentricity</label>
+                                </object>
+                              </object>
+                            </object>
+                          </object>
+                        </object>
+                        <size>360,160</size>
+                        <style>wxTAB_TRAVERSAL</style>
+                        <enabled>1</enabled>
+                      </object>
+                      <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+                    </object>
+                  </object>
+                </object>
+              </object>
+              <object class="notebookpage">
+                <label>Motion</label>
+                <object class="wxPanel" name="motion_model_panel">
+                  <object class="wxBoxSizer">
+                    <orient>wxVERTICAL</orient>
+                    <object class="sizeritem">
+                      <object class="wxStaticText">
+                        <label>Motion Model</label>
+                        <font>
+                          <size>10</size>
+                          <family>swiss</family>
+                          <style>normal</style>
+                          <weight>bold</weight>
+                          <underlined>0</underlined>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                    <object class="spacer">
+                      <size>0,10</size>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxBoxSizer">
+                        <orient>wxHORIZONTAL</orient>
+                        <object class="sizeritem">
+                          <object class="wxStaticText">
+                            <label>Angle Weight: </label>
+                            <size>300,20</size>
+                          </object>
+                        </object>
+                        <object class="sizeritem">
+                          <object class="wxTextCtrl" name="angle_weight">
+                            <value>0</value>
+                          </object>
+                        </object>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticText">
+                        <label>Weight of the angle parameter in computing distance between predicted target and observation positions. Angle distance multiplied by weight is added to unweighted Euclidean distance between centers. </label>
+                        <size>400,52</size>
+                        <font>
+                          <size>8</size>
+                          <family>swiss</family>
+                          <style>normal</style>
+                          <weight>normal</weight>
+                          <underlined>0</underlined>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticLine">
+                        <size>400,5</size>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxBoxSizer">
+                        <orient>wxHORIZONTAL</orient>
+                        <object class="sizeritem">
+                          <object class="wxStaticText">
+                            <label>Max Jump Distance: </label>
+                            <size>300,20</size>
+                          </object>
+                        </object>
+                        <object class="sizeritem">
+                          <object class="wxTextCtrl" name="max_jump"/>
+                        </object>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticText">
+                        <label>Maximum distance between predicted position and observation for a target identity and observation to be matched. </label>
+                        <size>400,28</size>
+                        <font>
+                          <size>8</size>
+                          <family>swiss</family>
+                          <style>normal</style>
+                          <weight>normal</weight>
+                          <underlined>0</underlined>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticLine">
+                        <size>400,5</size>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxBoxSizer">
+                        <orient>wxHORIZONTAL</orient>
+                        <object class="sizeritem">
+                          <object class="wxStaticText">
+                            <label>Center Dampening: </label>
+                            <size>300,20</size>
+                          </object>
+                        </object>
+                        <object class="sizeritem">
+                          <object class="wxTextCtrl" name="center_dampen"/>
+                        </object>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxBoxSizer">
+                        <orient>wxHORIZONTAL</orient>
+                        <object class="sizeritem">
+                          <object class="wxStaticText">
+                            <label>Angle Dampening: </label>
+                            <size>300,20</size>
+                          </object>
+                        </object>
+                        <object class="sizeritem">
+                          <object class="wxTextCtrl" name="angle_dampen"/>
+                        </object>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticText">
+                        <label>Predicted position is previous position plus (1 - dampen) times previous velocity. If dampen is 1, then predicted position is just previous position. If dampen is 0, then predicted position is constant velocity prediction. </label>
+                        <size>400,50</size>
+                        <font>
+                          <size>8</size>
+                          <family>swiss</family>
+                          <style>normal</style>
+                          <weight>normal</weight>
+                          <underlined>0</underlined>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                  </object>
+                </object>
+              </object>
+              <size>400,420</size>
+              <style>wxNB_DEFAULT</style>
+              <object class="notebookpage">
+                <label>Observation</label>
+                <object class="wxPanel" name="observation_panel">
+                  <object class="wxBoxSizer">
+                    <orient>wxVERTICAL</orient>
+                    <object class="sizeritem">
+                      <object class="wxStaticText">
+                        <label>Observation Parameters</label>
+                        <font>
+                          <size>10</size>
+                          <family>swiss</family>
+                          <style>normal</style>
+                          <weight>bold</weight>
+                          <underlined>0</underlined>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxBoxSizer">
+                        <orient>wxHORIZONTAL</orient>
+                        <object class="sizeritem">
+                          <object class="wxStaticText">
+                            <label>Max Area Delete: </label>
+                            <size>300,20</size>
+                          </object>
+                        </object>
+                        <object class="sizeritem">
+                          <object class="wxTextCtrl" name="max_area_delete"/>
+                        </object>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticText">
+                        <size>400,50</size>
+                        <label>If a detected connected component cannot be merged with other connected components and has area &lt;= Max Area Delete, then this connected component is ignored. Area is measured in squared pixels. </label>
+                        <font>
+                          <size>8</size>
+                          <style>normal</style>
+                          <weight>normal</weight>
+                          <underlined>0</underlined>
+                          <family>swiss</family>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticLine">
+                        <size>400,5</size>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxBoxSizer">
+                        <orient>wxHORIZONTAL</orient>
+                        <object class="sizeritem">
+                          <object class="wxStaticText">
+                            <size>300,20</size>
+                            <label>Min Area Ignore: </label>
+                          </object>
+                        </object>
+                        <object class="sizeritem">
+                          <object class="wxTextCtrl" name="min_area_ignore"/>
+                        </object>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticText">
+                        <size>400,40</size>
+                        <label>Extremely large connected components may be caused by objects other than flies or lighting changes. Enter the minimum area of large foreground detections to be ignored.</label>
+                        <font>
+                          <size>8</size>
+                          <style>normal</style>
+                          <weight>normal</weight>
+                          <underlined>0</underlined>
+                          <family>swiss</family>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticLine">
+                        <size>400,5</size>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxBoxSizer">
+                        <orient>wxHORIZONTAL</orient>
+                        <object class="sizeritem">
+                          <object class="wxStaticText">
+                            <label>Max Penalty Merge: </label>
+                            <size>300,20</size>
+                          </object>
+                        </object>
+                        <object class="sizeritem">
+                          <object class="wxTextCtrl" name="max_penalty_merge"/>
+                        </object>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticText">
+                        <label>We check to see if small connected components can be merged by flipping the labels of some pixels from background to foreground. If the total difference of these background pixels from the foreground threshold is less than Max Penalty Merge, then we perform the merge. </label>
+                        <size>400,64</size>
+                        <font>
+                          <size>8</size>
+                          <family>swiss</family>
+                          <style>normal</style>
+                          <weight>normal</weight>
+                          <underlined>0</underlined>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticLine">
+                        <size>400,5</size>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxBoxSizer">
+                        <orient>wxHORIZONTAL</orient>
+                        <object class="sizeritem">
+                          <object class="wxStaticText">
+                            <label>Lower Threshold: </label>
+                            <size>300,20</size>
+                          </object>
+                        </object>
+                        <object class="sizeritem">
+                          <object class="wxTextCtrl" name="lower_thresh"/>
+                        </object>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticText">
+                        <size>400,50</size>
+                        <label>If the area of a connected component is small, we will try to lower the foreground/background threshold to include more pixels in the connected component. We lower the threshold to Lower Thresh times the current threshold. </label>
+                        <font>
+                          <size>8</size>
+                          <style>normal</style>
+                          <weight>normal</weight>
+                          <underlined>0</underlined>
+                          <family>swiss</family>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticLine">
+                        <size>400,5</size>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxBoxSizer">
+                        <orient>wxHORIZONTAL</orient>
+                        <object class="sizeritem">
+                          <object class="wxStaticText">
+                            <size>300,20</size>
+                            <label>Max Clusters per Blob: </label>
+                          </object>
+                        </object>
+                        <object class="sizeritem">
+                          <object class="wxTextCtrl" name="maxclustersperblob">
+                            <value>10</value>
+                          </object>
+                        </object>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticText">
+                        <size>400,50</size>
+                        <label>Maximum number of clusters Ctrax will try to split a connected component into during the forward pass.</label>
+                        <font>
+                          <size>8</size>
+                          <style>normal</style>
+                          <weight>normal</weight>
+                          <underlined>0</underlined>
+                          <family>swiss</family>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                  </object>
+                </object>
+              </object>
+              <object class="notebookpage">
+                <label>Hindsight</label>
+                <object class="wxPanel" name="hindsight_panel">
+                  <object class="wxBoxSizer">
+                    <orient>wxVERTICAL</orient>
+                    <object class="sizeritem">
+                      <object class="wxCheckBox" name="do_fix_split">
+                        <label>Fix Split Detections</label>
+                        <checked>1</checked>
+                        <font>
+                          <size>10</size>
+                          <family>swiss</family>
+                          <style>normal</style>
+                          <weight>bold</weight>
+                          <underlined>0</underlined>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticText">
+                        <label>If checked, Ctrax will look for sequences in which a single target is mistakenly split into two observations. These observations will be merged. </label>
+                        <size>400,38</size>
+                        <font>
+                          <size>8</size>
+                          <family>swiss</family>
+                          <style>normal</style>
+                          <weight>normal</weight>
+                          <underlined>0</underlined>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxPanel" name="splitdetection_panel">
+                        <object class="wxBoxSizer">
+                          <orient>wxVERTICAL</orient>
+                          <object class="sizeritem">
+                            <object class="wxBoxSizer">
+                              <orient>wxHORIZONTAL</orient>
+                              <object class="sizeritem">
+                                <object class="wxStaticText">
+                                  <label>Max Sequence Length: </label>
+                                  <size>300,20</size>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="splitdetection_length"/>
+                              </object>
+                            </object>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxBoxSizer">
+                              <orient>wxHORIZONTAL</orient>
+                              <object class="sizeritem">
+                                <object class="wxStaticText">
+                                  <label>Max Penalty Merge: </label>
+                                  <size>300,20</size>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="splitdetection_distance"/>
+                              </object>
+                            </object>
+                          </object>
+                        </object>
+                        <enabled>1</enabled>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxCheckBox" name="do_fix_merged">
+                        <label>Fix Merged Detections</label>
+                        <checked>1</checked>
+                        <font>
+                          <size>10</size>
+                          <family>swiss</family>
+                          <style>normal</style>
+                          <weight>bold</weight>
+                          <underlined>0</underlined>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticText">
+                        <label>If checked, Ctrax will look for sequences in which two targets are mistakenly merged into one observation. This observation will be split. </label>
+                        <size>400,38</size>
+                        <font>
+                          <size>8</size>
+                          <family>swiss</family>
+                          <style>normal</style>
+                          <weight>normal</weight>
+                          <underlined>0</underlined>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxPanel" name="mergeddetection_panel">
+                        <object class="wxBoxSizer">
+                          <orient>wxVERTICAL</orient>
+                          <object class="sizeritem">
+                            <object class="wxBoxSizer">
+                              <orient>wxHORIZONTAL</orient>
+                              <object class="sizeritem">
+                                <object class="wxStaticText">
+                                  <label>Max Sequence Length: </label>
+                                  <size>300,20</size>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="mergeddetection_length"/>
+                              </object>
+                            </object>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxBoxSizer">
+                              <orient>wxHORIZONTAL</orient>
+                              <object class="sizeritem">
+                                <object class="wxStaticText">
+                                  <label>Max Prediction Error Increase: </label>
+                                  <size>300,20</size>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="mergeddetection_distance"/>
+                              </object>
+                            </object>
+                          </object>
+                        </object>
+                        <enabled>1</enabled>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxCheckBox" name="do_fix_spurious">
+                        <label>Fix Spurious Detections</label>
+                        <checked>1</checked>
+                        <font>
+                          <size>10</size>
+                          <family>swiss</family>
+                          <style>normal</style>
+                          <weight>bold</weight>
+                          <underlined>0</underlined>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticText">
+                        <label>If checked, Ctrax will look for targets with short lifespans, caused by reflections, noise, etc. These targets will be deleted. </label>
+                        <size>400,30</size>
+                        <font>
+                          <size>8</size>
+                          <family>swiss</family>
+                          <style>normal</style>
+                          <weight>normal</weight>
+                          <underlined>0</underlined>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxPanel" name="spuriousdetection_panel">
+                        <object class="wxBoxSizer">
+                          <orient>wxVERTICAL</orient>
+                          <object class="sizeritem">
+                            <object class="wxBoxSizer">
+                              <orient>wxHORIZONTAL</orient>
+                              <object class="sizeritem">
+                                <object class="wxStaticText">
+                                  <label>Max Sequence Length: </label>
+                                  <size>300,20</size>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="spuriousdetection_length"/>
+                              </object>
+                            </object>
+                          </object>
+                        </object>
+                        <enabled>1</enabled>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxCheckBox" name="do_fix_lost">
+                        <label>Fix Lost Detections</label>
+                        <checked>1</checked>
+                        <font>
+                          <size>10</size>
+                          <family>swiss</family>
+                          <style>normal</style>
+                          <weight>bold</weight>
+                          <underlined>0</underlined>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticText">
+                        <label>If checked, Ctrax will look for targets that were undetected for a short sequence. Positions of targets will be filled in by interpolation. </label>
+                        <size>400,30</size>
+                        <font>
+                          <size>8</size>
+                          <family>swiss</family>
+                          <style>normal</style>
+                          <weight>normal</weight>
+                          <underlined>0</underlined>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxPanel" name="lostdetection_panel">
+                        <object class="wxBoxSizer">
+                          <orient>wxVERTICAL</orient>
+                          <object class="sizeritem">
+                            <object class="wxBoxSizer">
+                              <orient>wxHORIZONTAL</orient>
+                              <object class="sizeritem">
+                                <object class="wxStaticText">
+                                  <label>Max Sequence Length: </label>
+                                  <size>300,20</size>
+                                </object>
+                              </object>
+                              <object class="sizeritem">
+                                <object class="wxTextCtrl" name="lostdetection_length"/>
+                              </object>
+                            </object>
+                          </object>
+                        </object>
+                        <enabled>1</enabled>
+                      </object>
+                    </object>
+                  </object>
+                </object>
+              </object>
+            </object>
+            <flag>wxEXPAND</flag>
+          </object>
+          <object class="spacer">
+            <size>0,10</size>
+          </object>
+          <object class="sizeritem">
+            <object class="wxButton" name="done">
+              <label>Done</label>
+              <font>
+                <size>10</size>
+                <family>swiss</family>
+                <style>normal</style>
+                <weight>bold</weight>
+                <underlined>0</underlined>
+                <face>Sans</face>
+              </font>
+              <focused>1</focused>
+            </object>
+            <flag>wxALIGN_BOTTOM|wxALIGN_CENTRE_HORIZONTAL</flag>
+          </object>
+        </object>
+        <flag>wxEXPAND</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <object class="sizeritem">
+            <object class="wxToolBar" name="toolbar">
+              <object class="tool" name="zoomin">
+                <bitmap>zoom-in.bmp</bitmap>
+                <toggle>1</toggle>
+                <tooltip>Zoom In</tooltip>
+                <label>Zoom In</label>
+              </object>
+              <object class="tool" name="zoomout">
+                <bitmap>zoom-out.bmp</bitmap>
+                <toggle>1</toggle>
+                <tooltip>Zoom Out</tooltip>
+                <label>Zoom Out</label>
+              </object>
+              <object class="tool" name="moreinfo">
+                <bitmap>question-mark.bmp</bitmap>
+                <toggle>1</toggle>
+                <tooltip>Click on an ellipse to see observation properties.</tooltip>
+                <label>Properties</label>
+              </object>
+              <dontattachtoframe>1</dontattachtoframe>
+              <size>400,30</size>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxPanel" name="img_panel"/>
+            <option>1</option>
+            <flag>wxEXPAND</flag>
+            <minsize>400,400</minsize>
+          </object>
+          <object class="sizeritem">
+            <object class="wxScrollBar" name="frame_scrollbar">
+              <style>wxSB_HORIZONTAL</style>
+              <thumbsize>1</thumbsize>
+              <pagesize>30</pagesize>
+            </object>
+            <flag/>
+            <minsize>400,-1</minsize>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="frame_number">
+              <label>Frame Number 1</label>
+              <size>300,16</size>
+            </object>
+            <flag>wxALIGN_BOTTOM</flag>
+          </object>
+          <object class="sizeritem">
+            <object class="wxChoice" name="show_img">
+              <content>
+                <item>Unfiltered Observations</item>
+                <item>Filtered Observations</item>
+                <item>Small Observations</item>
+                <item>Large Observations</item>
+                <item>Deleted Observations</item>
+                <item>Split Observations</item>
+                <item>Merged Observations</item>
+                <item>Threshold-Lowered Observations</item>
+                <item>Max Jump</item>
+                <item>Motion Model Prediction</item>
+              </content>
+            </object>
+            <flag>wxALIGN_BOTTOM|wxALIGN_CENTRE_HORIZONTAL</flag>
+          </object>
+          <orient>wxVERTICAL</orient>
+        </object>
+        <option>1</option>
+      </object>
+    </object>
+  </object>
+</resource>
