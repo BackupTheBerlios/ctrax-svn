@@ -21,8 +21,9 @@ import sys
 
 from params import params
 
-import pkg_resources # part of setuptools
-SETTINGS_RSRC_FILE = pkg_resources.resource_filename( __name__, "track_settings.xrc" )
+import os
+import codedir
+SETTINGS_RSRC_FILE = os.path.join(codedir.codedir,'xrc','tracking_settings.xrc')
 
 # CtraxApp.Track #################################################
 class CtraxAlgorithm (settings.AppWithSettings):

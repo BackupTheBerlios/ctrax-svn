@@ -1,3 +1,0 @@
-#!/bin/bash
-
-export CTRAX_NO_REDIRECT=1

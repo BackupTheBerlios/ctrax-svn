@@ -10,11 +10,13 @@ import numpy as num
 import houghcircles
 from houghcircles import *
 import scipy.misc.pilutil as pilutil
-import pkg_resources # part of setuptools
 import colormapk
 import motmot.wxvalidatedtext.wxvalidatedtext as wxvt # part of Motmot
 
-RSRC_FILE = pkg_resources.resource_filename( __name__, "setarena.xrc" )
+import os
+import codedir
+RSRC_FILE = os.path.join(codedir.codedir,'xrc','setarena.xrc')
+
 RESIZE = 500
 NTHRESHSTEPS = 30
 NRADIUSSTEPS = RESIZE/2

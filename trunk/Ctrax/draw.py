@@ -20,8 +20,6 @@ from ellipsesk import draw_ellipses,draw_ellipses_bmp
 
 from params import params
 
-##import pkg_resources # part of setuptools
-##RSRC_FILE = pkg_resources.resource_filename( __name__, "draw_settings.xrc" )
 ##
 ##class PlotConstants:
 ##    def __init__( self ):

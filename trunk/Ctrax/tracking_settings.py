@@ -20,8 +20,9 @@ import copy
 from matchidentities import cvpred
 import sys
 
-import pkg_resources # part of setuptools
-RSRC_FILE = pkg_resources.resource_filename( __name__, "tracking_settings.xrc" )
+import os
+import codedir
+RSRC_FILE = os.path.join(codedir.codedir,'xrc','tracking_settings.xrc')
 
 SHOW_UNFILTERED_OBSERVATIONS = 0
 SHOW_FILTERED_OBSERVATIONS = 1

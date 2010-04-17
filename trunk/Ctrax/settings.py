@@ -15,8 +15,11 @@ import motmot.wxvalidatedtext.wxvalidatedtext as wxvt
 
 from version import __version__, DEBUG
 
-import pkg_resources # part of setuptools
-RSRC_FILE = pkg_resources.resource_filename( __name__, "Ctrax.xrc" )
+import os
+import codedir
+RSRC_FILE = os.path.join(codedir.codedir,'xrc','Ctrax.xrc')
+ICON_FILE = os.path.join(codedir.codedir,'icons','Ctraxicon.ico')
+#RSRC_FILE = 'xrc/Ctrax.xrc'
 
 # these may import 'const'
 import algorithm as alg
@@ -36,7 +39,7 @@ class AppWithSettings( wx.App ):
         rsrc = xrc.XmlResource( RSRC_FILE )
 
         self.frame = rsrc.LoadFrame( None, "frame_Ctrax" )
-        self.frame.SetIcon(wx.Icon(pkg_resources.resource_filename( __name__,'Ctraxicon.ico'), wx.BITMAP_TYPE_ICO))
+        self.frame.SetIcon(wx.Icon(ICON_FILE, wx.BITMAP_TYPE_ICO))
 
         # make references to useful objects
         self.menu = self.frame.GetMenuBar()

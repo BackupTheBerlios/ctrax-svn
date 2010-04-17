@@ -33,10 +33,11 @@ import highboostfilter
 #from settings import const as settings_const
 from version import DEBUG
 
-import pkg_resources # part of setuptools
-THRESH_RSRC_FILE = pkg_resources.resource_filename( __name__, "bg_thresh.xrc" )
-SETTINGS_RSRC_FILE = pkg_resources.resource_filename( __name__, "bg_settings.xrc" )
-HF_RSRC_FILE = pkg_resources.resource_filename( __name__, "homomorphic.xrc" )
+import os
+import codedir
+THRESH_RSRC_FILE = os.path.join(codedir.codedir,'xrc','bg_thresh.xrc')
+SETTINGS_RSRC_FILE = os.path.join(codedir.codedir,'xrc','bg_settings.xrc')
+HF_RSRC_FILE = os.path.join(codedir.codedir,'xrc','homomorphic.xrc')
 
 SAVE_STUFF = False
 USE_SAVED = False # USE_SAVED takes precedence over SAVE_STUFF

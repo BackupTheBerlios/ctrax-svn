@@ -4,11 +4,12 @@ import motmot.wxvideo.wxvideo as wxvideo
 #import motmot.wxglvideo.simple_overlay as wxvideo
 import imagesk
 import numpy as num
-import pkg_resources # part of setuptools
 import scipy.ndimage.morphology as morph
 from params import params
 
-RSRC_FILE = pkg_resources.resource_filename( __name__, "roi.xrc" )
+import os
+import codedir
+RSRC_FILE = os.path.join(codedir.codedir,'xrc','roi.xrc')
 
 USEGL = False
 

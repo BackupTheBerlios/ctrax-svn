@@ -24,9 +24,10 @@ import scipy.ndimage as meas
 
 from version import DEBUG
 
-import pkg_resources # part of setuptools
-ZOOM_RSRC_FILE = pkg_resources.resource_filename( __name__, "ellipses_zoom.xrc" )
-SETTINGS_RSRC_FILE = pkg_resources.resource_filename( __name__, "ellipses_settings.xrc" )
+import os
+import codedir
+ZOOM_RSRC_FILE = os.path.join(codedir.codedir,'xrc','ellipses_zoom.xrc')
+SETTINGS_RSRC_FILE = os.path.join(codedir.codedir,'xrc','ellipses_settings.xrc')
 
 class Point:
     def __init__( self, x, y ):

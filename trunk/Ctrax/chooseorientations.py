@@ -6,8 +6,9 @@ from params import params
 import annfiles as annot
 from version import DEBUG
 
-import pkg_resources # part of setuptools
-RSRC_FILE = pkg_resources.resource_filename( __name__, "chooseorientations.xrc" )
+import os
+import codedir
+RSRC_FILE = os.path.join(codedir.codedir,'xrc','chooseorientations.xrc')
 
 class ChooseOrientations:
 

@@ -6,8 +6,9 @@ import wx
 from wx import xrc
 from params import params
 
-import pkg_resources # part of setuptools
-RSRC_FILE = pkg_resources.resource_filename( __name__, "batch.xrc" )
+import os
+import codedir
+RSRC_FILE = os.path.join(codedir.codedir,'xrc','batch.xrc')
 
 class BatchWindow:
     def __init__( self, parent, directory, file_list=None ):
