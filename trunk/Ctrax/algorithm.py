@@ -10,8 +10,6 @@ import setarena
 import chooseorientations
 import os
 
-import motmot.wxvalidatedtext as wxvt # part of Motmot
-
 from version import DEBUG
 import annfiles as annot
 import ellipsesk as ell

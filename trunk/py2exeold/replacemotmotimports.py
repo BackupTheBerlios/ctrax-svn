@@ -12,10 +12,10 @@ for filename in glob.glob('*.py'):
     print "\n\nProcessing file = %s:"%filename
     for line in fidin:
         lineno+=1
-        allsnew = ['imops','wxvalidatedtext','wxvideo','wxglvideo','simple_overlay','wxvalidatedtext']
+        allsnew = ['imops','wxvalidatedtext','wxvideo','wxglvideo','simple_overlay','wxvalidatedtext','arrayimage']
         alls = ['motmot.imops.imops','motmot.wxvalidatedtext.wxvalidatedtext',
                 'motmot.wxvideo.wxvideo','motmot.wxglvideo.wxglvideo','motmot.wxglvideo.simple_overlay',
-                'motmot.wxvalidatedtext']
+                'motmot.wxvalidatedtext','pygarrayimage.arrayimage']
         for i in range(len(alls)):
             s = alls[i]
             snew = allsnew[i]
