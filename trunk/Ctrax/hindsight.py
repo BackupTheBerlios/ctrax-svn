@@ -167,6 +167,11 @@ class Hindsight:
         # T - 3 - t1 - 1 <= params.splitdetection_length
         # id2 can be merged with id1 in all frames t1:T-3
 
+        if DEBUG: print "before fixing, tracks[T-2]: "
+        if DEBUG: 
+            for tmpid in self.tracks[T-2].iterkeys():
+                print str(self.tracks[T-2][tmpid])
+
         # for each death in frame T-2
         didfix = False
         deathscurr = list(self.milestones.getdeaths(T-2))
@@ -187,6 +192,34 @@ class Hindsight:
         if params.do_fix_lost:
             for id2 in birthscurr:
                 didfix |= self.fix_lostdetection(id2,T-2)
+
+        if DEBUG: 
+            if didfix:
+                print "after fixing, tracks[T-2]: "
+            else:
+                print "after trying to fix but failing, tracks[T-2]: "
+        if DEBUG: 
+            for tmpid in self.tracks[T-2].iterkeys():
+                print str(self.tracks[T-2][tmpid])
+        if DEBUG and didfix:
+            idprint = set([])
+            for t in range(max(1,T-52),T):
+                for tmpid in self.tracks[t].iterkeys():
+                    d = num.sqrt((self.tracks[t][tmpid].x-self.tracks[t][tmpid].x)**2. + \
+                                 (self.tracks[t][tmpid].y-self.tracks[t][tmpid].y)**2.)
+                    if d > params.max_jump:
+                        idprint.add(tmpid)
+            for tmpid in idprint:
+                print "Id = %d has a big jump in the previous 50 frames: "%tmpid
+                for t in range(max(1,T-52),T):
+                    d = num.sqrt((self.tracks[t][tmpid].x-self.tracks[t-1][tmpid].x)**2. + \
+                                 (self.tracks[t][tmpid].y-self.tracks[t-1][tmpid].y)**2.)
+                    if d > params.max_jump:
+                        print "$$$ "
+                    print "%d: "%t + str(self.tracks[t][tmpid])
+                
+
+
             
     def fix_spuriousdetection(self,id,t2):
 
@@ -274,8 +307,11 @@ class Hindsight:
         start = self.tracks[t1-1][id1]
         end = self.tracks[t2][id2]
         if DEBUG: print "matching id1=%d in frame t1-1=%d and id2=%d in frame t2=%d"%(id1,t1-1,id2,t2)
+        if DEBUG: print "id1=%d last alive in frame t1-1=%d: "%(id1,t1-1) + str(start)
+        if DEBUG: print "id2=%d first alive in frame t2=%d: "%(id2,t2) + str(end)
         for t in range(t1,t2):
             self.tracks[t][id1] = ellipseinterpolate(start,end,t-t1+1,t2-t)
+            if DEBUG: print "set tracks[%d][%d] = "%(t,id1) + str(self.tracks[t][id1])
 
         # replace identity id2 in frames t2 thru death of id2 with id1
         for t in range(t2,len(self.tracks)):
@@ -468,6 +504,10 @@ class Hindsight:
 
         if d1 < d2:
 
+            if DEBUG: print "d1 = %f < d2 = %f"%(d1,d2)
+            if DEBUG: print "replacing id2 = %d with id1 = %d from t2 = %d on"%(id2,id1,t2)
+            if DEBUG: print "replacing id3 = %d with id2 = %d from t2 = %d on"%(id3,id2,t2)
+
             # from t2 to end
             for t in range(t2,len(self.tracks)):
                 if (not self.tracks[t].hasItem(id2)) and \
@@ -489,17 +529,24 @@ class Hindsight:
             d3 = self.milestones.getdeathframe(id3)
 
             # delete id3
+            if DEBUG: print "Deleting id3 = %d"%id3
             self.milestones.deleteid(id3)
             # recycle this id
             self.tracks.RecycleId(id3)
 
             # set id1 to die when id2 died
+            if DEBUG: print "Setting death of id1 = %d to %f"%(id1,d2)
             self.milestones.setdeath(id1,d2)
             
             # set id2 to die when id3 died
+            if DEBUG: print "Setting death of id2 = %d to %f"%(id2,d3)
             self.milestones.setdeath(id2,d3)
 
         else:
+
+            if DEBUG: print "d1 = %f >= d2 = %f"%(d1,d2)
+            if DEBUG: print "replacing id3 = %d with id1 = %d from t2 = %d on"%(id3,id1,t2)
+
             
             # from t2 to end
             for t in range(t2,len(self.tracks)):
@@ -514,11 +561,13 @@ class Hindsight:
             d3 = self.milestones.getdeathframe(id3)
                 
             # delete id3
+            if DEBUG: print "Deleting id3 = %d"%id3
             self.milestones.deleteid(id3)
             # recycle this id
             self.tracks.RecycleId(id3)
 
             # id1 now dies when id3 died
+            if DEBUG: print "Setting death of id1 = %d to %f"%(id1,d3)
             self.milestones.setdeath(id1,d3)
 
         return True
@@ -614,10 +663,10 @@ class Hindsight:
         for t in range(t1,t2):
             
             # delete lastborn
+            if DEBUG: print 'deleting target %d from frame %d: '%(lastborn,t) + str(self.tracks[t][lastborn])
             tmp = self.tracks[t].pop(lastborn)
             # replace id2 with merged_target
             merged_target[t-t1].identity = firstborn
-            if DEBUG: print 'deleting target %d from frame %d: '%(lastborn,t) + str(self.tracks[t][lastborn])
             if DEBUG: print 'replacing target %d in frame %d: '%(firstborn,t) + str(self.tracks[t][firstborn])
             if DEBUG: print 'with: ' + str(merged_target[t-t1])
 
@@ -664,6 +713,7 @@ class Hindsight:
             t1 = pair[1]
             merged_targets[pair] = []
             costs[pair] = -num.inf
+            if DEBUG: print 'merge costs for id2 = %d'%id2
             for t in range(t1,t2):
 
                 if DEBUG: print 'computing merge cost for frame %d'%t
@@ -671,6 +721,7 @@ class Hindsight:
                 # get the connected component image
                 (cc,dfore) = self.cc(t)
                 ccelements = num.unique(cc)
+                if DEBUG: print 'connected components in frame t:'
                 if DEBUG:
                     for ccelement in ccelements:
                         (tmp1,tmp2) = num.where(cc==ccelement)
@@ -750,9 +801,13 @@ class Hindsight:
 
         possible = set([])
         
+        if len(possibleid2s) == 0:
+            if DEBUG: print 'no id2s close enough to id3=%d in frame t2-1=%d'%(id3,t2-1)
+            return possible
+
         # loop through possible frames t1 that id1 dies
         t3 = max(t2-int(params.mergeddetection_length)-1,-1)
-        if DEBUG: print 't3 = ' + str(t3) + 't2 = ' + str(t2)
+        if DEBUG: print 't3 = ' + str(t3) + ', t2 = ' + str(t2)
         t3 = int(t3)
         t2 = int(t2)
         for t1 in range(t2-1,t3,-1):

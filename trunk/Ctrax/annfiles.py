@@ -10,6 +10,7 @@ import shutil
 
 from version import __version__
 from version import DEBUG_ANN as DEBUG
+from version import DEBUG_HINDSIGHT
 from params import params
 import ellipsesk as ell
 import pickle
@@ -1178,16 +1179,16 @@ class AnnotationFile:
     def GetNewId(self):
         if len(self.recycledids) > 0:
             newid = self.recycledids.pop()
-            if DEBUG: print "Recycled id %d"%newid
+            if DEBUG_HINDSIGHT: print "Recycled id %d"%newid
         else:
             newid = params.nids
-            if DEBUG: print "Used new id %d"%newid
+            if DEBUG_HINDSIGHT: print "Used new id %d"%newid
             params.nids+=1
         return newid
 
     def RecycleId(self,id):
         self.recycledids.append(id)
-        if DEBUG: print "Recycling id %d"%id
+        if DEBUG_HINDSIGHT: print "Recycling id %d"%id
 
     def rename_file(self,newfilename=None):
         oldfile = self.file

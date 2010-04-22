@@ -23,7 +23,7 @@ import wx
 from wx import xrc
 import numpy as num
 
-from version import __version__, DEBUG
+from version import __version__, DEBUG, DEBUG_REPEATABLE_BEHAVIOR
 import annfiles as annot
 import batch
 import bg
@@ -100,7 +100,11 @@ class CtraxApp( algorithm.CtraxAlgorithm ): # eventually inherits from wx.App
         else:
             if (not hasattr(self,'ann_filename')) or (self.ann_filename is None):
                 # choose ann file if not already specified
-                self.ChooseAnnFile()
+                didopen = self.ChooseAnnFile()
+                if not didopen:
+                    wx.MessageBox( "No ann file chosen. Aborting open.", 
+                                   "No ann file chosen", wx.ICON_WARNING )
+                    return
             #try:
             self.OpenMovie()
             self.UpdateStatusMovie()
@@ -317,7 +321,10 @@ instead, where <basename> is the base name of the movie.\n"
                 break
             # note that this should not happen if not in interactive mode
             # or in batch mode
-            self.ChooseAnnFile()
+            didopen = self.ChooseAnnFile()
+            if not didopen:
+                wx.MessageBox( "No ann file chosen. Using default: " + self.ann_filename,
+                               "No ann file chosen", wx.ICON_WARNING )
 
         if params.interactive and self.ann_file.IsAnnData():
             self.menu.Check( xrc.XRCID("menu_playback_show_ann"), True )
@@ -336,13 +343,15 @@ instead, where <basename> is the base name of the movie.\n"
         defaultFile = self.file + '.ann'
         dlg = wx.FileDialog( self.frame, "Annotation File", defaultDir, defaultFile, "Annotation files (*.ann)|*.ann", wx.SAVE )
 
-        if dlg.ShowModal() == wx.ID_OK:
+        retval = dlg.ShowModal() == wx.ID_OK
+        if retval:
             ann_file = dlg.GetFilename()
             ann_dir = dlg.GetDirectory()
         else:
             ann_file = defaultFile
             ann_dir = defaultDir
         self.ann_filename = os.path.join( ann_dir, ann_file )
+        return retval
 
     def OnOpen( self, evt ):
         """Movie file selection dialog."""
@@ -364,11 +373,22 @@ instead, where <basename> is the base name of the movie.\n"
 
         if didchoose:
 
-            self.ChooseAnnFile()
+            didchoose = self.ChooseAnnFile()
+            
+        if didchoose:
+
             # open movie
             self.OpenMovie()
             # show movie name in status bar
             self.UpdateStatusMovie()
+
+        else:
+
+            wx.MessageBox( "No ann file chosen. Aborting open.", 
+                           "No ann file chosen", wx.ICON_WARNING )
+
+            
+
 
     def OnLoadSettings( self, evt ):
         defaultDir = self.dir
@@ -1154,6 +1174,11 @@ def main():
         # redirect to a window
         args = ()
         kw = dict(redirect=True,filename='')
+
+    # for debugging only: reseed the random number generator at 0 for repeatable behavior
+    if DEBUG_REPEATABLE_BEHAVIOR:
+        num.random.seed(0)
+
 
     app = CtraxApp( *args, **kw )
     app.MainLoop()
