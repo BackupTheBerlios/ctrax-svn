@@ -13,6 +13,14 @@
 # we need to import pyglet.media before scipy.linalg.decomp is 
 # imported by kcluster, as this seems to cause have_avbin to be false
 # on windows
+# and now we need to import ctypes before media because this seems to 
+# be necessary to be able to find the avbin dll on windows. 
+# man!
+import ctypes
+import sys
+if sys.platform == 'win32' or sys.platform == 'cygwin':
+    avbin = ctypes.cdll.avbin
+
 import pyglet.media as media
 
 import os # use os for manipulating path names
@@ -338,6 +346,7 @@ instead, where <basename> is the base name of the movie.\n"
 
         if params.interactive:
 	    self.InitializeFrameSlider()
+            self.OnResize()
 
     def ChooseAnnFile(self,evt=None):
         # choose an annotation file
@@ -680,7 +689,7 @@ instead, where <basename> is the base name of the movie.\n"
             if self.tracking:
                 self.rate_text.SetValue("Refresh Period: %d fr"%params.framesbetweenrefresh)
 
-    def OnResize( self, evt ):
+    def OnResize( self, evt=None ):
         """Window resized. Repaint in new window size."""
         if evt is not None: evt.Skip()
         self.frame.Layout()

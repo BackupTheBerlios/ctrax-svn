@@ -173,6 +173,13 @@ class Ellipse:
     def compute_area(self):
         self.area = self.size.width*self.size.height*num.pi*4.
 
+    def isnan(self):
+        return (num.isnan(self.center.x) or \
+                    num.isnan(self.center.y) or \
+                    num.isnan(self.size.width) or \
+                    num.isnan(self.size.height) or \
+                    num.isnan(self.angle) )
+
 class TargetList:
 # container for targets
     def __init__( self ):

@@ -288,6 +288,8 @@ class Parameters:
         self.mergeddetection_length = 50
         self.splitdetection_cost = 40.
         self.splitdetection_length = 50
+        self.maxdcentersextra = 3.
+        self.bigboundingboxextra = 2.
 
         # Drawing/Display parameters
 

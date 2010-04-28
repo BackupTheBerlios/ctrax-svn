@@ -177,15 +177,16 @@ def weightedregionprops(L,ncc,dfore):
     return ellipses
 
 def getboundingboxbig(ellipse,sz):
-    # returns a box that has width and height 2*max major axis length
-    # around the center of the ellipse
-    r1 = num.floor(ellipse.center.y-params.maxshape.major*4)
+    # returns a box that has width and height ellipse major axis length
+    # times (1 + params.bigboundinggboxextra) around the center of the ellipse
+    major = ellipse.major * 4. * (1. + params.bigboundingboxextra)
+    r1 = num.floor(ellipse.center.y-major)
     if r1 < 0: r1 = 0
-    r2 = num.ceil(ellipse.center.y+params.maxshape.major*4)+1
+    r2 = num.ceil(ellipse.center.y+major)+1
     if r2 > sz[0]: r2 = sz[0]
-    c1 = num.floor(ellipse.center.x-params.maxshape.major*4)
+    c1 = num.floor(ellipse.center.x-major*4)
     if c1 < 0: c1 = 0
-    c2 = num.ceil(ellipse.center.x+params.maxshape.major*4)+1
+    c2 = num.ceil(ellipse.center.x+major*4)+1
     if c2 > sz[1]: c2 = sz[1]
     return (r1,r2,c1,c2)
 
@@ -251,13 +252,14 @@ def trylowerthresh(ellipses,i,L,dfore):
 
 def findclosecenters(ellipses,i):
     # maximum distance between centers
-    if num.isinf(params.maxshape.major):
-        maxmajor = 0.
-        for ell in ellipses:
-            maxmajor = max(maxmajor,ell.major)
-    else:
-        maxmajor = params.maxshape.major
-    maxdmergecenter = maxmajor*4+ellipses[i].minor*2
+    #if num.isinf(params.maxshape.major):
+    #    maxmajor = 0.
+    #    for ell in ellipses:
+    #        maxmajor = max(maxmajor,ell.major)
+    #else:
+    #    maxmajor = params.maxshape.major
+    maxdmergecenter = ellipses[i].major*4.*(1.+params.maxdcentersextra)
+    #maxdmergecenter = maxmajor*4+ellipses[i].minor*2
     #print 'maxdmergecenter = ' + str(maxdmergecenter)
     
     # indices other than i
