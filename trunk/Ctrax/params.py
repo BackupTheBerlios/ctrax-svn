@@ -368,7 +368,7 @@ class GUIConstants:
         self.info = AboutDialogInfo()
         self.info.SetName( "Ctrax" )
         self.info.SetVersion( __version__ )
-        self.info.SetCopyright( "2007-2008, Caltech ethomics project" )
+        self.info.SetCopyright( "2007-2010, Caltech ethomics project" )
         self.info.SetDescription( """The Caltech Multiple Fly Tracker.
 
 http://www.dickinson.caltech.edu/ctrax

@@ -746,7 +746,7 @@ def fixlarge(ellipses,L,dfore):
             ellipses[i].area = 0
             isdone[i] = True
         else:
-            #print 'trying to split ellipse: ' + str(ellipses[i])
+            if DEBUG: print 'trying to split ellipse: ' + str(ellipses[i])
             isdone = trysplit(ellipses,i,isdone,L,dfore)
     deleteellipses(ellipses,L)
 

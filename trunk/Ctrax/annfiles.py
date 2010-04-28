@@ -622,14 +622,8 @@ class AnnotationFile:
         if fileout is None:
             fileout = self.file
 
-        for ellipse in ellipse_list.itervalues():
-            fileout.write( '%f\t%f\t%f\t%f\t%f\t%d\t'%(ellipse.center.x,
-                                                       ellipse.center.y,
-                                                       ellipse.size.width,
-                                                       ellipse.size.height,
-                                                       ellipse.angle,
-                                                       ellipse.identity) )
-        fileout.write( "\n" )
+        string = self.write_ellipses_string( ellipse_list )
+        fileout.write( "%s\n"%string )
 
     def write_ellipses_string( self, ellipse_list):
         """Write one frame of data to string."""

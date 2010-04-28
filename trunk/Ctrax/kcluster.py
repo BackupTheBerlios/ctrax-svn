@@ -68,7 +68,6 @@ def gmminit(x,k,weights=None,kmeansiter=20,kmeansthresh=.001):
     # allocate covariance and priors
     S = num.zeros((d,d,k))
     priors = num.zeros(k)
-
     if num.any(weights) == False:
         # unweighted
         for i in range(k):
@@ -88,7 +87,13 @@ def gmminit(x,k,weights=None,kmeansiter=20,kmeansthresh=.001):
             nidx = num.sum(num.double(idx==i))
             priors[i] = num.sum(weights[idx==i])
             # compute mean for each cluster
-            mu[i,:] = num.sum(weights[idx==i]*x[idx==i,:],axis=0)/priors[i]
+            try:
+                # can raise 'invalid index'?
+                mu[i,:] = num.sum(weights[idx==i]*x[idx==i,:],axis=0)/priors[i]
+            except IndexError:
+                print( "i %d priors[i] %f"%(i,priors[i]) )
+                print( idx )
+                raise
             # compute covariance for each cluster
             diffs = x[idx==i,:] - mu[i,:].reshape(1,d)
             diffs *= num.sqrt(weights[idx==i])

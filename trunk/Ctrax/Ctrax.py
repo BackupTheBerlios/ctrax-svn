@@ -55,6 +55,8 @@ class CtraxApp( algorithm.CtraxAlgorithm ): # eventually inherits from wx.App
 	"""
 	Start up the Ctrax GUI
 	"""
+#        self.RestoreStdio()
+
         # parse commandline
         self.ParseCommandLine()
 

@@ -22,9 +22,10 @@ try:
     from FlyMovieFormat import NoMoreFramesException
 except ImportError:
     class NoMoreFramesException (Exception): pass
-import motmot.ufmf.ufmf as ufmf
-
-#import motmot.imops.imops as imops # part of Motmot
+try:
+    import motmot.ufmf.ufmf as ufmf
+except ImportError:
+    pass
 
 class Movie:
     """Generic interface for all supported movie types.
@@ -371,9 +372,13 @@ class Avi:
         self.issbfmf = False
  
         # need to open in binary mode to support Windows:
-        # self.file = open( filename, 'r' )
         self.file = open( filename, 'rb' )
-        self.read_header()
+        try:
+            self.read_header()
+        except Exception, details:
+            print( "error reading uncompressed AVI:" )
+            print( details )
+            raise
         
         # added to help masquerade as FMF file:
         self.filename = filename
@@ -543,7 +548,7 @@ class Avi:
             self.padwidth = 1
             self.padheight = 0
         else:
-            raise TypeError("Invalid AVI file. Frame size does not match width * height * bytesperpixel.")
+            raise TypeError("Invalid AVI file. Frame size (%d) does not match width * height * bytesperpixel (%d*%d*%d)."%(frame_size,self.width,self.height,depth))
 
         if self.isindexed:
             self.format = 'INDEXED'
