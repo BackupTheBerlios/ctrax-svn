@@ -471,9 +471,10 @@ class AnnotationFile:
         #if DEBUG: print "get_frame %d, framestracked = [%d,%d], framesbuffered = [%d,%d], frameswritten = [%d,%d]"%(f,self.firstframetracked,self.lastframetracked,self.firstframebuffered,self.lastframebuffered,self.firstframewritten,self.lastframewritten)
         if f < self.firstframebuffered or f > self.lastframebuffered:
 
-            if DEBUG: print "get_frame: Need to read frame %d from file. buffered frames = [%d,%d], tracked frames = [%d,%d]"%(f,self.firstframebuffered,self.lastframebuffered,self.firstframetracked,self.lastframetracked)
+            if DEBUG: print "get_frame: Need to read frame " + str(f) + " from file. buffered frames = [%d,%d], tracked frames = [%d,%d]"%(self.firstframebuffered,self.lastframebuffered,self.firstframetracked,self.lastframetracked)
 
             # read into buffer
+            #print 'f = ' + str(f) + ", firstframetracked = " + str(self.firstframetracked) + ', lookupinterval = ' + str(self.lookupinterval)
             i = int(num.floor( (f - self.firstframetracked) / self.lookupinterval ))
 
             if DEBUG: print "i = " + str(i)
@@ -623,7 +624,7 @@ class AnnotationFile:
             fileout = self.file
 
         string = self.write_ellipses_string( ellipse_list )
-        fileout.write( "%s\n"%string )
+        fileout.write( "%s"%string )
 
     def write_ellipses_string( self, ellipse_list):
         """Write one frame of data to string."""

@@ -304,6 +304,7 @@ class Hindsight:
     
         # add in tracks in frames t1 thru t2-1
         # by interpolating
+        if DEBUG: print 't1 = ' + str(t1) + ', id1 = ' + str(id1)
         start = self.tracks[t1-1][id1]
         end = self.tracks[t2][id2]
         if DEBUG: print "matching id1=%d in frame t1-1=%d and id2=%d in frame t2=%d"%(id1,t1-1,id2,t2)
