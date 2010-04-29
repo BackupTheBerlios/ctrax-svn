@@ -899,7 +899,7 @@ class TrackingSettings:
         if not(hasattr(self,'obs_filtered') and self.obs_filtered.issame(self.show_frame)):
             wx.BeginBusyCursor()
             wx.Yield()
-            obs_filtered = ell.find_ellipses(self.bg_imgs.dfore,self.bg_imgs.bw,True)
+            obs_filtered = ell.find_ellipses(self.bg_imgs.dfore,self.bg_imgs.cc,self.bg_imgs.ncc,True)
             wx.EndBusyCursor()
             self.obs_filtered = StoredObservations(obs_filtered,self.show_frame)
 
@@ -912,7 +912,7 @@ class TrackingSettings:
             if not(hasattr(self,'obs_unfiltered') and self.obs_unfiltered.issame(self.show_frame)):
                 wx.BeginBusyCursor()
                 wx.YieldIfNeeded()
-                obs_unfiltered = ell.find_ellipses(self.bg_imgs.dfore,self.bg_imgs.bw,False)
+                obs_unfiltered = ell.find_ellipses(self.bg_imgs.dfore,self.bg_imgs.cc,self.bg_imgs.ncc,False)
                 wx.EndBusyCursor()
                 self.obs_unfiltered = StoredObservations(obs_unfiltered,self.show_frame)
             return self.obs_unfiltered.obs
@@ -932,7 +932,7 @@ class TrackingSettings:
             wx.BeginBusyCursor()
             wx.YieldIfNeeded()
             (obs_unfiltered,issmall,islarge,didlowerthresh,didmerge,diddelete,didsplit) = \
-                                         ell.find_ellipses_display(self.bg_imgs.dfore,self.bg_imgs.bw)
+                                         ell.find_ellipses_display(self.bg_imgs.dfore,self.bg_imgs.cc,self.bg_imgs.ncc)
             wx.EndBusyCursor()
             self.obs_unfiltered = StoredObservations(obs_unfiltered,self.show_frame,
                                                      issmall,islarge,didlowerthresh,
@@ -948,7 +948,9 @@ class TrackingSettings:
     def GetBgImage(self):
         
         if not (self.bg_img_frame == self.show_frame):
-            (self.bg_imgs.dfore,self.bg_imgs.bw) = self.bg_imgs.sub_bg(self.show_frame)
+            (self.bg_imgs.dfore,self.bg_imgs.bw,
+             self.bg_imgs.cc,self.bg_imgs.ncc) = \
+             self.bg_imgs.sub_bg(self.show_frame)
             self.bg_img_frame = self.show_frame
         
     def GetObsPrev(self):
@@ -956,8 +958,8 @@ class TrackingSettings:
             wx.BeginBusyCursor()
             wx.Yield()
             prevframe = num.maximum(0,self.show_frame-1)
-            (dfore,bw) = self.bg_imgs.sub_bg(prevframe)
-            obs_filtered = ell.find_ellipses(dfore,bw,True)
+            (dfore,bw,cc,ncc) = self.bg_imgs.sub_bg(prevframe)
+            obs_filtered = ell.find_ellipses(dfore,cc,ncc,True)
             wx.EndBusyCursor()
             self.obs_prev = StoredObservations(obs_filtered,self.show_frame)
         return self.obs_prev.obs

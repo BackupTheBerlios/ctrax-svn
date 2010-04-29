@@ -269,35 +269,14 @@ class TargetList:
 # code for estimating connected component observations
 import estconncomps as est
 
-def find_ellipses( dfore , bw, dofix=True ):
+def find_ellipses( dfore , L, ncc, dofix=True ):
     """Fits ellipses to connected components in image.
     Returns an EllipseList, each member representing
     the x,y position and orientation of a single fly."""
 
     # check number of above-threshold pixels
-    rows, cols = num.nonzero( bw )
+    #rows, cols = num.nonzero( bw )
 
-    # store current time to find out how long computing ccs takes
-    last_time = time.time()
-
-    # find connected components
-    (L,ncc) = meas.label(bw)
-
-    # make sure there aren't too many connected components
-    if ncc > params.max_n_clusters:
-        warn( "too many objects found (>%d); truncating object search"%(params.max_n_clusters) )
-        # for now, just throw out the last connected components.
-        # in the future, we can sort based on area and keep those
-        # with the largest area. hopefully, this never actually
-        # happens.
-        ncc = params.max_n_clusters
-        L[L >= ncc] = 0
-
-    #print 'time to compute connected components: %.2f'%(time.time()-last_time)
-
-    # store current time to find out how long fitting ellipses takes
-    last_time = time.time()
-        
     # fit ellipses
     ellipses = est.weightedregionprops(L,ncc,dfore)
 
@@ -336,16 +315,16 @@ def find_ellipses( dfore , bw, dofix=True ):
 
     return ellipses
 
-def find_ellipses2( dfore , bw, dofix=True ):
+def find_ellipses2( dfore , L, ncc, dofix=True ):
     """Fits ellipses to connected components in image.
     Returns an EllipseList, each member representing
     the x,y position and orientation of a single fly."""
 
     # check number of above-threshold pixels
-    rows, cols = num.nonzero( bw )
+    #rows, cols = num.nonzero( bw )
 
     # find connected components
-    (L,ncc) = meas.label(bw)
+    #(L,ncc) = meas.label(bw)
     
     # make sure there aren't too many connected components
     if ncc > params.max_n_clusters:
@@ -400,10 +379,9 @@ def est_shape( bg, tracking_settings_frame=None ):
                 progressbar.Destroy()
                 return False
         try:
-            (dfore,bw) = bg.sub_bg( frame )
+            (dfore,bw,L,ncc) = bg.sub_bg( frame )
         except:
             continue
-        (L,ncc) = meas.label(bw)
         ellipsescurr = est.weightedregionprops(L,ncc,dfore)
         ellipses += ellipsescurr
 
@@ -671,16 +649,16 @@ class EllipseFrame:
         for window in self.ellipse_windows:
             window.redraw(eraseBackground=eraseBackground)
 
-def find_ellipses_display( dfore , bw ):
+def find_ellipses_display( dfore , L, ncc ):
     """Fits ellipses to connected components in image.
     Returns an EllipseList, each member representing
     the x,y position and orientation of a single fly."""
 
     # check number of above-threshold pixels
-    rows, cols = num.nonzero( bw )
+    #rows, cols = num.nonzero( bw )
 
     # find connected components
-    (L,ncc) = meas.label(bw)
+    #(L,ncc) = meas.label(bw)
     
     # make sure there aren't too many connected components
     if ncc > params.max_n_clusters:

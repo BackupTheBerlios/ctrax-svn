@@ -290,6 +290,8 @@ class Parameters:
         self.splitdetection_length = 50
         self.maxdcentersextra = 3.
         self.bigboundingboxextra = 2.
+        # maximum number of frames to buffer for faster hindsight
+        self.maxnframesbuffer = 100
 
         # Drawing/Display parameters
 

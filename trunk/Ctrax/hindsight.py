@@ -754,7 +754,7 @@ class Hindsight:
     def cc(self,t):
 
         # perform background subtraction
-        (dfore,bw) = self.bg.sub_bg(t+params.start_frame)
+        (dfore,bw) = self.bg.sub_bg(t+params.start_frame,docomputecc=False)
         
         # for each pixel, find the target it most likely belongs to
         (y,x) = num.where(bw)
