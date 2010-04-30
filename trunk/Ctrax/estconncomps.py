@@ -7,6 +7,7 @@ import kcluster2d as kcluster
 from params import params
 # this uses its own debug
 from version import DEBUG_ESTCONNCOMPS as DEBUG
+from version import DEBUG_TRACKINGSETTINGS
 
 #class ShapeParams:
 #    def __init__(self,major=0,minor=0,area=0,ecc=0):
@@ -415,7 +416,7 @@ def trydelete(ellipses,i,issmall):
         ellipses[i].area = 0
         issmall[i] = False
 
-def deleteellipses(ellipses,L):
+def deleteellipses(ellipses,L,doerase=False):
     i = 0
     while True:
         if i >= len(ellipses):
@@ -423,8 +424,9 @@ def deleteellipses(ellipses,L):
         if ellipses[i].area == 0:
             ellipses.pop(i)
             # fix the connected components labels
-            L[L==i+1] = 0
-            L[L>i+1] = L[L>i+1]-1
+            if doerase:
+                L[L==i+1] = 0
+                L[L>i+1] = L[L>i+1]-1
         else:
             i+=1
 
@@ -761,7 +763,7 @@ def trymergedisplay(ellipses,issmall,i,L,dfore):
     
     # if there are no close centers, just return
     if len(closeinds) == 0:
-        return (False,num.array([]))
+        return (False,[])
 
     #print 'ellipses close to ellipse[%d] = '%i + str(ellipses[i])
     #for jtmp in closeinds:
@@ -785,55 +787,61 @@ def trymergedisplay(ellipses,issmall,i,L,dfore):
 
     # see if the penalty is small enough, if not, return
     if minmergepenalty >= params.maxpenaltymerge:
-        return (False,num.array([]))
+        return (False,[])
 
     # perform the merge
     canmergewith = closeinds[bestjmerge]
     #print 'merging with ellipse[%d] = '%closeinds[bestjmerge] + str(ellipses[closeinds[bestjmerge]])
+    mergedwith = ellipses[canmergewith].copy()
+    
     mergeellipses(ellipses,i,canmergewith,ellipsesmerge[bestjmerge],issmall,L)
     #print 'after mergeellipses, ellipses = '
     #for jtmp in range(len(ellipses)):
     #    print str(ellipses[jtmp])
 
-    return (True,canmergewith)
+    return (True,mergedwith)
 
 def fixsmalldisplay(ellipses,L,dfore):
     issmall = num.zeros(len(ellipses),dtype=bool)
+    ellsmall = []
     for i in range(len(ellipses)):
         issmall[i] = ellipses[i].area < params.minshape.area
+        if issmall[i]:
+            ellsmall.append(ellipses[i].copy())
 
     # for returning
     retissmall = issmall.copy()
-    retdidlowerthresh = num.zeros(len(ellipses),dtype=bool)
+    retdidlowerthresh = []
     retdidmerge = []
-    for i in range(len(ellipses)):
-        retdidmerge.append(set([i]))
-    retdiddelete = num.zeros(len(ellipses),dtype=bool)
+    retdiddelete = []
 
     while num.any(issmall):
         i = num.where(issmall)[0]
         i = i[0]
         didmerge = False
+        ellipse0 = ellipses[i].copy()
+
         (issmall[i],ellipselowerthresh) = trylowerthresh(ellipses,i,L,dfore)
         if (retissmall[i] == True) and (issmall[i] == False):
+            retdidlowerthresh.append(ellipse0)
             ellipses[i] = ellipselowerthresh
-            retdidlowerthresh[i] = True
                
         if issmall[i]:
             (didmerge,mergedwith) = trymergedisplay(ellipses,issmall,i,L,dfore)
             if didmerge:
-                retdidmerge[i] = retdidmerge[i] | retdidmerge[mergedwith]
+                retdidmerge.append(ellipse0)
+                retdidmerge.append(mergedwith)
 
         if issmall[i] and (didmerge==False):
             # set ellipses[i] to be ellipselowerthresh
             ellipses[i] = ellipselowerthresh.copy()
             trydelete(ellipses,i,issmall)
             if ellipses[i].area == 0:
-                retdiddelete[i] = True
+                retdiddelete.append(ellipse0)
             issmall[i] = False
-    deleteellipses(ellipses,L)
+    deleteellipses(ellipses,L,doerase=False)
 
-    return (retissmall,retdidlowerthresh,retdidmerge,retdiddelete)
+    return (ellsmall,retdidlowerthresh,retdidmerge,retdiddelete)
 
 def fixlargedisplay(ellipses,L,dfore):
 
@@ -841,14 +849,14 @@ def fixlargedisplay(ellipses,L,dfore):
 
     # whether or not we have tried to fix the ellipse
     isdone = num.zeros(len(ellipses),dtype=bool)
+    elllarge = []
     # set to True if the ellipse is not large
     for i in range(len(ellipses)):
         isdone[i] = ellipses[i].area <= params.maxshape.area
-
+        if not isdone[i]:
+            elllarge.append(ellipses[i].copy())
     retislarge = isdone.copy()
     retdidsplit = []
-    for i in range(len(ellipses)):
-        retdidsplit.append(set([i]))
         
     while True:
         # find an ellipse that is not done
@@ -868,12 +876,14 @@ def fixlargedisplay(ellipses,L,dfore):
             isdone = trysplit(ellipses,i,isdone,L,dfore)
 
         newlen = len(ellipses)
-        newellipses = set(range(oldlen,newlen))
-        if i >= len(retislarge):
-            for j in range(len(retislarge)):
-                if i in retdidsplit[j]:
-                    break
-        else:
-            j = i
-        retdidsplit[j] = retdidsplit[j] | newellipses
-    return (retislarge,retdidsplit)
+        if newlen > oldlen:
+            retdidsplit.append(i)
+            retdidsplit.extend(range(oldlen,newlen))
+    
+    retdidsplit = set(retdidsplit)
+    ellsplit = []
+    for i in retdidsplit:
+        ellsplit.append(ellipses[i].copy())
+    if DEBUG_TRACKINGSETTINGS: print 'in fixlargedisplay, ellsplit = ' + str(ellsplit)
+
+    return (elllarge,ellsplit)

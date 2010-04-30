@@ -11,6 +11,7 @@ from params import params
 import imagesk
 import matchidentities as m_id
 import wx
+from version import DEBUG_TRACKINGSETTINGS
 
 #import pylab
 
@@ -274,9 +275,6 @@ def find_ellipses( dfore , L, ncc, dofix=True ):
     Returns an EllipseList, each member representing
     the x,y position and orientation of a single fly."""
 
-    # check number of above-threshold pixels
-    #rows, cols = num.nonzero( bw )
-
     # fit ellipses
     ellipses = est.weightedregionprops(L,ncc,dfore)
 
@@ -319,22 +317,6 @@ def find_ellipses2( dfore , L, ncc, dofix=True ):
     """Fits ellipses to connected components in image.
     Returns an EllipseList, each member representing
     the x,y position and orientation of a single fly."""
-
-    # check number of above-threshold pixels
-    #rows, cols = num.nonzero( bw )
-
-    # find connected components
-    #(L,ncc) = meas.label(bw)
-    
-    # make sure there aren't too many connected components
-    if ncc > params.max_n_clusters:
-        warn( "too many objects found (>%d); truncating object search"%(params.max_n_clusters) )
-        # for now, just throw out the last connected components.
-        # in the future, we can sort based on area and keep those
-        # with the largest area. hopefully, this never actually
-        # happens.
-        ncc = params.max_n_clusters
-        L[L >= ncc] = 0
         
     # fit ellipses
     ellipses = est.weightedregionprops(L,ncc,dfore)
@@ -654,32 +636,36 @@ def find_ellipses_display( dfore , L, ncc ):
     Returns an EllipseList, each member representing
     the x,y position and orientation of a single fly."""
 
-    # check number of above-threshold pixels
-    #rows, cols = num.nonzero( bw )
-
-    # find connected components
-    #(L,ncc) = meas.label(bw)
-    
-    # make sure there aren't too many connected components
-    if ncc > params.max_n_clusters:
-        warn( "too many objects found (>%d); truncating object search"%(params.max_n_clusters) )
-        # for now, just throw out the last connected components.
-        # in the future, we can sort based on area and keep those
-        # with the largest area. hopefully, this never actually
-        # happens.
-        ncc = params.max_n_clusters
-        L[L >= ncc] = 0
-        
     # fit ellipses
     ellipses = est.weightedregionprops(L,ncc,dfore)
 
+    ellipsescopy = []
+    for ell in ellipses:
+        ellipsescopy.append(ell.copy())
+
+    if DEBUG_TRACKINGSETTINGS: print 'before fixing, ellipses = ' + str(ellipses) + ', len = ' + str(len(ellipses))
+
     # check if any are small, and [try to] fix those
-    (issmall,didlowerthresh,didmerge,diddelete) = est.fixsmalldisplay(ellipses,L,dfore)
+    (ellsmall,didlowerthresh,didmerge,diddelete) = est.fixsmalldisplay(ellipses,L,dfore)
+
+    if DEBUG_TRACKINGSETTINGS: print 'after fixing small ellipses, ellipses = ' + str(ellipses) + ', len = ' + str(len(ellipses))
+    if DEBUG_TRACKINGSETTINGS: print 'ellsmall = ' + str(ellsmall)
+    if DEBUG_TRACKINGSETTINGS: print 'didlowerthresh = ' + str(didlowerthresh)
+    if DEBUG_TRACKINGSETTINGS: print 'didmerge = ' + str(didmerge)
+    if DEBUG_TRACKINGSETTINGS: print 'diddelete = ' + str(diddelete)
 
     # check if any are large, and [try to] fix those
-    (islarge,didsplit) = est.fixlargedisplay(ellipses,L,dfore)
+    (elllarge,didsplit) = est.fixlargedisplay(ellipses,L,dfore)
+
+    if DEBUG_TRACKINGSETTINGS: print 'after fixing large ellipses, ellipses = ' + str(ellipses) + ', len = ' + str(len(ellipses))
+    if DEBUG_TRACKINGSETTINGS: print 'elllarge = ' + str(elllarge)
+    if DEBUG_TRACKINGSETTINGS: print 'didsplit = ' + str(didsplit)
+    if DEBUG_TRACKINGSETTINGS: print 'ellsmall = ' + str(ellsmall)
+    if DEBUG_TRACKINGSETTINGS: print 'didlowerthresh = ' + str(didlowerthresh)
+    if DEBUG_TRACKINGSETTINGS: print 'didmerge = ' + str(didmerge)
+    if DEBUG_TRACKINGSETTINGS: print 'diddelete = ' + str(diddelete)    
     
-    return (ellipses,issmall,islarge,didlowerthresh,didmerge,diddelete,didsplit)
+    return (ellipsescopy,ellsmall,elllarge,didlowerthresh,didmerge,diddelete,didsplit)
 
 def draw_ellipses( targets, thickness=1, step=10*num.pi/180., colors=params.colors ):
     """Draw ellipses on a color image (MxNx3 numpy array).

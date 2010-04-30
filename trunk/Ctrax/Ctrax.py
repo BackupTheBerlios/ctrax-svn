@@ -1195,4 +1195,8 @@ def main():
     app.MainLoop()
 
 if __name__ == '__main__':
+    #import hotshot
+    #prof = hotshot.Profile("hotshot_ctrax_stats")
+    #prof.runcall(main)
+    #prof.close()
     main()
