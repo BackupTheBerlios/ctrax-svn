@@ -1,6 +1,6 @@
 Ctrax: The Caltech Multiple Fly Tracker
 
-(c) 2007-2009 The Caltech Ethomics Project
+(c) 2007-2010 The Caltech Ethomics Project
 http://www.dickinson.caltech.edu/ctrax
 branson@caltech.edu
 

@@ -1,24 +1,71 @@
-2009-04-17 Kristin Branson
+2010-05-03 Kristin Branson
+
+* Version 0.1.5.5 released. 
+
+2010-05-03 Kristin Branson
+
+* Upped version number, migrated changes to py2exe version, made new Windows release. 
+
+2010-05-03 Kristin Branson
+
+* Fixed some bugs in tracking_settings.py -- showing e.g. split ellipses after fixed ellipses was not working correctly. 
+
+2010-04-30 Kristin Branson
+
+* Fixed some bugs in tracking_settings.py -- showing e.g. deleted ellipses was not working correctly. 
+
+2010-04-29 Kristin Branson
+
+* Fixed bug detecting small connected components: numpy.where returns a long not an int. 
+
+2010-04-29 Kristin Branson
+
+* Implemented buffering of background subtraction results. This should make merging and splitting in hindsight faster. 
+
+2010-04-28 Kristin Branson
+
+* Extra \n being written to annfile after every frame of new tracks. This was causing problems when the trajectories were read in from file; trajectories were being detected as dying every frame. 
+
+2010-04-28 Kristin Branson
+
+* * pyglet.media.avbin was not getting loaded correctly (DEP issue?). Added an extraneous "ctypes.cdll.LoadLibrary('avbin')" before the extraneous "import pyglet.media" at the top of Ctrax.py. 
+* Hopefully fixed frame slider being too long when Ctrax started by adding a call to OnResize() after the movie is opened. 
+* Fixed bug in splitting ellipses which occurred if clustering failed and returned NaNs. 
+* Removed some of the dependencies on maximum major axis length parameter. Now, actual major axis length is used instead. 
+* Fixed some issues with seeking for compressed movies using avbin. 
+
+2010-04-28 John Bender
+
+* small tweaks and bugfixes...
+
+2010-04-22 Kristin Branson
+
+* Modified behavior if "Cancel" hit when selecting annotation file. 
+* Modified REPEATABLE_BEHAVIOR behavior:
+  now just seeds with 0 at the beginning of the program. 
+* Added more DEBUG statements to hindsight.py
+
+2010-04-17 Kristin Branson
 
 * Version 0.1.5.4 released. 
 
-2009-04-17 Kristin Branson
+2010-04-17 Kristin Branson
 
 * Made py2exe version easier to maintain, hopefully. 
 
-2009-04-17 Kristin Branson
+2010-04-17 Kristin Branson
 
 * Migrated changes to py2exe. 
 
-2009-04-17 Kristin Branson
+2010-04-17 Kristin Branson
 
 * Re-organized code and data file locations. Stripped pkg_resources and setuptools from code. Now, Ctrax does not run from anywhere with the command "Ctrax" but instead with the command "Ctrax-script.py". Need to see how this affects things in Linux. 
 
-2009-04-16 Kristin Branson
+2010-04-16 Kristin Branson
 
 * Used Cython to speed up kcluster2d code. 
 
-2009-04-11 Kristin Branson
+2010-04-11 Kristin Branson
 
 * Version 0.1.5.3 released.
 
