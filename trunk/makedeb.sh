@@ -1,7 +1,7 @@
 #!/bin/bash
 
-cd ~/FLIES/code/Ctrax
-stdeb_run_setup --default-distribution hardy-ads
+cd $HOME/tracking/code/Ctrax
+stdeb_run_setup --default-distribution karmic-ads
 version=`cat version.txt`
 cd deb_dist/Ctrax-$version
 echo "**********************************************************"

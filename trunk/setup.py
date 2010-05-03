@@ -82,7 +82,6 @@ requires=['cython',
           ]
 
 setup( 
-    scripts=['Ctrax/Ctrax-script.py',],
     name="Ctrax",
     version=this_version,
     author="Caltech Ethomics Project",

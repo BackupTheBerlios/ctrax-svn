@@ -27,8 +27,9 @@ our project homepage:
 
 Files:
 
-Ctrax-VERSION-py2.5-linux-i686.egg is the Python 2.5 egg for 32-bit
-Linux systems. 
+Ctrax-VERSION.linux-x86_64.tar.gz is the 64-bit, x86 Linux built distribution of Ctrax. 
+
+python-ctrax_VERSION-1_amd64_karmic.deb is the Debian release file for 64-bit Ubuntu 9.10 (Karmic Koala). 
 
 ***********************************************************************
 
