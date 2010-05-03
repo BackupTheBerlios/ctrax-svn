@@ -275,12 +275,15 @@ def find_ellipses( dfore , L, ncc, dofix=True ):
     Returns an EllipseList, each member representing
     the x,y position and orientation of a single fly."""
 
+    if DEBUG_TRACKINGSETTINGS: print 'ncc = ' + str(ncc) + ', max(L) = ' + str(num.max(L)) + ', nnz(L) = ' + str(num.flatnonzero(L).shape) + ', sum(dfore) = ' + str(num.sum(num.sum(dfore)))
+
     # fit ellipses
     ellipses = est.weightedregionprops(L,ncc,dfore)
 
-    #print 'initial list of ellipses:'
-    #for i in range(len(ellipses)):
-    #    print 'ellipse[%d] = '%i + str(ellipses[i])
+    if DEBUG_TRACKINGSETTINGS:
+        print 'initial list of ellipses:'
+        for i in range(len(ellipses)):
+            print 'ellipse[%d] = '%i + str(ellipses[i])
 
     #print 'time to fit ellipses: %.2f'%(time.time() - last_time)
 
@@ -303,9 +306,10 @@ def find_ellipses( dfore , L, ncc, dofix=True ):
         # check if any are large, and [try to] fix those
         est.fixlarge(ellipses,L,dfore)
 
-        #print 'after fixing large, ellipses = \n'
-        #for i in range(len(ellipses)):
-        #    print 'ellipse[%d] = '%i + str(ellipses[i])
+        if DEBUG_TRACKINGSETTINGS:
+            print 'after fixing large, ellipses ='
+            for i in range(len(ellipses)):
+                print 'ellipse[%d] = '%i + str(ellipses[i])
 
         #print 'time to fix large ellipses: %.2f'%(time.time() - last_time)
 
@@ -637,6 +641,7 @@ def find_ellipses_display( dfore , L, ncc ):
     the x,y position and orientation of a single fly."""
 
     # fit ellipses
+    if DEBUG_TRACKINGSETTINGS: print 'ncc = ' + str(ncc) + ', max(L) = ' + str(num.max(L)) + ', nnz(L) = ' + str(num.flatnonzero(L).shape) + ', sum(dfore) = ' + str(num.sum(num.sum(dfore)))
     ellipses = est.weightedregionprops(L,ncc,dfore)
 
     ellipsescopy = []
@@ -644,6 +649,11 @@ def find_ellipses_display( dfore , L, ncc ):
         ellipsescopy.append(ell.copy())
 
     if DEBUG_TRACKINGSETTINGS: print 'before fixing, ellipses = ' + str(ellipses) + ', len = ' + str(len(ellipses))
+    if DEBUG_TRACKINGSETTINGS:
+        areasum = 0
+        for ell in ellipses:
+            areasum += ell.area
+        print 'summed area of ellipses = ' + str(areasum)
 
     # check if any are small, and [try to] fix those
     (ellsmall,didlowerthresh,didmerge,diddelete) = est.fixsmalldisplay(ellipses,L,dfore)
@@ -664,6 +674,13 @@ def find_ellipses_display( dfore , L, ncc ):
     if DEBUG_TRACKINGSETTINGS: print 'didlowerthresh = ' + str(didlowerthresh)
     if DEBUG_TRACKINGSETTINGS: print 'didmerge = ' + str(didmerge)
     if DEBUG_TRACKINGSETTINGS: print 'diddelete = ' + str(diddelete)    
+
+    if DEBUG_TRACKINGSETTINGS: print 'returning ellipsescopy = ' + str(ellipsescopy) + ', len = ' + str(len(ellipsescopy))
+    if DEBUG_TRACKINGSETTINGS:
+        areasum = 0
+        for ell in ellipsescopy:
+            areasum += ell.area
+        print 'summed area of ellipses = ' + str(areasum)
     
     return (ellipsescopy,ellsmall,elllarge,didlowerthresh,didmerge,diddelete,didsplit)
 

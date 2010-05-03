@@ -598,7 +598,7 @@ class TrackingSettings:
 
     def ShowImage(self):
 
-        print 'ShowImage ' + str(self.show_frame)
+        if DEBUG_TRACKINGSETTINGS: print 'ShowImage ' + str(self.show_frame)
 
         wx.Yield()
         wx.BeginBusyCursor()
@@ -609,14 +609,17 @@ class TrackingSettings:
         self.GetBgImage()
         
         if self.img_chosen == SHOW_UNFILTERED_OBSERVATIONS:
+            if DEBUG_TRACKINGSETTINGS: print 'SHOW_UNFILTERED_OBSERVATIONS'
             obs_unfiltered = self.GetObsUnfiltered()
             plot_linesegs = ell.draw_ellipses(obs_unfiltered)
             
         elif self.img_chosen == SHOW_FILTERED_OBSERVATIONS:
+            if DEBUG_TRACKINGSETTINGS: print 'SHOW_FILTERED_OBSERVATIONS'
             obs_filtered = self.GetObsFiltered()
             plot_linesegs = ell.draw_ellipses(obs_filtered)
             
         elif self.img_chosen == SHOW_SMALL_OBSERVATIONS:
+            if DEBUG_TRACKINGSETTINGS: print 'SHOW_SMALL_OBSERVATIONS'
             obs_unfiltered = self.GetObsUnfiltered()
             obs_small = []
             for obs in obs_unfiltered:
@@ -625,6 +628,7 @@ class TrackingSettings:
             plot_linesegs = ell.draw_ellipses(obs_small)
             
         elif self.img_chosen == SHOW_LARGE_OBSERVATIONS:
+            if DEBUG_TRACKINGSETTINGS: print 'SHOW_LARGE_OBSERVATIONS'
             obs_unfiltered = self.GetObsUnfiltered()
             obs_large = []
             for obs in obs_unfiltered:
@@ -633,23 +637,28 @@ class TrackingSettings:
             plot_linesegs = ell.draw_ellipses(obs_large)
 
         elif self.img_chosen == SHOW_DELETED_OBSERVATIONS:
+            if DEBUG_TRACKINGSETTINGS: print 'SHOW_DELETED_OBSERVATIONS'
             (obs_unfiltered,obs_deleted) = self.GetObsUnfiltered('diddelete')
             plot_linesegs = ell.draw_ellipses(obs_deleted)
 
         elif self.img_chosen == SHOW_SPLIT_OBSERVATIONS:
+            if DEBUG_TRACKINGSETTINGS: print 'SHOW_SPLIT_OBSERVATIONS'
             (obs_unfiltered,obs_split) = self.GetObsUnfiltered('didsplit')
             plot_linesegs = ell.draw_ellipses(obs_split)
 
         elif self.img_chosen == SHOW_MERGED_OBSERVATIONS:
+            if DEBUG_TRACKINGSETTINGS: print 'SHOW_MERGED_OBSERVATIONS'
             (obs_unfiltered,obs_merge) = self.GetObsUnfiltered('didmerge')
             plot_linesegs = ell.draw_ellipses(obs_merge)
 
         elif self.img_chosen == SHOW_LOWERED_OBSERVATIONS:
+            if DEBUG_TRACKINGSETTINGS: print 'SHOW_LOWERED_OBSERVATIONS'
             (obs_unfiltered,obs_lowered) = self.GetObsUnfiltered('didlowerthresh')
             plot_linesegs = ell.draw_ellipses(obs_lowered)
 
         # MAXJUMP
         elif self.img_chosen == SHOW_MAXJUMP:
+            if DEBUG_TRACKINGSETTINGS: print 'SHOW_MAXJUMP'
 
             # either grab or compute observations
             obs_filtered = self.GetObsFiltered()
@@ -664,6 +673,7 @@ class TrackingSettings:
                 
 
         elif self.img_chosen == SHOW_MOTIONMODEL:
+            if DEBUG_TRACKINGSETTINGS: print 'SHOW_MOTIONMODEL'
 
             (target_prev,target_curr,target_pred) = self.GetTargetMotion()
 
@@ -756,6 +766,8 @@ class TrackingSettings:
         self.frame_number_text.SetLabel('Frame %d'%self.show_frame)
         
         wx.EndBusyCursor()
+
+        if DEBUG_TRACKINGSETTINGS: sys.stdout.flush()
 
     def ImageChosen(self,evt):
 
@@ -910,21 +922,17 @@ class TrackingSettings:
 
     def GetObsFiltered(self):
         if not(hasattr(self,'obs_filtered') and self.obs_filtered.issame(self.show_frame)):
-            obs_filtered = ell.find_ellipses(self.bg_imgs.dfore,self.bg_imgs.cc,self.bg_imgs.ncc,True)
+            if DEBUG_TRACKINGSETTINGS: print 'computing filtered observations'
+            obs_filtered = ell.find_ellipses(self.bg_imgs.dfore.copy(),self.bg_imgs.cc.copy(),self.bg_imgs.ncc,True)
             self.obs_filtered = StoredObservations(obs_filtered,self.show_frame)
+        else:
+            if DEBUG_TRACKINGSETTINGS: print 'filtered observations already computed'
+        if DEBUG_TRACKINGSETTINGS: print 'obs_filtered:\n' + str(self.obs_filtered)
 
         return self.obs_filtered.obs
     def GetObsUnfiltered(self,*args):
 
-        # if we are only interested in the unfiltered observation
-        if len(args) == 0:
-            # if it has not yet been computed for this frame, compute
-            if not(hasattr(self,'obs_unfiltered') and self.obs_unfiltered.issame(self.show_frame)):
-                obs_unfiltered = ell.find_ellipses(self.bg_imgs.dfore,self.bg_imgs.cc,self.bg_imgs.ncc,False)
-                self.obs_unfiltered = StoredObservations(obs_unfiltered,self.show_frame)
-            return self.obs_unfiltered.obs
-
-        # otherwise, we need to check for attributes as well
+        # do we need to recompute?
         mustcompute = False
         if hasattr(self,'obs_unfiltered') and self.obs_unfiltered.issame(self.show_frame):
             for arg in args:
@@ -933,16 +941,25 @@ class TrackingSettings:
                    break
         else:
             mustcompute = True
+
         if DEBUG_TRACKINGSETTINGS: print 'mustcompute = ' + str(mustcompute)
         if DEBUG_TRACKINGSETTINGS and not mustcompute:
           print 'stored obs_unfiltered = ' + str(self.obs_unfiltered)
+
+        # if we are only interested in the unfiltered observation
+        if len(args) == 0:
+            # if it has not yet been computed for this frame, compute
+            if mustcompute:
+                obs_unfiltered = ell.find_ellipses(self.bg_imgs.dfore.copy(),self.bg_imgs.cc.copy(),self.bg_imgs.ncc,False)
+                self.obs_unfiltered = StoredObservations(obs_unfiltered,self.show_frame)
+            return self.obs_unfiltered.obs
           
         # compute if necessary
         if mustcompute:
             wx.BeginBusyCursor()
             wx.YieldIfNeeded()
             (obs_unfiltered,ellsmall,elllarge,didlowerthresh,didmerge,diddelete,didsplit) = \
-                                         ell.find_ellipses_display(self.bg_imgs.dfore,self.bg_imgs.cc,self.bg_imgs.ncc)
+                                         ell.find_ellipses_display(self.bg_imgs.dfore.copy(),self.bg_imgs.cc.copy(),self.bg_imgs.ncc)
             if DEBUG_TRACKINGSETTINGS: print 'computed obs_unfiltered = ' + str(obs_unfiltered) + ', len = ' + str(len(obs_unfiltered))
             if DEBUG_TRACKINGSETTINGS: print 'ellsmall = ' + str(ellsmall)
             if DEBUG_TRACKINGSETTINGS: print 'elllarge = ' + str(elllarge)

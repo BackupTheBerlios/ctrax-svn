@@ -123,6 +123,11 @@ def weightedregionpropsi(BWI,w):
 
 def weightedregionprops(L,ncc,dfore):
 
+    if DEBUG_TRACKINGSETTINGS: print 'in weightedregionprops, ncc = ' + str(ncc) + ', max(L) = ' + str(num.max(L)) + ', nnz(L) = ' + str(num.flatnonzero(L).shape) + ', sum(dfore) = ' + str(num.sum(num.sum(dfore)))
+    if DEBUG_TRACKINGSETTINGS:
+        for l in range(1,num.max(L)+1):
+            print 'nnz(L == %d) = '%l + str(num.alen(num.flatnonzero(L==l)))
+
     if ncc == 0:
         return []
 
@@ -416,7 +421,7 @@ def trydelete(ellipses,i,issmall):
         ellipses[i].area = 0
         issmall[i] = False
 
-def deleteellipses(ellipses,L,doerase=False):
+def deleteellipses(ellipses,L,doerase=True):
     i = 0
     while True:
         if i >= len(ellipses):
@@ -885,5 +890,7 @@ def fixlargedisplay(ellipses,L,dfore):
     for i in retdidsplit:
         ellsplit.append(ellipses[i].copy())
     if DEBUG_TRACKINGSETTINGS: print 'in fixlargedisplay, ellsplit = ' + str(ellsplit)
+
+    deleteellipses(ellipses,L,doerase=False)
 
     return (elllarge,ellsplit)
