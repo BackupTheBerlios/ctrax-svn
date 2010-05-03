@@ -22,9 +22,10 @@ try:
     from FlyMovieFormat import NoMoreFramesException
 except ImportError:
     class NoMoreFramesException (Exception): pass
-import ufmf as ufmf
-
-#import imops as imops # part of Motmot
+try:
+    import ufmf as ufmf
+except ImportError:
+    pass
 
 class Movie:
     """Generic interface for all supported movie types.
@@ -371,9 +372,13 @@ class Avi:
         self.issbfmf = False
  
         # need to open in binary mode to support Windows:
-        # self.file = open( filename, 'r' )
         self.file = open( filename, 'rb' )
-        self.read_header()
+        try:
+            self.read_header()
+        except Exception, details:
+            print( "error reading uncompressed AVI:" )
+            print( details )
+            raise
         
         # added to help masquerade as FMF file:
         self.filename = filename
@@ -543,7 +548,7 @@ class Avi:
             self.padwidth = 1
             self.padheight = 0
         else:
-            raise TypeError("Invalid AVI file. Frame size does not match width * height * bytesperpixel.")
+            raise TypeError("Invalid AVI file. Frame size (%d) does not match width * height * bytesperpixel (%d*%d*%d)."%(frame_size,self.width,self.height,depth))
 
         if self.isindexed:
             self.format = 'INDEXED'
@@ -872,7 +877,7 @@ class CompressedAvi:
         if DEBUG: print 'Trying to read compressed AVI'
         self.issbfmf = False
         self.source = media.load(filename)
-        self.ZERO = 0.00001
+        self.ZERO = 1./1000000.
         # for some video types, if we don't do a read before 
         # seeking, bad things happen
         im = self.source.get_next_video_frame()
@@ -889,10 +894,12 @@ class CompressedAvi:
         self.duration_seconds = self.source.duration
         if DEBUG: print 'duration_seconds = ' + str(self.duration_seconds)
         self._estimate_fps()
-        self.frame_delay_us = 1e6 / self.fps
-        self._estimate_keyframe_period()
+        if DEBUG: print 'fps estimated to be' + str(self.fps)
         self.n_frames = int(num.floor(self.duration_seconds * self.fps))
         if DEBUG: print "n_frames estimated to be %d"%self.n_frames
+        self.frame_delay_us = 1e6 / self.fps
+        self._estimate_keyframe_period()
+        if DEBUG: print 'keyframe period estimate to be ' + str(self.keyframe_period_s) + ' s, ' + str(self.keyframe_period) + ' frames'
         
         # added to help masquerade as FMF file:
         self.filename = filename
@@ -903,6 +910,7 @@ class CompressedAvi:
 
         self.MAXBUFFERSIZE = num.round(200*1000*1000/self.width/self.height)
         self.buffersize = min(self.MAXBUFFERSIZE,self.keyframe_period)
+        if DEBUG: print 'buffersize set to ' + str(self.buffersize)
 
         # compute the bits per pixel
         self.source._seek(self.ZERO)
@@ -1055,14 +1063,24 @@ class CompressedAvi:
         return (frame,ts)
 
     def get_next_frame_and_reset_buffer(self):
-        
+
+        # first frame stored in buffer
         self.bufferframe0 = self.currframe
+        # frame after last frame stored in buffer
         self.bufferframe1 = self.currframe + 1
+        # buffer will wrap around if frames are read in in-order
+        # bufferoff0 is the location in the buffer of the first 
+        # frame buffered
         self.bufferoff0 = 0
-        self.bufferoff = 0
         (frame,ts) = self._get_next_frame_helper()
         self.buffer[:,:,0] = frame.copy()
         self.bufferts[0] = ts
+        # bufferoff is the location in the buffer where we should 
+        # write the next frame
+        if self.buffersize > 1:
+            self.bufferoff = 1
+        else:
+            self.bufferoff = 0
 
         # set the current frame
         self.currframe += 1
@@ -1105,7 +1123,8 @@ class CompressedAvi:
         # are we erasing the first frame?
         if self.bufferoff0 == self.bufferoff:
             self.bufferframe0 += 1
-            self.bufferoff0 += 1
+            if self.buffersize > 1:
+                self.bufferoff0 += 1
             if DEBUG: print "erasing first frame, bufferframe0 is now %d, bufferoff0 is now %d"%(self.bufferframe0,self.bufferoff0)
 
         if DEBUG: print "buffer frames: [%d,%d), bufferoffset0 = %d"%(self.bufferframe0,self.bufferframe1,self.bufferoff0)
@@ -1154,7 +1173,7 @@ class CompressedAvi:
             im = self.source.get_next_video_frame()
             ts = self.source.get_next_video_timestamp()
             if DEBUG: print 'i = %d, ts = '%i + str(ts)
-            if (ts is None) or num.isnan(ts) or (ts <= ts0):
+            if (ts is None) or num.isnan(ts) or (ts <= ts1):
                 break
             i = i + 1
             ts1 = ts
@@ -1171,9 +1190,11 @@ class CompressedAvi:
 
         if DEBUG: print 'Estimating keyframe period'
 
-        self.source._seek(max(self.ZERO,self.start_time))
+        self.source._seek(self.ZERO)
 
         ts0 = self.source.get_next_video_timestamp()
+
+        if DEBUG: print 'After first seek, ts0 intialized to ' + str(ts0)
 
         i = 1 # i is the number of successful seeks
         foundfirst = False
@@ -1186,9 +1207,19 @@ class CompressedAvi:
             ts = self.source.get_next_video_timestamp()
 
             # did we seek past the end of the movie?
-            if num.isnan(ts):
-                raise ValueError( "Could not compute keyframe period in compressed video" )    
-                break
+            if ts is None or num.isnan(ts):
+                if foundfirst:
+                    # we found one keyframe after start, use start
+                    self.keyframe_period = i
+                    self.keyframe_period_s = self.keyframe_period / self.fps
+                else:
+                    # then set keyframe period to be length of entire movie
+                    self.keyframe_period = self.n_frames + 1
+                    self.keyframe_period_s = self.duration_seconds + self.fps
+                    if DEBUG: 'Only keyframe found at start of movie, setting keyframe_period = n_frames + 1 = %d, keyframe_period_s = duration_seconds + fps = %f'%(self.keyframe_period,self.keyframe_period_s)
+
+                #raise ValueError( "Could not compute keyframe period in compressed video" )    
+                return
 
             if ts > ts0:
                 if foundfirst:

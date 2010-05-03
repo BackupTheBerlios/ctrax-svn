@@ -1,4 +1,4 @@
-__version__ = "0.1.5.4"
+__version__ = "0.1.5.5"
 
 DEBUG = False
 DEBUG_ESTCONNCOMPS = False
@@ -6,3 +6,5 @@ DEBUG_HINDSIGHT = False
 DEBUG_MOVIES = False
 DEBUG_ANN = False
 DEBUG_REPEATABLE_BEHAVIOR = False
+DEBUG_BGBUFFER = False
+DEBUG_TRACKINGSETTINGS = False

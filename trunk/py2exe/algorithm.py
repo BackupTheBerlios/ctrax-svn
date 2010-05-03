@@ -57,6 +57,9 @@ class CtraxAlgorithm (settings.AppWithSettings):
         if DEBUG: print "Initializing buffer for tracking"
         self.ann_file.InitializeBufferForTracking(self.start_frame)
 
+        # initialize dfore and connected component buffer
+        self.bg_imgs.set_buffer_maxnframes()
+
         for self.start_frame in range(self.start_frame,self.n_frames):
 
             if DEBUG: print "Tracking frame %d / %d"%(self.start_frame,self.n_frames-1)
@@ -70,11 +73,12 @@ class CtraxAlgorithm (settings.AppWithSettings):
             last_time = time.time()
 
             # perform background subtraction
-            try:
-                (self.dfore,self.isfore) = self.bg_imgs.sub_bg( self.start_frame )
-            except:
-                # catch all error types here, and just break out of loop
-                break
+            #try:
+            (self.dfore,self.isfore,self.cc,self.ncc) = \
+                self.bg_imgs.sub_bg( self.start_frame, dobuffer=True )
+            #except:
+            #    # catch all error types here, and just break out of loop
+            #    break
 
             # write to sbfmf
             if self.dowritesbfmf:
@@ -90,7 +94,7 @@ class CtraxAlgorithm (settings.AppWithSettings):
                 break
 
             # find observations
-            self.ellipses = ell.find_ellipses( self.dfore, self.isfore )
+            self.ellipses = ell.find_ellipses( self.dfore, self.cc, self.ncc )
 
             #if params.DOBREAK:
             #    print 'Exiting at frame %d'%self.start_frame

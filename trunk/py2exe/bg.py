@@ -31,7 +31,7 @@ import highboostfilter
 #import histgmm
 #from histgmm import make_vect
 #from settings import const as settings_const
-from version import DEBUG
+from version import DEBUG, DEBUG_BGBUFFER
 
 import os
 import codedir
@@ -168,7 +168,8 @@ class BackgroundCalculator:
         #print "creating morphology structures, with radii %d, %d"%(params.opening_radius,params.closing_radius)
         self.opening_struct = self.create_morph_struct(params.opening_radius)
         self.closing_struct = self.create_morph_struct(params.closing_radius)
-
+        # initialize backsub buffer as empty
+        self.initialize_buffer()
 
     def updateParameters(self):
 
@@ -663,55 +664,157 @@ class BackgroundCalculator:
         self.hfnorm = self.hf.apply(self.center) / tmp
         self.hfnorm[issmall & (self.hfnorm<1.)] = 1.        
 
-    def sub_bg(self,framenumber):
+    def sub_bg(self,framenumber,docomputecc=True,dobuffer=False):
         """Reads image, subtracts background, then thresholds."""
 
-        # read in the image
-        # IndexError if requested frame < 0
-        # NoMoreFramesException if frame is >= n_frames
-        # ValueError if the frame size read in does not equal the buffer
-        #   for uncompressed AVI
+        # check to see if frame is in the buffer
+        if framenumber >= self.buffer_start and \
+                framenumber < self.buffer_end:
+            (dfore,bw) = self.sub_bg_from_buffer(framenumber)
+        else:
+
+            # read in the image
+            # IndexError if requested frame < 0
+            # NoMoreFramesException if frame is >= n_frames
+            # ValueError if the frame size read in does not equal the buffer
+            #   for uncompressed AVI
+
+            self.curr_im, stamp = params.movie.get_frame( int(framenumber) )
+            im = self.curr_im.astype( num.float )
+            self.curr_stamp = stamp
+
+            dfore = num.zeros(im.shape)
+            if params.bg_type == params.BG_TYPE_LIGHTONDARK:
+                # if white flies on a dark background, then we only care about differences
+                # im - bgmodel.center > bgmodel.thresh
+                dfore[self.isarena] = num.maximum(0,im[self.isarena] - self.center[self.isarena])
+
+            elif params.bg_type == params.BG_TYPE_DARKONLIGHT:
+                # if dark flies on a white background, then we only care about differences
+                # bgmodel.center - im > bgmodel.thresh
+                dfore[self.isarena] = num.maximum(0,self.center[self.isarena] - im[self.isarena])
+
+            else:
+                # otherwise, we care about both directions
+                dfore[self.isarena] = num.abs(im[self.isarena] - self.center[self.isarena])
+
+            dfore[self.isarena] /= self.dev[self.isarena]
+            if params.n_bg_std_thresh > params.n_bg_std_thresh_low:
+                bwhigh = num.zeros(im.shape,dtype=bool)
+                bwlow = num.zeros(im.shape,dtype=bool)
+                bwhigh[self.isarena] = dfore[self.isarena] > params.n_bg_std_thresh
+                bwlow[self.isarena] = dfore[self.isarena] > params.n_bg_std_thresh_low
+
+                # do hysteresis
+                bw = morph.binary_propagation(bwhigh,mask=bwlow)
+            else:
+                bw = num.zeros(im.shape,dtype=bool)
+                bw[self.isarena] = dfore[self.isarena] > params.n_bg_std_thresh
+
+            # do morphology
+            if params.do_use_morphology:
+                if params.opening_radius > 0:
+                    bw = morph.binary_opening(bw,self.opening_struct)
+                if params.closing_radius > 0:
+                    bw = morph.binary_closing(bw,self.closing_struct)
+
+            if dobuffer:
+                # store in buffer
+                self.store_in_buffer(framenumber,dfore,bw)
         
-        self.curr_im, stamp = params.movie.get_frame( int(framenumber) )
-        im = self.curr_im.astype( num.float )
-        self.curr_stamp = stamp
+        if not docomputecc:
+            return (dfore,bw)
 
-        dfore = num.zeros(im.shape)
-        if params.bg_type == params.BG_TYPE_LIGHTONDARK:
-            # if white flies on a dark background, then we only care about differences
-            # im - bgmodel.center > bgmodel.thresh
-            dfore[self.isarena] = num.maximum(0,im[self.isarena] - self.center[self.isarena])
-            
-        elif params.bg_type == params.BG_TYPE_DARKONLIGHT:
-            # if dark flies on a white background, then we only care about differences
-            # bgmodel.center - im > bgmodel.thresh
-            dfore[self.isarena] = num.maximum(0,self.center[self.isarena] - im[self.isarena])
-            
-        else:
-            # otherwise, we care about both directions
-            dfore[self.isarena] = num.abs(im[self.isarena] - self.center[self.isarena])
+        [cc,ncc] = meas.label(bw)
 
-        dfore[self.isarena] /= self.dev[self.isarena]
-        if params.n_bg_std_thresh > params.n_bg_std_thresh_low:
-            bwhigh = num.zeros(im.shape,dtype=bool)
-            bwlow = num.zeros(im.shape,dtype=bool)
-            bwhigh[self.isarena] = dfore[self.isarena] > params.n_bg_std_thresh
-            bwlow[self.isarena] = dfore[self.isarena] > params.n_bg_std_thresh_low
-            
-            # do hysteresis
-            bw = morph.binary_propagation(bwhigh,mask=bwlow)
-        else:
-            bw = num.zeros(im.shape,dtype=bool)
-            bw[self.isarena] = dfore[self.isarena] > params.n_bg_std_thresh
+        # make sure there aren't too many connected components
+        if ncc > params.max_n_clusters:
+            warn( "too many objects found (>%d); truncating object search"%(params.max_n_clusters) )
+            # for now, just throw out the last connected components.
+            # in the future, we can sort based on area and keep those
+            # with the largest area. hopefully, this never actually
+            # happens.
+            ncc = params.max_n_clusters
+            cc[cc >= ncc] = 0
 
-        # do morphology
-        if params.do_use_morphology:
-            if params.opening_radius > 0:
-                bw = morph.binary_opening(bw,self.opening_struct)
-            if params.closing_radius > 0:
-                bw = morph.binary_closing(bw,self.closing_struct)
+        return (dfore,bw,cc,ncc)
+
+    def store_in_buffer(self,framenumber,dfore,bw):
+        
+        if self.buffer_maxnframes == 0:
+            return
+
+        if DEBUG_BGBUFFER: print 'storing frame %d in buffer'%framenumber
+
+        if DEBUG_BGBUFFER: print 'frames buffered before adding: [%d,%d)'%(self.buffer_start,self.buffer_end)
+        
+        if framenumber >= self.buffer_start and \
+                framenumber < self.buffer_end:
+            if DEBUG_BGBUFFER: print 'frame %d already in buffer'%framenumber
+            return
+
+        # check to see if framenumber == bufferend
+        if framenumber != self.buffer_end:
+            # reset buffer
+            self.initialize_buffer(framenumber)
+
+        # is the buffer full?
+        while self.buffer_end - self.buffer_start >= self.buffer_maxnframes:
+            if DEBUG_BGBUFFER: print 'buffer full, popping first element'
+            tmp = self.buffer_bw.pop(0)
+            tmp = self.buffer_dfore.pop(0)
+            #tmp = self.buffer_id2cc.pop(0)
+            self.buffer_start += 1
+            if DEBUG_BGBUFFER: print 'removed frame %d from start of buffer'%(self.buffer_start-1)
+        
+        # add to buffer
+        self.buffer_bw.append(bw.copy())
+        self.buffer_dfore.append(dfore.copy())
+        #self.buffer_id2cc.append({})
+        self.buffer_end += 1
+        if DEBUG_BGBUFFER: print 'added frame %d at index %d of buffer'%(framenumber,len(self.buffer_bw))
+        if DEBUG_BGBUFFER: print 'frames buffered after adding: [%d,%d)'%(self.buffer_start,self.buffer_end)
+
+        return
+
+    def sub_bg_from_buffer(self,framenumber):
+
+        if DEBUG_BGBUFFER: print 'sub_bg_from_buffer(%d)'%framenumber
+        if DEBUG_BGBUFFER: print 'frames buffered: [%d,%d)'%(self.buffer_start,self.buffer_end)
+        
+        # index into buffer
+        i = framenumber - self.buffer_start
+
+        if DEBUG_BGBUFFER: print 'reading buffered frame %d at index %d'%(framenumber,i)
+
+        dfore = self.buffer_dfore[i].copy()
+        bw = self.buffer_bw[i].copy()
 
         return (dfore,bw)
+
+    def set_buffer_maxnframes(self):
+
+        self.buffer_maxnframes = 0
+        if params.do_fix_split:
+            self.buffer_maxnframes = max(self.buffer_maxnframes,
+                                         params.splitdetection_length+2)
+        if params.do_fix_merged:
+            self.buffer_maxnframes = max(self.buffer_maxnframes,
+                                         params.mergeddetection_length+2)
+        self.buffer_maxnframes = min(params.maxnframesbuffer,
+                                     self.buffer_maxnframes)
+
+    def initialize_buffer(self,start_frame=0):
+
+        self.set_buffer_maxnframes()
+
+        # initialize connected component frame buffer as empty
+        self.buffer_bw = []
+        self.buffer_dfore = []
+        self.buffer_start = start_frame
+        self.buffer_end = start_frame
+        
+        if DEBUG_BGBUFFER: print 'initialized bgbuffer'
 
     def create_morph_struct(self, radius):
         if radius <= 0:
@@ -725,6 +828,9 @@ class BackgroundCalculator:
 
     def ShowBG( self, parent, framenumber, old_thresh ):
         
+        # clear buffer
+        self.initialize_buffer()
+
         self.old_thresh = params.n_bg_std_thresh
         self.show_frame = framenumber
 
@@ -884,7 +990,7 @@ class BackgroundCalculator:
             # changing the conversion from scrollbar units to threshold units
             self.scrollbar2thresh = float(maxv) / float(params.sliderres)
             return
-        (self.dfore,self.bw) = self.sub_bg(self.show_frame)
+        (self.dfore,self.bw) = self.sub_bg(self.show_frame,docomputecc=False)
         # what is the maximum dfore?
         self.max_slider = num.max(self.dfore)
         self.scrollbar2thresh = float(self.max_slider) / float(params.sliderres)
@@ -989,7 +1095,7 @@ class BackgroundCalculator:
                     donormalize = True
                 else:
                     donormalize = False
-                (self.dfore,self.bw) = self.sub_bg(self.show_frame)
+                (self.dfore,self.bw) = self.sub_bg(self.show_frame,docomputecc=False)
                 # change the scale of the threshold
                 self.SetThreshBounds()
                 if donormalize:
@@ -1276,7 +1382,7 @@ class BackgroundCalculator:
         """Do background subtraction."""
         wx.BeginBusyCursor()
         wx.Yield()
-        (self.dfore,self.bw) = self.sub_bg(self.show_frame)
+        (self.dfore,self.bw,self.cc,self.ncc) = self.sub_bg(self.show_frame)
         self.windowsize = [self.img_panel.GetRect().GetHeight(),self.img_panel.GetRect().GetWidth()]
         if self.show_img_type == params.SHOW_BACKGROUND:
             img_8 = imagesk.double2mono8(self.center,donormalize=False)
@@ -1304,13 +1410,12 @@ class BackgroundCalculator:
                 img_8 = imagesk.double2mono8(self.dev.clip(n1,n2))
             self.img_wind.update_image_and_drawings('bg',img_8,format='MONO8')
         elif self.show_img_type == params.SHOW_CC:
-            (L,ncc) = meas.label(self.bw)
             #self.img = colormap_image(L)
-            img_8 = colormap_image(L)
+            img_8 = colormap_image(self.cc)
             self.img_wind.update_image_and_drawings('bg',img_8,format='RGB8')
         elif self.show_img_type == params.SHOW_ELLIPSES:
             # find ellipse observations
-            obs = find_ellipses(self.dfore,self.bw,False)
+            obs = find_ellipses(self.dfore,self.cc,self.ncc,False)
             im, stamp = params.movie.get_frame( int(self.show_frame) )
             img_8 = imagesk.double2mono8(im,donormalize=False)
             plot_linesegs = draw_ellipses(obs)
@@ -1333,6 +1438,8 @@ class BgSettingsDialog:
         #self.const = bg.const
         #const.n_frames = bg.n_frames
         self.bg = bg
+        # clear buffer
+        self.bg.initialize_buffer()
         rsrc = xrc.XmlResource( SETTINGS_RSRC_FILE )
         self.frame = rsrc.LoadFrame(parent, "bg_settings")
         self.algorithm = xrc.XRCCTRL( self.frame, "algorithm" )

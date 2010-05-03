@@ -1,7 +1,7 @@
 import numpy as num
 import scipy.cluster.vq as vq
 #import scipy.linalg.decomp as decomp
-from version import DEBUG, DEBUG_REPEATABLE_BEHAVIOR
+from version import DEBUG
 
 d = 2
 
@@ -103,10 +103,6 @@ def gmminit(x,k,weights=None,kmeansiter=20,kmeansthresh=.001):
     return (mu,S,priors)
 
 def gmm(x,k,weights=None,nreplicates=10,kmeansiter=20,kmeansthresh=.001,emiters=100,emthresh=.001,mincov=.01):
-
-    # for debugging only: reseed the random number generator at 0 for repeatable behavior
-    if DEBUG_REPEATABLE_BEHAVIOR:
-        num.random.seed(0)
 
     # number of data points
     n = x.shape[0]

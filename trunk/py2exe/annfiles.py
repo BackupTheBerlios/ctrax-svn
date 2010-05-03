@@ -10,6 +10,7 @@ import shutil
 
 from version import __version__
 from version import DEBUG_ANN as DEBUG
+from version import DEBUG_HINDSIGHT
 from params import params
 import ellipsesk as ell
 import pickle
@@ -470,9 +471,10 @@ class AnnotationFile:
         #if DEBUG: print "get_frame %d, framestracked = [%d,%d], framesbuffered = [%d,%d], frameswritten = [%d,%d]"%(f,self.firstframetracked,self.lastframetracked,self.firstframebuffered,self.lastframebuffered,self.firstframewritten,self.lastframewritten)
         if f < self.firstframebuffered or f > self.lastframebuffered:
 
-            if DEBUG: print "get_frame: Need to read frame %d from file. buffered frames = [%d,%d], tracked frames = [%d,%d]"%(f,self.firstframebuffered,self.lastframebuffered,self.firstframetracked,self.lastframetracked)
+            if DEBUG: print "get_frame: Need to read frame " + str(f) + " from file. buffered frames = [%d,%d], tracked frames = [%d,%d]"%(self.firstframebuffered,self.lastframebuffered,self.firstframetracked,self.lastframetracked)
 
             # read into buffer
+            #print 'f = ' + str(f) + ", firstframetracked = " + str(self.firstframetracked) + ', lookupinterval = ' + str(self.lookupinterval)
             i = int(num.floor( (f - self.firstframetracked) / self.lookupinterval ))
 
             if DEBUG: print "i = " + str(i)
@@ -621,14 +623,8 @@ class AnnotationFile:
         if fileout is None:
             fileout = self.file
 
-        for ellipse in ellipse_list.itervalues():
-            fileout.write( '%f\t%f\t%f\t%f\t%f\t%d\t'%(ellipse.center.x,
-                                                       ellipse.center.y,
-                                                       ellipse.size.width,
-                                                       ellipse.size.height,
-                                                       ellipse.angle,
-                                                       ellipse.identity) )
-        fileout.write( "\n" )
+        string = self.write_ellipses_string( ellipse_list )
+        fileout.write( "%s"%string )
 
     def write_ellipses_string( self, ellipse_list):
         """Write one frame of data to string."""
@@ -1178,16 +1174,16 @@ class AnnotationFile:
     def GetNewId(self):
         if len(self.recycledids) > 0:
             newid = self.recycledids.pop()
-            if DEBUG: print "Recycled id %d"%newid
+            if DEBUG_HINDSIGHT: print "Recycled id %d"%newid
         else:
             newid = params.nids
-            if DEBUG: print "Used new id %d"%newid
+            if DEBUG_HINDSIGHT: print "Used new id %d"%newid
             params.nids+=1
         return newid
 
     def RecycleId(self,id):
         self.recycledids.append(id)
-        if DEBUG: print "Recycling id %d"%id
+        if DEBUG_HINDSIGHT: print "Recycling id %d"%id
 
     def rename_file(self,newfilename=None):
         oldfile = self.file

@@ -12,7 +12,7 @@ import py2exe
 # include directories for hungarian
 numpyincludedirs = numpy.get_include()
 
-this_version = '0.1.5.4'
+this_version = '0.1.5.5'
 
 # add all of the .xrc and .bmp files
 Ctrax_data_files = [('xrc',glob.glob(os.path.join('xrc','*.xrc'))),
