@@ -6,6 +6,6 @@ exclude setupberlios.txt
 exclude virtualenvdirections.txt
 exclude makeanewrelease.txt
 prune exports
-exclude MANIFEST.in
-include Ctrax.egg-info/stdeb.cfg
+include stdeb.cfg
 global-exclude *test* *tmp* *temp* *.mat old* Ctrax.log
+include hungarian/asp.h
