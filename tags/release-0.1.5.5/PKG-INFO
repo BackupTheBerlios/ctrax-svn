@@ -1,0 +1,62 @@
+Metadata-Version: 1.1
+Name: Ctrax
+Version: 0.1.5.5
+Summary: Ctrax: The Caltech Multiple Fly Tracker
+Home-page: http://www.dickinson.caltech.edu/Ctrax
+Author: Kristin Branson
+Author-email: bransonk@janelia.hhmi.org
+License: UNKNOWN
+Download-URL: https://developer.berlios.de/projects/ctrax/
+Description: 
+        Ctrax: The Caltech Multiple Fly Tracker
+        
+        (c) 2007-2010 The Caltech Ethomics Project
+        http://www.dickinson.caltech.edu/ctrax
+        branson@caltech.edu
+        
+        Ctrax is an open-source, freely available, machine vision program for
+        estimating the positions and orientations of many walking flies,
+        maintaining their individual identities over long periods of time. It
+        was designed to allow high-throughput, quantitative analysis of
+        behavior in freely moving flies. Our primary goal in this project is
+        to provide quantitative behavior analysis tools to the neuroethology
+        community, thus we've endeavored to make the system adaptable to other
+        lab's setups. We have assessed the quality of the tracking results for
+        our setup, and found that it can maintain fly identities indefinitely
+        with minimal supervision, and on average for 1.5 fly-hours
+        automatically.
+        
+Platform: Windows
+Platform: Linux
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: End Users/Desktop
+Classifier: Intended Audience :: Information Technology
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: GNU General Public License (GPL)
+Classifier: Natural Language :: English
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: C
+Classifier: Programming Language :: C++
+Classifier: Programming Language :: Python :: 2.5
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Scientific/Engineering :: Bio-Informatics
+Classifier: Topic :: Scientific/Engineering :: Image Recognition
+Classifier: Topic :: Scientific/Engineering :: Information Analysis
+Classifier: Topic :: Scientific/Engineering :: Medical Science Apps.
+Requires: cython
+Requires: motmot.imops
+Requires: motmot.ufmf
+Requires: motmot.wxglvideo
+Requires: motmot.wxvalidatedtext
+Requires: motmot.wxvideo
+Requires: numpy
+Requires: PIL
+Requires: pygarrayimage
+Requires: pyglet
+Requires: scipy
+Requires: wx
+Provides: Ctrax
+Obsoletes: mtrax
