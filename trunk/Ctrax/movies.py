@@ -376,8 +376,8 @@ class Avi:
         try:
             self.read_header()
         except Exception, details:
-            print( "error reading uncompressed AVI:" )
-            print( details )
+            if DEBUG: print( "error reading uncompressed AVI:" )
+            if DEBUG: print( details )
             raise
         
         # added to help masquerade as FMF file:
