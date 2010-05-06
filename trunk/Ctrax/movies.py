@@ -97,7 +97,11 @@ class Movie:
                     self.type = 'avbin'
                 except:
                     if self.interactive:
-                        wx.MessageBox( "Failed opening file \"%s\"."%(filename), "Error", wx.ICON_ERROR )
+                        if not media.have_avbin:
+                            msgtxt = "Failed opening file \"%s\". AVbin could not be loaded, and compressed AVIs cannot be read."%(filename)
+                        else:
+                            msgtxt = "Failed opening file \"%s\". AVbin was successfully loaded, but could not read the AVI."%(filename)
+                        wx.MessageBox( msgtxt, "Error", wx.ICON_ERROR )
                     raise
                 else:
                     if params.interactive:
