@@ -48,6 +48,7 @@ python setup_py2exe.py build -c mingw32 py2exe
 
 ***
 cp maintain/dlls/* dist/.
+cp build/lib.win32-2.5/*pyd dist/.
 ***
 
 These dlls are:

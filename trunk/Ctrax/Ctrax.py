@@ -22,6 +22,8 @@ try:
         import ctypes
         import sys
         avbin = ctypes.cdll.avbin
+except:
+    pass
 import pyglet.media as media
 
 import os # use os for manipulating path names

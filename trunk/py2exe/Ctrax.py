@@ -16,11 +16,14 @@
 # and now we need to import ctypes before media because this seems to 
 # be necessary to be able to find the avbin dll on windows. 
 # man!
-import ctypes
-import sys
-if sys.platform == 'win32' or sys.platform == 'cygwin':
-    avbin = ctypes.cdll.avbin
 
+try:
+    if sys.platform == 'win32' or sys.platform == 'cygwin':
+        import ctypes
+        import sys
+        avbin = ctypes.cdll.avbin
+except:
+    pass
 import pyglet.media as media
 
 import os # use os for manipulating path names

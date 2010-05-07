@@ -1,3 +1,11 @@
+2010-05-06 Kristin Branson
+
+* Modified code to potentially work if AVbin cannot be loaded (not yet debugged). Added avbin.dll to bundled dlls in Windows installer. 
+
+2010-05-04 Kristin Branson
+
+* Fixed error message that would pop up when trying to read a compressed movie (fails first when trying to read as uncompressed, this is normal). 
+
 2010-05-03 Kristin Branson
 
 * Version 0.1.5.5 released. 

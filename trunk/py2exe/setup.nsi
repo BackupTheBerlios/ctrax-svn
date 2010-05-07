@@ -7,10 +7,10 @@
 ;--------------------------------
 
 ; The name of the installer
-Name "Ctrax-0.1.5.5"
+Name "Ctrax-0.1.5.6"
 
 ; The file to write
-OutFile "Ctrax-0.1.5.5-installer.exe"
+OutFile "Ctrax-0.1.5.6-installer.exe"
 Icon 'icons\Ctraxicon.ico'
 
 ; The default installation directory
@@ -18,7 +18,7 @@ InstallDir "$PROGRAMFILES\Ctrax-0.1"
 
 ; Registry key to check for directory (so if you install again, it will 
 ; overwrite the old one automatically)
-InstallDirRegKey HKLM "Software\Ctrax-0.1.5.5" "Install_Dir"
+InstallDirRegKey HKLM "Software\Ctrax-0.1.5.6" "Install_Dir"
 
 ; Request application privileges for Windows Vista
 RequestExecutionLevel admin
@@ -37,7 +37,7 @@ UninstPage instfiles
 ;--------------------------------
 
 ; The stuff to install
-Section "Ctrax-0.1.5.5 (required)"
+Section "Ctrax-0.1.5.6 (required)"
 
   SectionIn RO
   
@@ -64,13 +64,13 @@ Section "Ctrax-0.1.5.5 (required)"
   File "dist\xrc\*.*"
   
   ; Write the installation path into the registry
-  WriteRegStr HKLM SOFTWARE\Ctrax-0.1.5.5 "Install_Dir" "$INSTDIR"
+  WriteRegStr HKLM SOFTWARE\Ctrax-0.1.5.6 "Install_Dir" "$INSTDIR"
   
   ; Write the uninstall keys for Windows
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Ctrax-0.1.5.5" "DisplayName" "Ctrax-0.1.5.5"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Ctrax-0.1.5.5" "UninstallString" '"$INSTDIR\uninstall.exe"'
-  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Ctrax-0.1.5.5" "NoModify" 1
-  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Ctrax-0.1.5.5" "NoRepair" 1
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Ctrax-0.1.5.6" "DisplayName" "Ctrax-0.1.5.6"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Ctrax-0.1.5.6" "UninstallString" '"$INSTDIR\uninstall.exe"'
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Ctrax-0.1.5.6" "NoModify" 1
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Ctrax-0.1.5.6" "NoRepair" 1
   WriteUninstaller "uninstall.exe"
   
 SectionEnd
@@ -99,8 +99,8 @@ SectionEnd
 Section "Uninstall"
   
   ; Remove registry keys
-  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Ctrax-0.1.5.5"
-  DeleteRegKey HKLM SOFTWARE\Ctrax-0.1.5.5
+  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Ctrax-0.1.5.6"
+  DeleteRegKey HKLM SOFTWARE\Ctrax-0.1.5.6
 
   ; Remove files and uninstaller
   Delete $INSTDIR\Ctrax-script.exe
