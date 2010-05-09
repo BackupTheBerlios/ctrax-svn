@@ -1,0 +1,11 @@
+prune py2exe
+prune matlab
+prune fixerrors
+prune behavioralmicroarray
+exclude setupberlios.txt
+exclude virtualenvdirections.txt
+exclude makeanewrelease.txt
+prune exports
+include stdeb.cfg
+global-exclude *test* *tmp* *temp* *.mat old* Ctrax.log
+include hungarian/asp.h

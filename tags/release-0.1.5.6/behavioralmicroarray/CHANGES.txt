@@ -1,0 +1,15 @@
+2009-06-08 Kristin Branson
+
+VERSION 0.1.04 CREATED
+
+2009-06-08 Kristin Branson
+
+Matlab, particularly v. 2009a, has trouble saving and loading function 
+handles correctly. the "f2i" field of the "trx" variable is a function 
+that inputs the frame number and returns the index into the trx fields 
+corresponding to that frame. In the past, it had been saved and loaded, 
+but now save_tracks removes it and load_tracks restores it. 
+
+2009-06-15 Kristin Branson
+
+Fixed bug in make_ctrax_result_movie. If the movie was an AVI, then fid was being set to -1, and make_ctrax_result_movie was interpreting this as the movie being unreadable. Also, it tried to close the fid at the end of the function. 
