@@ -98,7 +98,7 @@ setup(
     requires=requires,
     provides=['Ctrax',],
     obsoletes=['mtrax',],
-    scripts=['Ctrax/Ctrax-script.py','Ctrax/Ctrax.py',],
+    scripts=['Ctrax/Ctrax-script.py'],
     cmdclass = {'build_ext': build_ext},
     package_dir={'Ctrax': 'Ctrax'},
     package_data = {'Ctrax':Ctrax_package_data},
