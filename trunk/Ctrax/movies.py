@@ -1262,10 +1262,10 @@ class CompressedAvi:
 def write_results_to_avi(movie,tracks,filename,f0=None,f1=None):
 
     nframes = len(tracks)
-    if f0 is None:
+    if f0 is None or type(f0) != type(1):
         f0 = params.start_frame
-    if f1 is None:
-        f1 = nframes + params.start_frame - 1
+    if f1 is None or type(f1) != type(1):
+        f1 = nframes + params.start_frame - 1        
 
     f0 -= params.start_frame
     f1 -= params.start_frame
@@ -1341,7 +1341,8 @@ def write_avi_frame(movie,tracks,i,outstream):
     # get tails
     old_pts = []
     early_frame = int(max(0,i-params.tail_length))
-    for dataframe in tracks[early_frame:i+1]:
+    for f in range( early_frame, i+1 ):
+        dataframe = tracks[f]
         these_pts = []
         for ellipse in dataframe.itervalues():
             these_pts.append( (ellipse.center.x,ellipse.center.y,
