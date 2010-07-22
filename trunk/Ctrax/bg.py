@@ -235,7 +235,7 @@ class BackgroundCalculator:
         for i in range(params.bg_firstframe,bg_lastframe+1,nframesskip):
 
             if params.interactive and not params.batch_executing:
-                (keepgoing,skip) = progressbar.Update(value=nframesused+1,newmsg='Reading in frame %d (%d / %d)'%(i+1,nframesused,n_bg_frames))
+                (keepgoing,skip) = progressbar.Update(value=(i-params.bg_firstframe)/nframesskip,newmsg='Reading in frame %d / %d'%(i-params.bg_firstframe,n_bg_frames))
                 if not keepgoing:
                     progressbar.Destroy()
 
@@ -729,7 +729,9 @@ class BackgroundCalculator:
 
         # make sure there aren't too many connected components
         if ncc > params.max_n_clusters:
-            warn( "too many objects found (>%d); truncating object search"%(params.max_n_clusters) )
+            if params.interactive:
+                wx.MessageBox( "too many objects found (>%d); truncating object search"%(params.max_n_clusters), "Error", wx.ICON_ERROR )
+
             # for now, just throw out the last connected components.
             # in the future, we can sort based on area and keep those
             # with the largest area. hopefully, this never actually

@@ -78,7 +78,7 @@ class BatchWindow:
         params.batch_autodetect_bg_model = v == 0
 
     def OnButtonAdd( self, evt ):
-        dlg = wx.FileDialog( self.frame, "Select movie", self.dir, "", "FMF Files|*.fmf|StaticBackgroundFMF Files|*.sbfmf", wx.OPEN )
+        dlg = wx.FileDialog( self.frame, "Select movie", self.dir, "", "FlyMovieFormat files (*.fmf)|*.fmf|audio-video interleave files (*.avi)|*.avi|StaticBackgroundFlyMovieFormat Files (*.sbfmf)|*.sbfmf|MicroFlyMovieFormat Files (*.ufmf)|*.ufmf|Any (*)|*", wx.OPEN )
         
         if dlg.ShowModal() == wx.ID_OK:
             self.dir = dlg.GetDirectory()

@@ -126,10 +126,10 @@ class Movie:
         self.bufferedframe_stamp = None
         self.bufferedframe_num = None
 
-    def get_frame( self, framenumber ):
+    def get_frame( self, framenumber, doforce=False ):
         """Return numpy array containing frame data."""
         # check to see if we have buffered this frame
-        if framenumber == self.bufferedframe_num:
+        if not doforce and framenumber == self.bufferedframe_num:
             return (self.bufferedframe_im.copy(),self.bufferedframe_stamp)
 
         #self.lock.acquire()
@@ -764,6 +764,9 @@ class Avi:
         
         return self.get_next_frame()
     
+    def set_fmfmode(self,fmfmode):
+        self.fmfmode = fmfmode
+
     def get_next_frame(self):
         """returns next frame"""
        
@@ -789,22 +792,42 @@ class Avi:
         height = self.height + self.padheight
         if self.isindexed:
             frame = self.colormap[frame,:]
-            frame.resize((width,height,3))
-            frame = frame[:self.width,:self.height,:]
-            tmp = frame.astype(float)
-            tmp = tmp[:,:,0]*.3 + tmp[:,:,1]*.59 + tmp[:,:,2]*.11
-            tmp = tmp.T
+            if self.fmfmode:
+                frame.resize((height,width,3))
+                frame = frame[:self.height,:self.width,:]
+                tmp = frame.astype(float)
+                tmp = tmp[:,:,0]*.3 + tmp[:,:,1]*.59 + tmp[:,:,2]*.11
+            else:
+                frame.resize((width,height,3))
+                frame = frame[:self.width,:self.height,:]
+                tmp = frame.astype(float)
+                tmp = tmp[:,:,0]*.3 + tmp[:,:,1]*.59 + tmp[:,:,2]*.11
+                tmp = tmp.T
             frame = tmp.astype(num.uint8)
         elif frame.size == width*height:
-            frame.resize( (height, width) )
-            frame = frame[:self.height,:self.width]
+            if self.fmfmode:
+                frame.resize( (height, width) )
+                frame = frame[:self.height,:self.width]
+            else:
+                frame.resize( (width, height) )
+                frame = frame[:self.width,:self.height]
+                frame = frame.T
         elif frame.size == width*height*3:
-            frame.resize( (height, width*3) )
-            tmp = frame.astype(float)
-            tmp = tmp[:,2:width*3:3]*.3 + \
-                tmp[:,1:width*3:3]*.59 + \
-                tmp[:,0:width*3:3]*.11
-            tmp = tmp[:self.height,:self.width]
+            if self.fmfmode:
+                frame.resize( (height, width*3) )
+                tmp = frame.astype(float)
+                tmp = tmp[:,2:width*3:3]*.3 + \
+                    tmp[:,1:width*3:3]*.59 + \
+                    tmp[:,0:width*3:3]*.11
+                tmp = tmp[:self.height,:self.width]
+            else:
+                frame.resize( (width, height*3) )
+                tmp = frame.astype(float)
+                tmp = tmp[:,2:height*3:3]*.3 + \
+                    tmp[:,1:height*3:3]*.59 + \
+                    tmp[:,0:height*3:3]*.11
+                tmp = tmp[:self.width,:self.height]
+                tmp = tmp.T
             frame = tmp.astype(num.uint8)
             #frame = imops.to_mono8( 'RGB24', frame )
             #raise TypeError( "movie must be grayscale" )
@@ -813,16 +836,28 @@ class Avi:
             #   right and see if width is integral and within 10 of expected;
             #   if so, use that; otherwise, error (djo)
             # raise ValueError( "frame size %d doesn't make sense: movie must be 8-bit grayscale"%(frame.size) )
-            if frame.size % height == 0:
-                self.newwidth = frame.size / height
-                if abs(self.newwidth - width) < 10:
-                    frame.resize((self.newwidth, height))
-                    frame = frame[:self.width,:self.height]
+            if self.fmfmode:
+                if frame.size % height == 0:
+                    self.newwidth = frame.size / height
+                    if abs(self.newwidth - width) < 10:
+                        frame.resize((self.newwidth, height))
+                        frame = frame[:self.width,:self.height]
+                    else:
+                        raise ValueError("apparent new width = %d; expected width = %d"
+                            % (height, self.newwidth))
                 else:
-                    raise ValueError("apparent new width = %d; expected width = %d"
-                        % (height, self.newwidth))
+                    raise ValueError("apparent new width is not integral; mod = %d" % (frame.size % height))
             else:
-                raise ValueError("apparent new width is not integral; mod = %d" % (frame.size % height))
+                if frame.size % width == 0:
+                    self.newheight = frame.size / width
+                    if abs(self.newheight - height) < 10:
+                        frame.resize((self.newheight, width))
+                        frame = frame[:self.height,:self.width]
+                    else:
+                        raise ValueError("apparent new height = %d; expected height = %d"
+                            % (width, self.newheight))
+                else:
+                    raise ValueError("apparent new height is not integral; mod = %d" % (frame.size % width))
             
         # make up a timestamp based on the file's stated framerate
         
