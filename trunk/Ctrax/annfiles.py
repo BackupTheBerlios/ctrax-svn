@@ -23,7 +23,7 @@ class InvalidFileFormatException(Exception):
 class AnnotationFile:
 
     def __init__( self, filename=None, bg_imgs=None, doreadheader=True,
-                  justreadheader=False, doreadbgmodel=True ):
+                  justreadheader=False, doreadbgmodel=True, doreadtrx=False ):
         """This function should be called inside an exception handler
         in case the annotation header versions are different from expected
         or the file doesn't exist."""
@@ -141,7 +141,7 @@ class AnnotationFile:
 
         # in non-interactive mode or for brand-new annotation files,
         # we will not read in the trajectories
-        if (not params.interactive) or params.batch_executing or newfile:
+        if (not doreadtrx) and ((not params.interactive) or params.batch_executing or newfile):
             return
 
         # read in the header
@@ -150,10 +150,11 @@ class AnnotationFile:
         # if we don't read it, we will still be at the correct file location from call to CheckAnnHeader
         
         # check if we want to read in the trajectories from this file
-        msgtxt = "Read old trajectories from %s? Choosing not to read will cause the trajectories in this file to be overwritten."%filename
-        if wx.MessageBox(msgtxt,"Read trajectories?",wx.YES|wx.NO) == wx.NO:
-            if DEBUG: print "Not reading trajectories"
-            return
+        if params.interactive:
+            msgtxt = "Read old trajectories from %s? Choosing not to read will cause the trajectories in this file to be overwritten."%filename
+            if wx.MessageBox(msgtxt,"Read trajectories?",wx.YES|wx.NO) == wx.NO:
+                if DEBUG: print "Not reading trajectories"
+                return
 
 
         if DEBUG: print "Reading trajectories..."
@@ -879,10 +880,12 @@ class AnnotationFile:
                 params.do_use_morphology = bool(int(value))
             elif parameter == 'opening_radius':
                 params.opening_radius = int(value)
-                self.bg_imgs.opening_struct = self.bg_imgs.create_morph_struct(params.opening_radius)
+                if self.bg_imgs is not None:
+                    self.bg_imgs.opening_struct = self.bg_imgs.create_morph_struct(params.opening_radius)
             elif parameter == 'closing_radius':
                 params.closing_radius = int(value)
-                self.bg_imgs.closing_struct = self.bg_imgs.create_morph_struct(params.closing_radius)
+                if self.bg_imgs is not None:
+                    self.bg_imgs.closing_struct = self.bg_imgs.create_morph_struct(params.closing_radius)
             elif parameter == 'bg_algorithm':
                 if value == 'median':
                     params.use_median = True
@@ -890,14 +893,14 @@ class AnnotationFile:
                     params.use_median = False
             elif parameter == 'background median':
                 sz = int(value)
-                if doreadbgmodel:
+                if doreadbgmodel and (self.bg_imgs is not None):
                     self.bg_imgs.med = num.fromstring(self.file.read(sz),'<d')
                     self.bg_imgs.med.shape = params.movie_size
                 else:
                     self.file.seek(sz,1)
             elif parameter == 'background mean':
                 sz = int(value)
-                if doreadbgmodel:
+                if doreadbgmodel and (self.bg_imgs is not None):
                     self.bg_imgs.mean = num.fromstring(self.file.read(sz),'<d')
                     self.bg_imgs.mean.shape = params.movie_size
                 else:
@@ -906,7 +909,7 @@ class AnnotationFile:
                 params.bg_norm_type = int(value)
             elif parameter == 'background mad':
                 sz = int(value)
-                if doreadbgmodel:
+                if doreadbgmodel and (self.bg_imgs is not None):
                     self.bg_imgs.mad = num.fromstring(self.file.read(sz),'<d')
                     self.bg_imgs.mad.shape = params.movie_size
                 else:
@@ -920,7 +923,7 @@ class AnnotationFile:
                     self.file.seek(sz,1)
             elif parameter == 'hfnorm':
                 sz = int(value)
-                if doreadbgmodel:
+                if doreadbgmodel and (self.bg_imgs is not None):
                     self.bg_imgs.hfnorm = num.fromstring(self.file.read(sz),'<d')
                     self.bg_imgs.hfnorm.shape = params.movie_size
                 else:
@@ -1016,7 +1019,7 @@ class AnnotationFile:
             elif parameter == 'data format':
                 self.n_fields = len(value.split())
 
-        if doreadbgmodel:
+        if doreadbgmodel and (self.bg_imgs is not None):
             self.bg_imgs.updateParameters()
 
     def ReadSettings( self ):

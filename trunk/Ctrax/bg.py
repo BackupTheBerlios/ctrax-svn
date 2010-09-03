@@ -157,6 +157,9 @@ class BackgroundCalculator:
             self.std = params.movie.h_mov.bgstd.copy()
             self.std.shape = params.movie.h_mov.framesize
             
+            # precompute bounds for backsub
+            #self.precomputeBounds()
+
             # approximate homomorphic filtering
             tmp = self.center.copy()
             issmall = tmp<1.
@@ -170,6 +173,22 @@ class BackgroundCalculator:
         self.closing_struct = self.create_morph_struct(params.closing_radius)
         # initialize backsub buffer as empty
         self.initialize_buffer()
+
+    #def precomputeBounds(self):
+    #    
+    #    # less restrictive bounds
+    #    self.lb_low = self.center - params.n_bg_std_thresh_low*self.dev
+    #    self.ub_low = self.center + params.n_bg_std_thresh_low*self.dev
+    #
+    #    # more restrictive bounds
+    #    self.lb_high = self.center - params.n_bg_std_thresh*self.dev
+    #    self.ub_high = self.center + params.n_bg_std_thresh*self.dev
+    #
+    #    # use isarena: will always be inbounds
+    #    self.lb_low[self.isarena==False] = -num.inf
+    #    self.lb_high[self.isarena==False] = -num.inf
+    #    self.ub_low[self.isarena==False] = num.inf
+    #    self.ub_high[self.isarena==False] = num.inf
 
     def updateParameters(self):
 
@@ -729,8 +748,7 @@ class BackgroundCalculator:
 
         # make sure there aren't too many connected components
         if ncc > params.max_n_clusters:
-            if params.interactive:
-                wx.MessageBox( "too many objects found (>%d); truncating object search"%(params.max_n_clusters), "Error", wx.ICON_ERROR )
+            print "too many objects found (>%d); truncating object search"%(params.max_n_clusters)
 
             # for now, just throw out the last connected components.
             # in the future, we can sort based on area and keep those

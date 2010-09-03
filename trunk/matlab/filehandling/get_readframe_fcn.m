@@ -21,10 +21,15 @@
 % readframe. 
 % headerinfo is a struct with fields depending on the type of movie
 
-function [readframe,nframes,fid,headerinfo] = get_readframe_fcn(filename)
+function [readframe,nframes,fid,headerinfo] = get_readframe_fcn(filename,forcegrayscale)
+
+if nargin < 2,
+  forcegrayscale = true;
+end
 
 % allow videoio library to be used if it is installed and on the path
 CTRAX_ISVIDEOIO = exist('videoReader','file');
+%CTRAX_ISVIDEOIO = false;
 
 [base,ext] = splitext(filename);
 if strcmpi(ext,'.fmf'),
@@ -47,7 +52,13 @@ else
     nframes = info.numFrames;
     seek(readerobj,0);
     seek(readerobj,1);
-    readframe = @(f) videoioreadframe(readerobj,f);
+    im =  videoioreadframe(readerobj,1);
+    ncolors = size(im,3);
+    if ncolors == 1 || ~forcegrayscale,
+      readframe = @(f) videoioreadframe(readerobj,f);
+    else
+      readframe = rgb2gray(videoioreadframe(readerobj,f));
+    end
     headerinfo = info;
     headerinfo.type = 'avi';
   else
@@ -57,7 +68,13 @@ else
       % approximate nframes from duration
       nframes = get(readerobj,'Duration')*get(readerobj,'FrameRate');
     end
-    readframe = @(f) flipdim(read(readerobj,f),1);
+    im = flipdim(read(readerobj,1),1);
+    ncolors = size(im,3);
+    if ncolors == 1 || ~forcegrayscale,
+      readframe = @(f) flipdim(read(readerobj,f),1);
+    else
+      readframe = @(f) rgb2gray(flipdim(read(readerobj,f),1));
+    end
     headerinfo = get(readerobj);
     headerinfo.type = 'avi';
   end

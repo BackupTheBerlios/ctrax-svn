@@ -234,6 +234,7 @@ class Parameters:
         self.batch_autodetect_arena = True
         self.batch_autodetect_shape = True
         self.batch_autodetect_bg_model = True
+        self.batch_executing = False
         # morphology
         self.do_use_morphology = False
         self.opening_radius = 0
@@ -327,6 +328,21 @@ class Parameters:
         #self.n_hist_bins = 100
         #self.uhistogram_cut = 5 # n-th percentile
         #self.n_frames_trunc = 2
+
+        # computing prior background/foreground models
+
+        # number of frames to sample per video
+        self.prior_nframessample = 5
+
+        # number of foreground pixels to sample per location
+        self.prior_fg_nsamples_pool = 5
+        # number of background pixels to sample per location
+        self.prior_bg_nsamples_pool = 5
+
+        # how much to increase the sample radius per iteration
+        self.prior_fg_pool_radius_factor = 1.25
+        # how much to increase the sample radius per iteration
+        self.prior_bg_pool_radius_factor = 1.25
 
     def __print__(self):
         s = ""

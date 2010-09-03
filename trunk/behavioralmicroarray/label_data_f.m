@@ -292,7 +292,7 @@ end
 
 helpmsg = {};
 helpmsg{1} = 'Choose file to which to save labels for the following trx files:';
-helmsgs(2:1+nmovies) = matnames;
+helpmsgs(2:1+nmovies) = matnames;
 labelmatname = sprintf('%slabeleddata%s.mat',labelmatpath,ds);
 [labelmatname,labelmatpath] = uiputfilehelp('*.mat','Save labels to...',labelmatname,'helpmsg',helpmsg);
 save('-append',savedsettingsfile,'labelmatname','labelmatpath');

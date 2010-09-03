@@ -161,7 +161,7 @@ function handles = PlotFirstFrame(handles)
 
 axes(handles.mainaxes);
 im = handles.readframe(handles.f);
-[handles.nr,handles.nc] = size(im);
+[handles.nr,handles.nc,handles.ncolors] = size(im);
 handles.him = imagesc(im);
 colormap gray; axis image; hold on;
 zoom reset;

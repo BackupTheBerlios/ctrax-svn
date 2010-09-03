@@ -1,12 +1,12 @@
-function varargout = labelbehaviors(varargin)
-% [starts,ends] = labelbehaviors(trx,fly,moviename)
+function varargout = labelmanybehaviors(varargin)
+% [starts,ends] = labelmanybehaviors(trx,fly,moviename)
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @labelbehaviors_OpeningFcn, ...
-                   'gui_OutputFcn',  @labelbehaviors_OutputFcn, ...
+                   'gui_OpeningFcn', @labelmanybehaviors_OpeningFcn, ...
+                   'gui_OutputFcn',  @labelmanybehaviors_OutputFcn, ...
                    'gui_LayoutFcn',  [] , ...
                    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -21,48 +21,69 @@ end
 % End initialization code - DO NOT EDIT
 
 
-% --- Executes just before labelbehaviors is made visible.
-function labelbehaviors_OpeningFcn(hObject, eventdata, handles, varargin)
+% --- Executes just before labelmanybehaviors is made visible.
+function labelmanybehaviors_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to labelbehaviors (see VARARGIN)
+% varargin   command line arguments to labelmanybehaviors (see VARARGIN)
 
-% Choose default command line output for labelbehaviors
-if length(varargin) < 3 || length(varargin) == 4 || length(varargin) > 9,
-  error('Usage: [starts,ends] = labelbehaviors(trx,fly,moviename, <starts,ends>,<labels>,<scattercommand>)');
+% Choose default command line output for labelmanybehaviors
+if length(varargin) < 4 || length(varargin) == 5 || length(varargin) == 6 || length(varargin) > 9,
+  error('Usage: [starts,ends] = labelmanybehaviors(trx,fly,moviename,behaviors,<starts,ends,labels>,<scattercommand>,<behaviorcolors>)');
 end
 handles.output = hObject;
 handles.trx = varargin{1};
 handles.fly = varargin{2};
 handles.moviename = varargin{3};
-if length(varargin) >= 5,
-  handles.segstarts = varargin{4};
-  handles.segends = varargin{5};
+handles.behaviors = varargin{4};
+if length(varargin) >= 7,
+  handles.segstarts = varargin{5};
+  handles.segends = varargin{6};
+  handles.labels = varargin{7};
 else
   handles.segstarts = [];
   handles.segends = [];
+  handles.labels = {};
 end
-if length(varargin) >= 6 && ~isempty(varargin{6}),
-  handles.labels = varargin{6};
-else
-  handles.labels = struct('f',cell(1,0),'s',cell(1,0));
-end
-if length(varargin) >= 7 && ~isempty(varargin{7}),
-  handles.scattercommand = varargin{7};
+handles.behaviors = [handles.behaviors,setdiff(unique(handles.labels),handles.behaviors)];
+handles.nbehaviors = length(handles.behaviors);
+if length(varargin) >= 8 && ~isempty(varargin{8}),
+  handles.scattercommand = varargin{8};
 else
   handles.scattercommand = 'min(trk.velmag,7)';
 end
 set(handles.scatteredit,'string',handles.scattercommand);
-if length(varargin) >= 8 && ~isempty(varargin{8}),
-  handles.segcolors = varargin{8};
-end
-if length(varargin) >= 9 && isstruct(varargin{9}),
-  handles.othersegs = varargin{9};
+if length(varargin) >= 9 && ~isempty(varargin{9}),
+  handles.behaviorcolors = varargin{9};
 else
-  handles.othersegs = struct;
+  handles.behaviorcolors = zeros(0,3);
 end
+n = handles.nbehaviors - size(handles.behaviorcolors,1);
+if n > 0,
+  if n <= 6,
+    newcolors = lines(n);
+  else
+    newcolors = jet(n)*.7;
+  end
+  handles.behaviorcolors = cat(1,handles.behaviorcolors,newcolors);
+end
+handles.behaviorcurr = handles.behaviors{1};
+
+% store the offset between the left side of the panel position and the
+% right side of the figure
+set(handles.uipanel_right,'Units','Pixels');
+set(handles.uipanel_bottom,'Units','Pixels');
+set(handles.figure1,'Units','Pixels');
+set(handles.mainaxes,'Units','Pixels');
+figpos = get(handles.figure1,'Position');
+axespos = get(handles.mainaxes,'Position');
+panelpos = get(handles.uipanel_right,'Position');
+handles.axesoffright = figpos(3) - (axespos(1)+axespos(3));
+handles.axesofftop = figpos(4) - (axespos(2)+axespos(4));
+handles.paneloffright = figpos(3) - panelpos(1);
+handles.minfigsz = figpos(3:4);
 
 % set parameters
 handles.fps = 10;
@@ -82,6 +103,8 @@ handles.nframes = handles.trx(handles.fly).endframe;
 handles.isseg = -ones(1,handles.trx(handles.fly).nframes-1);
 handles.hstarts = [];
 handles.hends = [];
+handles.behaviorvalue = 1;
+handles.behaviorcurr = handles.behaviors{handles.behaviorvalue};
 % setup gui
 InitializeFrameSlider(handles);
 SetFrameNumber(handles);
@@ -93,12 +116,12 @@ handles = PlotFirstFrame(handles);
 % Update handles structure
 guidata(hObject, handles);
 
-% UIWAIT makes labelbehaviors wait for user response (see UIRESUME)
+% UIWAIT makes labelmanybehaviors wait for user response (see UIRESUME)
 uiwait(handles.figure1);
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = labelbehaviors_OutputFcn(hObject, eventdata, handles) 
+function varargout = labelmanybehaviors_OutputFcn(hObject, eventdata, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -111,11 +134,7 @@ starts = handles.segstarts + handles.trx(handles.fly).firstframe-1;
 ends = handles.segends + handles.trx(handles.fly).firstframe-1;
 varargout{1} = starts;
 varargout{2} = ends;
-if ~isfield(handles,'labels'),
-  varargout{3} = [];
-else
-  varargout{3} = handles.labels;
-end
+varargout{3} = handles.labels;
 if isfield(handles,'fid'),
   try
     fclose(handles.fid);
@@ -136,36 +155,24 @@ axis image; hold on;
 zoom reset;
 ax = axis;
 
-% plot other labeled behaviors
-color_other = [.7,.7,.7];
-fns = fieldnames(handles.othersegs);
-for i = 1:length(fns),
-  fn = fns{i};
-  starts = handles.othersegs.(fn).starts;
-  ends = handles.othersegs.(fn).ends;
-  handles.hothersegs.(fn) = nan(1,length(starts));
-  for j = 1:length(starts),
-    f1 = starts(j); f2 = ends(j);
-    i1 = handles.trx(handles.fly).off+(f1);
-    i2 = handles.trx(handles.fly).off+(f2);
-    handles.hothersegs.(fn)(j) = plot(handles.trx(handles.fly).x(i1:i2),...
-      handles.trx(handles.fly).y(i1:i2),'-','color',color_other,'linewidth',4,'hittest','off');
+if isempty(handles.behaviorcolors),
+  if handles.nbehaviors <= 6,
+    handles.behaviorcolors = lines(handles.nbehaviors);
+  else
+    handles.behaviorcolors = jet(handles.nbehaviors)*.7;
   end
 end
-
-colors = lines(6);
 for i = 1:length(handles.segstarts),
   f1 = handles.segstarts(i); f2 = handles.segends(i);
   i1 = handles.trx(handles.fly).off+(f1);
   i2 = handles.trx(handles.fly).off+(f2);
+  behaviorcurr = handles.labels{i};
+  behaviorvalue = find(strcmp(behaviorcurr,handles.behaviors),1);
   handles.isseg(i1:i2) = ...
-    plot(handles.trx(handles.fly).x(i1:i2),...
-    handles.trx(handles.fly).y(i1:i2),'m','linewidth',4,'hittest','off');
-  handles.hstarts(i) = plot(handles.trx(handles.fly).x(i1),handles.trx(handles.fly).y(i1),'o','color',colors(mod(i-1,6)+1,:));
-  handles.hends(i) = plot(handles.trx(handles.fly).x(i2),handles.trx(handles.fly).y(i2),'s','color',colors(mod(i-1,6)+1,:));
-  if isfield(handles,'segcolors'),
-    set(handles.isseg(i1),'color',handles.segcolors(i,:));
-  end
+    plot(handles.trx(handles.fly).x(i1:i2+1),...
+    handles.trx(handles.fly).y(i1:i2+1),'-','color',handles.behaviorcolors(behaviorvalue,:),'linewidth',6,'hittest','off');
+  handles.hstarts(i) = plot(handles.trx(handles.fly).x(i1),handles.trx(handles.fly).y(i1),'o','color',handles.behaviorcolors(behaviorvalue,:));
+  handles.hends(i) = plot(handles.trx(handles.fly).x(i2),handles.trx(handles.fly).y(i2),'s','color',handles.behaviorcolors(behaviorvalue,:));
 end
 plot(handles.trx(handles.fly).x,handles.trx(handles.fly).y,'w-','hittest','off');
 handles.hpath = myscatter(handles.trx(handles.fly).x,handles.trx(handles.fly).y,[],handles.c,[],@jet,'.');
@@ -174,20 +181,10 @@ colormap jet;
 %colorbar;
 set(handles.hpath,'hittest','off');
 handles.hmarker = drawflyo(0,0,0,10,10);
-handles.hcenter = plot(0,0,'o','color','r','hittest','off');
-set(handles.hmarker,'color','r','linewidth',2,'hittest','off');
-handles.hlabel = zeros(size(handles.labels));
-for i = 1:length(handles.labels),
-  j = handles.trx(handles.fly).off+(handles.labels(i).f);
-  handles.hlabel(i) = text(handles.trx(handles.fly).x(j),...
-    handles.trx(handles.fly).y(j),handles.labels(i).s,'horizontalalignment','left',...
-    'color','r','fontname','times','fontsize',16,'clipping','on');
-  if handles.isseg(handles.labels(i).f),
-    set(handles.hlabel(i),'color',get(handles.isseg(handles.labels(i).f),'color'));
-  end
-end
+handles.hcenter = plot(0,0,'o','color','k','hittest','off');
+set(handles.hmarker,'color','k','linewidth',2,'hittest','off');
 axes(handles.zoomlocaxes);
-image(uint8(repmat(im,[1,1,3]))); axis image; axis off;
+handles.him_zoomloc = image(uint8(repmat(im,[1,1,3]))); axis image; axis off;
 hold on;
 handles.hzoombox = plot(ax([1,1,2,2,1]),ax([3,4,4,3,3]),'r','linewidth',2);
 
@@ -202,9 +199,12 @@ function handles = UpdatePlot(handles)
 
 im = handles.readframe(handles.f);
 set(handles.him,'cdata',uint8(repmat(im,[1,1,3])));
+set(handles.him_zoomloc,'cdata',uint8(repmat(im,[1,1,3])));
 
 fly = handles.fly;
 i = handles.trx(fly).off+(handles.f);
+handles = UpdateBehaviorLabels(handles);
+
 updatefly(handles.hmarker,handles.trx(fly).x(i),handles.trx(fly).y(i),...
   handles.trx(fly).theta(i),handles.trx(fly).a(i),handles.trx(fly).b(i));
 set(handles.hcenter,'xdata',handles.trx(fly).x(i),'ydata',handles.trx(fly).y(i));
@@ -214,6 +214,25 @@ if get(handles.zoombutton,'value'),
 end
 
 set(handles.mainaxes,'buttondownfcn',handles.bd);
+
+function handles = UpdateBehaviorLabels(handles)
+
+fly = handles.fly;
+i = handles.trx(fly).off+(handles.f);
+if handles.isseg(i) > 0,
+  j = find(handles.segends >= i,1);
+  if ~strcmp(handles.behaviorcurr,handles.labels{j}),
+    handles.behaviorcurr = handles.labels{j};
+    handles.behaviorvalue = find(strcmp(handles.behaviors,handles.behaviorcurr));
+    set(handles.addlabelbutton,'Value',handles.behaviorvalue,'BackgroundColor',handles.behaviorcolors(handles.behaviorvalue,:));
+  end
+  set(handles.hmarker,'color',handles.behaviorcolors(handles.behaviorvalue,:));
+  set(handles.hcenter,'color',handles.behaviorcolors(handles.behaviorvalue,:));
+else
+  set(handles.hmarker,'color','k');
+  set(handles.hcenter,'color','k');
+end
+
 
 function ZoomInOnFlies(handles)
 
@@ -290,6 +309,7 @@ v = track.firstframe <= f && track.endframe >= f;
 function InitializeDisplayPanel(handles)
 
 set(handles.speedtext,'string',sprintf('Playback Speed: %.1f fps',handles.fps));
+set(handles.addlabelbutton,'String',handles.behaviors,'Value',handles.behaviorvalue,'BackgroundColor',handles.behaviorcolors(handles.behaviorvalue,:));
 
 % --- Executes on button press in playpausebutton.
 function playpausebutton_Callback(hObject, eventdata, handles)
@@ -493,24 +513,26 @@ if handles.isseg(i1)>0 || f1 > handles.trx(handles.fly).endframe || ...
 end
 i2 = find(handles.isseg(i1+1:end)>0,1,'first');
 if isempty(i2),
-  i2 = handles.trx(handles.fly).nframes;
+  i2 = handles.trx(handles.fly).nframes-1;
 else
   i2 = i2 + i1 - 1;
 end
+
 handles.currentstarti = i1;
 %i1 = handles.trx(handles.fly).off+(f1);
 %i2 = handles.trx(handles.fly).off+(f2);
-handles.isseg(i1:i2) = plot(handles.trx(handles.fly).x(i1:i2),...
-  handles.trx(handles.fly).y(i1:i2),'m','linewidth',4,'hittest','off');
+handles.isseg(i1:i2) = plot(handles.trx(handles.fly).x(i1:i2+1),...
+  handles.trx(handles.fly).y(i1:i2+1),'-','color',handles.behaviorcolors(handles.behaviorvalue,:),'linewidth',6,'hittest','off');
 chil = get(handles.mainaxes,'children');
 chil = [chil(2:end-1);chil(1);chil(end)];
 set(handles.mainaxes,'children',chil);
 handles.segstarts(end+1) = i1;
 handles.segends(end+1) = i2;
-colors = lines(6);
-i = mod(length(handles.segstarts)-1,6)+1;
-handles.hstarts(end+1) = plot(handles.trx(handles.fly).x(i1),handles.trx(handles.fly).y(i1),'o','color',colors(i,:));
-handles.hends(end+1) = plot(handles.trx(handles.fly).x(i2),handles.trx(handles.fly).y(i2),'s','color',colors(i,:));
+handles.labels{end+1} = handles.behaviorcurr;
+handles.hstarts(end+1) = plot(handles.trx(handles.fly).x(i1),handles.trx(handles.fly).y(i1),'o','color',handles.behaviorcolors(handles.behaviorvalue,:));
+handles.hends(end+1) = plot(handles.trx(handles.fly).x(i2),handles.trx(handles.fly).y(i2),'s','color',handles.behaviorcolors(handles.behaviorvalue,:));
+
+handles = UpdateBehaviorLabels(handles);
 
 guidata(hObject,handles);
 
@@ -523,6 +545,9 @@ function addendbutton_Callback(hObject, eventdata, handles)
 % end last interval at f1
 f1 = handles.f;
 i1 = handles.trx(handles.fly).off+(f1);
+if i1 == handles.trx(handles.fly).nframes,
+  return;
+end
 if handles.isseg(i1)<=0 || f1 > handles.trx(handles.fly).endframe || ...
     f1 < handles.trx(handles.fly).firstframe,
   return;
@@ -544,21 +569,19 @@ i0 = handles.segstarts(end);
 %end
 
 % set plot data
-set(handles.isseg(i1),'xdata',handles.trx(handles.fly).x(i0:i1),...
-  'ydata',handles.trx(handles.fly).y(i0:i1));
-set(handles.hends(end),'xdata',handles.trx(handles.fly).x(i1),...
-  'ydata',handles.trx(handles.fly).y(i1));
+set(handles.isseg(i1),'xdata',handles.trx(handles.fly).x(i0:i1+1),...
+  'ydata',handles.trx(handles.fly).y(i0:i1+1));
+set(handles.hends(end),'xdata',handles.trx(handles.fly).x(i1+1),...
+  'ydata',handles.trx(handles.fly).y(i1+1));
 handles.segends(end) = i1;
+
+handles = UpdateBehaviorLabels(handles);
 
 guidata(hObject,handles);
 
 starts = handles.segstarts + handles.trx(handles.fly).firstframe-1;
 ends = handles.segends + handles.trx(handles.fly).firstframe-1;
-if ~isfield(handles,'labels'),
-  labels = [];
-else
-  labels = handles.labels;
-end
+labels = handles.labels;
 
 save labeledbehaviors_autosave.mat starts ends labels
 
@@ -634,18 +657,12 @@ delete(handles.hstarts(j));
 delete(handles.hends(j));
 handles.segstarts(j) = [];
 handles.segends(j) = [];
+handles.labels(j) = [];
 handles.hstarts(j) = [];
 handles.hends(j) = [];
 handles.isseg(i0:i1) = -1;
-if isfield(handles,'labels') && ~isempty(handles.labels),
-  fs = getstructarrayfield(handles.labels,'f');
-  f0 = i0 + off; f1 = i1 + off;
-  dodelete = fs >= f0 & fs <= f1;
-  if any(dodelete),
-    delete(handles.hlabel(dodelete));
-    handles.labels(dodelete) = [];
-  end
-end
+
+handles = UpdateBehaviorLabels(handles);
 
 guidata(hObject,handles);
 
@@ -656,25 +673,20 @@ function addlabelbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+handles.behaviorvalue = get(hObject,'value');
+handles.behaviorcurr = handles.behaviors{handles.behaviorvalue};
+set(hObject,'BackgroundColor',handles.behaviorcolors(handles.behaviorvalue,:));
+
 f = handles.f;
 i = handles.trx(handles.fly).off+(f);
-if handles.isseg(i) <= 0,
-  return;
+if handles.isseg(i) > 0,
+  % switch the label
+  j = find(handles.segends >= i,1);
+  handles.labels{j} = handles.behaviorcurr;
+  handles.behaviorvalue = find(strcmp(handles.behaviorcurr,handles.behaviors),1);
+  set(handles.isseg(i),'color',handles.behaviorcolors(handles.behaviorvalue,:));
 end
 
-s = inputdlg('Enter label for segment: ');
-newlabel.f = f;
-newlabel.s = s;
-newh = text(handles.trx(handles.fly).x(i),...
-  handles.trx(handles.fly).y(i),s,'horizontalalignment','left',...
-  'color','r','fontname','times','fontsize',16,'clipping','on');
-if ~isfield(handles,'labels'),
-  handles.labels = newlabel;
-  handles.hlabel = newh;
-else
-  handles.labels(end+1) = newlabel;
-  handles.hlabel(end+1) = newh;
-end
 guidata(hObject,handles);
 
 
@@ -711,3 +723,37 @@ handles.f = handles.trx(handles.fly).firstframe + j - 1;
 SetFrameNumber(handles,hObject);
 handles = UpdatePlot(handles);
 guidata(hObject,handles);
+
+
+% --- Executes when figure1 is resized.
+function figure1_ResizeFcn(hObject, eventdata, handles)
+% hObject    handle to figure1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if ~isfield(handles,'minfigsz'),
+  return;
+end
+figpos = get(handles.figure1,'Position');
+figpos0 = figpos;
+figpos(3) = max(figpos(3),handles.minfigsz(1));
+figpos(4) = max(figpos(4),handles.minfigsz(2));
+if any(figpos ~= figpos0),
+  set(handles.figure1,'Position',figpos);
+end
+
+axespos = get(handles.mainaxes,'Position');
+axespos(3) = figpos(3) - axespos(1) - handles.axesoffright;
+axespos(4) = figpos(4) - axespos(2) - handles.axesofftop;
+set(handles.mainaxes,'Position',axespos);
+
+panelpos = get(handles.uipanel_bottom,'Position');
+c = axespos(1) + axespos(3)/2;
+panelpos(1) = c - panelpos(3)/2;
+set(handles.uipanel_bottom,'Position',panelpos);
+
+panelpos = get(handles.uipanel_right,'Position');
+panelpos(1) = figpos(3) - handles.paneloffright;
+set(handles.uipanel_right,'Position',panelpos);
+
+%keyboard;
