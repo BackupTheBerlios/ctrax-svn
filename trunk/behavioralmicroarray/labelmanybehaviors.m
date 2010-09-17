@@ -39,8 +39,8 @@ handles.fly = varargin{2};
 handles.moviename = varargin{3};
 handles.behaviors = varargin{4};
 if length(varargin) >= 7,
-  handles.segstarts = varargin{5};
-  handles.segends = varargin{6};
+  handles.segstarts = varargin{5}-handles.trx(handles.fly).firstframe+1;
+  handles.segends = varargin{6}-handles.trx(handles.fly).firstframe+1;
   handles.labels = varargin{7};
 else
   handles.segstarts = [];
@@ -164,9 +164,9 @@ if isempty(handles.behaviorcolors),
   end
 end
 for i = 1:length(handles.segstarts),
-  f1 = handles.segstarts(i); f2 = handles.segends(i);
-  i1 = handles.trx(handles.fly).off+(f1);
-  i2 = handles.trx(handles.fly).off+(f2);
+  i1 = handles.segstarts(i); i2 = handles.segends(i);
+  %i1 = handles.trx(handles.fly).off+(f1);
+  %i2 = handles.trx(handles.fly).off+(f2);
   behaviorcurr = handles.labels{i};
   behaviorvalue = find(strcmp(behaviorcurr,handles.behaviors),1);
   handles.isseg(i1:i2) = ...
