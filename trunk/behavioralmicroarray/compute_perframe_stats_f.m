@@ -135,47 +135,54 @@ if ~ISDOCOMPUTEARENA,
   docomputearena = strcmpi(b,'yes');
 end
 if docomputearena;
-  fprintf('Enter name of annotation file to read arena position from.\n');
-  annname = [matpath,strrep(matnameonly,'.mat','.ann')];
-  if ~exist(annname,'file'),
-    annnamefmf = [matpath,strrep(matnameonly,'.mat','.fmf.ann')];
-    if exist(annnamefmf,'file')
-      annname = annnamefmf;
-    else
-      annnamesbfmf = [matpath,strrep(matnameonly,'.mat','.sbfmf.ann')];
-      if exist(annnamesbfmf,'file')
-        annname = annnamesbfmf;
+  if isfield(trx,'arena') && ~isnan(trx(1).arena.x) && ~isnan(trx(1).arena.y) && ...
+      ~isnan(trx(1).arena.r),
+    arena_center_x = trx(1).arena.x;
+    arena_center_y = trx(1).arena.y;
+    arena_radius = trx(1).arena.y;
+  else
+    fprintf('Enter name of annotation file to read arena position from.\n');
+    annname = [matpath,strrep(matnameonly,'.mat','.ann')];
+    if ~exist(annname,'file'),
+      annnamefmf = [matpath,strrep(matnameonly,'.mat','.fmf.ann')];
+      if exist(annnamefmf,'file')
+        annname = annnamefmf;
       else
-        annnameavi = [matpath,strrep(matnameonly,'.mat','.avi.ann')];
-        if exist(annnameavi,'file')
-          annname = annnameavi;
+        annnamesbfmf = [matpath,strrep(matnameonly,'.mat','.sbfmf.ann')];
+        if exist(annnamesbfmf,'file')
+          annname = annnamesbfmf;
+        else
+          annnameavi = [matpath,strrep(matnameonly,'.mat','.avi.ann')];
+          if exist(annnameavi,'file')
+            annname = annnameavi;
+          end
         end
       end
     end
-  end
-  helpmsg = {'We will read in the location of the arena from the Ctrax annotation file.',...
-    sprintf('Choose the annotation file corresponding to trx file %s',matname)};
-  [annname,annpath] = uigetfilehelp('*.ann',sprintf('Annotation file corresponding to %s',matnameonly),annname,'helpmsg',helpmsg);
-  annname = [annpath,annname];
-  if ~exist(annname,'file'),
-    fprintf('Annotation file %s does not exist, not computing dist2wall\n',annname);
-    docomputearena = false;
-  else
-    try
-      [arena_center_x,arena_center_y,arena_radius] = ...
-        read_ann(annname,'arena_center_x','arena_center_y','arena_radius');
-    catch
-      fprintf('Could not read annotation file %s, not computing dist2wall\n',annname);
-      docomputearena = false;
-    end
-    if isempty(arena_center_x) || isempty(arena_center_y) || isempty(arena_radius),
-      fprintf('Circular arena is not defined in annotation file %s\n',annname);
+    helpmsg = {'We will read in the location of the arena from the Ctrax annotation file.',...
+      sprintf('Choose the annotation file corresponding to trx file %s',matname)};
+    [annname,annpath] = uigetfilehelp('*.ann',sprintf('Annotation file corresponding to %s',matnameonly),annname,'helpmsg',helpmsg);
+    annname = [annpath,annname];
+    if ~exist(annname,'file'),
+      fprintf('Annotation file %s does not exist, not computing dist2wall\n',annname);
       docomputearena = false;
     else
-      for fly = 1:length(trx),
-        trx(fly).arena.x = arena_center_x;
-        trx(fly).arena.y = arena_center_y;
-        trx(fly).arena.r = arena_radius;
+      try
+        [arena_center_x,arena_center_y,arena_radius] = ...
+          read_ann(annname,'arena_center_x','arena_center_y','arena_radius');
+      catch
+        fprintf('Could not read annotation file %s, not computing dist2wall\n',annname);
+        docomputearena = false;
+      end
+      if isempty(arena_center_x) || isempty(arena_center_y) || isempty(arena_radius),
+        fprintf('Circular arena is not defined in annotation file %s\n',annname);
+        docomputearena = false;
+      else
+        for fly = 1:length(trx),
+          trx(fly).arena.x = arena_center_x;
+          trx(fly).arena.y = arena_center_y;
+          trx(fly).arena.r = arena_radius;
+        end
       end
     end
   end

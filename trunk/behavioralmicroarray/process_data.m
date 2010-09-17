@@ -30,13 +30,15 @@ if isfield(data,'thetapred'),
 end
 
 % read arena dimensions
-if ~isempty(annname) && exist(annname,'file'),
-  [arena.x,arena.y,arena.r] = arena_params(annname,moviename);
-else
-  arena.x = nan; arena.y = nan; arena.r = nan;
-end
-for fly = 1:nflies,
-  data(fly).arena = arena;
+if ~isfield(data,'arena') || isnan(data(1).arena.x),
+  if ~isempty(annname) && exist(annname,'file'),
+    [arena.x,arena.y,arena.r] = arena_params(annname,moviename);
+  else
+    arena.x = nan; arena.y = nan; arena.r = nan;
+  end
+  for fly = 1:nflies,
+    data(fly).arena = arena;
+  end
 end
 
 thetafil = [1     4     6     4     1]/16;

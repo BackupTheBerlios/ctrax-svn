@@ -60,6 +60,7 @@ if length(varargin) >= 9 && ~isempty(varargin{9}),
 else
   handles.behaviorcolors = zeros(0,3);
 end
+
 n = handles.nbehaviors - size(handles.behaviorcolors,1);
 if n > 0,
   if n <= 6,
@@ -526,11 +527,17 @@ handles.isseg(i1:i2) = plot(handles.trx(handles.fly).x(i1:i2+1),...
 chil = get(handles.mainaxes,'children');
 chil = [chil(2:end-1);chil(1);chil(end)];
 set(handles.mainaxes,'children',chil);
-handles.segstarts(end+1) = i1;
-handles.segends(end+1) = i2;
-handles.labels{end+1} = handles.behaviorcurr;
-handles.hstarts(end+1) = plot(handles.trx(handles.fly).x(i1),handles.trx(handles.fly).y(i1),'o','color',handles.behaviorcolors(handles.behaviorvalue,:));
-handles.hends(end+1) = plot(handles.trx(handles.fly).x(i2),handles.trx(handles.fly).y(i2),'s','color',handles.behaviorcolors(handles.behaviorvalue,:));
+j = find(handles.segstarts >= i1,1);
+hstart = plot(handles.trx(handles.fly).x(i1),handles.trx(handles.fly).y(i1),'o','color',handles.behaviorcolors(handles.behaviorvalue,:));
+hend = plot(handles.trx(handles.fly).x(i2),handles.trx(handles.fly).y(i2),'s','color',handles.behaviorcolors(handles.behaviorvalue,:));
+if isempty(j),
+  j = length(handles.segstarts)+1;
+end
+handles.segstarts = [handles.segstarts(1:j-1),i1,handles.segstarts(j:end)];
+handles.segends = [handles.segends(1:j-1),i2,handles.segends(j:end)];
+handles.labels = [handles.labels(1:j-1),{handles.behaviorcurr},handles.labels(j:end)];
+handles.hstarts = [handles.hstarts(1:j-1),hstart,handles.hstarts(j:end)];
+handles.hends = [handles.hends(1:j-1),hend,handles.hends(j:end)];
 
 handles = UpdateBehaviorLabels(handles);
 
@@ -553,12 +560,14 @@ if handles.isseg(i1)<=0 || f1 > handles.trx(handles.fly).endframe || ...
   return;
 end
 
+j = find(handles.segstarts <= i1 & handles.segends >= i1,1);
+
 % reset until f2 to -1
-i2 = handles.segends(end);
+i2 = handles.segends(j);
 handles.isseg(i1+1:i2) = -1;
 
 % start of this interval
-i0 = handles.segstarts(end);
+i0 = handles.segstarts(j);
 %i0 = find(handles.isseg(1:i1-1)<=0,1,'last');
 %if isempty(i0),
 %  i0 = 1;
@@ -571,9 +580,9 @@ i0 = handles.segstarts(end);
 % set plot data
 set(handles.isseg(i1),'xdata',handles.trx(handles.fly).x(i0:i1+1),...
   'ydata',handles.trx(handles.fly).y(i0:i1+1));
-set(handles.hends(end),'xdata',handles.trx(handles.fly).x(i1+1),...
+set(handles.hends(j),'xdata',handles.trx(handles.fly).x(i1+1),...
   'ydata',handles.trx(handles.fly).y(i1+1));
-handles.segends(end) = i1;
+handles.segends(j) = i1;
 
 handles = UpdateBehaviorLabels(handles);
 
@@ -697,11 +706,9 @@ function prevlabel_button_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 i = handles.trx(handles.fly).off+(handles.f);
-j = find(handles.isseg(1:i-2)<=0&handles.isseg(2:i-1)>0,1,'last');
-if isempty(j),
-  return;
-end
-j = j + 1;
+j = find(handles.segends < i,1,'last');
+if isempty(j), return; end
+j = handles.segends(j);
 handles.f = handles.trx(handles.fly).firstframe + j - 1;
 SetFrameNumber(handles,hObject);
 handles = UpdatePlot(handles);
@@ -714,11 +721,9 @@ function nextlabel_button_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 i = handles.trx(handles.fly).off+(handles.f);
-j = find(handles.isseg(i:end-1)<=0&handles.isseg(i+1:end)>0,1,'first');
-if isempty(j),
-  return;
-end
-j = j + i;
+j = find(handles.segstarts > i,1);
+if isempty(j), return; end
+j = handles.segstarts(j);
 handles.f = handles.trx(handles.fly).firstframe + j - 1;
 SetFrameNumber(handles,hObject);
 handles = UpdatePlot(handles);
