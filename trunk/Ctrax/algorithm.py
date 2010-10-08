@@ -2,7 +2,6 @@
 # KMB 09/07/07
 
 import numpy as num
-from scipy.linalg.basic import eps
 import time
 import wx
 from wx import xrc

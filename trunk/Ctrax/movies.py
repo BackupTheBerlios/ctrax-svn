@@ -23,7 +23,9 @@ try:
 except ImportError:
     class NoMoreFramesException (Exception): pass
 try:
-    import motmot.ufmf.ufmf as ufmf
+    # FIXME: change back to motmot.ufmf.ufmf
+    #import motmot.ufmf.ufmf as ufmf
+    import ufmf
 except ImportError:
     pass
 
@@ -126,10 +128,10 @@ class Movie:
         self.bufferedframe_stamp = None
         self.bufferedframe_num = None
 
-    def get_frame( self, framenumber, doforce=False ):
+    def get_frame( self, framenumber ):
         """Return numpy array containing frame data."""
         # check to see if we have buffered this frame
-        if not doforce and framenumber == self.bufferedframe_num:
+        if framenumber == self.bufferedframe_num:
             return (self.bufferedframe_im.copy(),self.bufferedframe_stamp)
 
         #self.lock.acquire()
@@ -764,9 +766,6 @@ class Avi:
         
         return self.get_next_frame()
     
-    def set_fmfmode(self,fmfmode):
-        self.fmfmode = fmfmode
-
     def get_next_frame(self):
         """returns next frame"""
        
@@ -792,42 +791,22 @@ class Avi:
         height = self.height + self.padheight
         if self.isindexed:
             frame = self.colormap[frame,:]
-            if self.fmfmode:
-                frame.resize((height,width,3))
-                frame = frame[:self.height,:self.width,:]
-                tmp = frame.astype(float)
-                tmp = tmp[:,:,0]*.3 + tmp[:,:,1]*.59 + tmp[:,:,2]*.11
-            else:
-                frame.resize((width,height,3))
-                frame = frame[:self.width,:self.height,:]
-                tmp = frame.astype(float)
-                tmp = tmp[:,:,0]*.3 + tmp[:,:,1]*.59 + tmp[:,:,2]*.11
-                tmp = tmp.T
+            frame.resize((width,height,3))
+            frame = frame[:self.width,:self.height,:]
+            tmp = frame.astype(float)
+            tmp = tmp[:,:,0]*.3 + tmp[:,:,1]*.59 + tmp[:,:,2]*.11
+            tmp = tmp.T
             frame = tmp.astype(num.uint8)
         elif frame.size == width*height:
-            if self.fmfmode:
-                frame.resize( (height, width) )
-                frame = frame[:self.height,:self.width]
-            else:
-                frame.resize( (width, height) )
-                frame = frame[:self.width,:self.height]
-                frame = frame.T
+            frame.resize( (height, width) )
+            frame = frame[:self.height,:self.width]
         elif frame.size == width*height*3:
-            if self.fmfmode:
-                frame.resize( (height, width*3) )
-                tmp = frame.astype(float)
-                tmp = tmp[:,2:width*3:3]*.3 + \
-                    tmp[:,1:width*3:3]*.59 + \
-                    tmp[:,0:width*3:3]*.11
-                tmp = tmp[:self.height,:self.width]
-            else:
-                frame.resize( (width, height*3) )
-                tmp = frame.astype(float)
-                tmp = tmp[:,2:height*3:3]*.3 + \
-                    tmp[:,1:height*3:3]*.59 + \
-                    tmp[:,0:height*3:3]*.11
-                tmp = tmp[:self.width,:self.height]
-                tmp = tmp.T
+            frame.resize( (height, width*3) )
+            tmp = frame.astype(float)
+            tmp = tmp[:,2:width*3:3]*.3 + \
+                tmp[:,1:width*3:3]*.59 + \
+                tmp[:,0:width*3:3]*.11
+            tmp = tmp[:self.height,:self.width]
             frame = tmp.astype(num.uint8)
             #frame = imops.to_mono8( 'RGB24', frame )
             #raise TypeError( "movie must be grayscale" )
@@ -836,28 +815,16 @@ class Avi:
             #   right and see if width is integral and within 10 of expected;
             #   if so, use that; otherwise, error (djo)
             # raise ValueError( "frame size %d doesn't make sense: movie must be 8-bit grayscale"%(frame.size) )
-            if self.fmfmode:
-                if frame.size % height == 0:
-                    self.newwidth = frame.size / height
-                    if abs(self.newwidth - width) < 10:
-                        frame.resize((self.newwidth, height))
-                        frame = frame[:self.width,:self.height]
-                    else:
-                        raise ValueError("apparent new width = %d; expected width = %d"
-                            % (height, self.newwidth))
+            if frame.size % height == 0:
+                self.newwidth = frame.size / height
+                if abs(self.newwidth - width) < 10:
+                    frame.resize((self.newwidth, height))
+                    frame = frame[:self.width,:self.height]
                 else:
-                    raise ValueError("apparent new width is not integral; mod = %d" % (frame.size % height))
+                    raise ValueError("apparent new width = %d; expected width = %d"
+                        % (height, self.newwidth))
             else:
-                if frame.size % width == 0:
-                    self.newheight = frame.size / width
-                    if abs(self.newheight - height) < 10:
-                        frame.resize((self.newheight, width))
-                        frame = frame[:self.height,:self.width]
-                    else:
-                        raise ValueError("apparent new height = %d; expected height = %d"
-                            % (width, self.newheight))
-                else:
-                    raise ValueError("apparent new height is not integral; mod = %d" % (frame.size % width))
+                raise ValueError("apparent new width is not integral; mod = %d" % (frame.size % height))
             
         # make up a timestamp based on the file's stated framerate
         
@@ -1297,10 +1264,10 @@ class CompressedAvi:
 def write_results_to_avi(movie,tracks,filename,f0=None,f1=None):
 
     nframes = len(tracks)
-    if f0 is None or type(f0) != type(1):
+    if f0 is None:
         f0 = params.start_frame
-    if f1 is None or type(f1) != type(1):
-        f1 = nframes + params.start_frame - 1        
+    if f1 is None:
+        f1 = nframes + params.start_frame - 1
 
     f0 -= params.start_frame
     f1 -= params.start_frame
@@ -1376,8 +1343,7 @@ def write_avi_frame(movie,tracks,i,outstream):
     # get tails
     old_pts = []
     early_frame = int(max(0,i-params.tail_length))
-    for f in range( early_frame, i+1 ):
-        dataframe = tracks[f]
+    for dataframe in tracks[early_frame:i+1]:
         these_pts = []
         for ellipse in dataframe.itervalues():
             these_pts.append( (ellipse.center.x,ellipse.center.y,

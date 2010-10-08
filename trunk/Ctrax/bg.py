@@ -254,7 +254,7 @@ class BackgroundCalculator:
         for i in range(params.bg_firstframe,bg_lastframe+1,nframesskip):
 
             if params.interactive and not params.batch_executing:
-                (keepgoing,skip) = progressbar.Update(value=(i-params.bg_firstframe)/nframesskip,newmsg='Reading in frame %d / %d'%(i-params.bg_firstframe,n_bg_frames))
+                (keepgoing,skip) = progressbar.Update(value=nframesused+1,newmsg='Reading in frame %d (%d / %d)'%(i+1,nframesused,n_bg_frames))
                 if not keepgoing:
                     progressbar.Destroy()
 
