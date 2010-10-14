@@ -76,7 +76,7 @@ class Movie:
                 if self.interactive:
                     wx.MessageBox( "I/O error opening \"%s\""%(filename), "Error", wx.ICON_ERROR )
                 raise
-            except ufmf.ShortUfmfFileError:
+            except ufmf.ShortUFMFFileError:
                 if self.interactive:
                     wx.MessageBox( "Error opening \"%s\". Short ufmf file."%(filename), "Error", wx.ICON_ERROR )
                 raise

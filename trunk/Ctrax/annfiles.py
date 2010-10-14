@@ -10,7 +10,7 @@ import shutil
 
 from version import __version__
 from version import DEBUG_ANN as DEBUG
-from version import DEBUG_HINDSIGHT
+from version import DEBUG_IDASSIGNMENT
 from params import params
 import ellipsesk as ell
 import pickle
@@ -182,8 +182,11 @@ class AnnotationFile:
                 if DEBUG: print "i = %d, adding %x to the lookup table for frame = %d"%(i,p,self.lastframetracked+1)
                 if DEBUG: print "line = " + str(line.split())
                 self.lookup.append(p)
-
-            ells = self.ParseData(line)
+            try:
+                ells = self.ParseData(line)
+            except:
+                print "Error parsing line %d. Aborting."%self.n
+                break
             # count ids
             self.CountIds(ells)
             #ells = self.ReplaceIds(ells)
@@ -1166,7 +1169,7 @@ class AnnotationFile:
         scipy.io.savemat( filename, save_dict, oned_as='column' )
         # menu_file_write_timestamps
     
-    def tell():
+    def tell(self):
         return self.file.tell()
 
     def get_frame_prev(self):
@@ -1177,16 +1180,16 @@ class AnnotationFile:
     def GetNewId(self):
         if len(self.recycledids) > 0:
             newid = self.recycledids.pop()
-            if DEBUG_HINDSIGHT: print "Recycled id %d"%newid
+            if DEBUG_IDASSIGNMENT: print "Assigned recycled id %d"%newid
         else:
             newid = params.nids
-            if DEBUG_HINDSIGHT: print "Used new id %d"%newid
+            if DEBUG_IDASSIGNMENT: print "Assigned new id %d"%newid
             params.nids+=1
         return newid
 
     def RecycleId(self,id):
         self.recycledids.append(id)
-        if DEBUG_HINDSIGHT: print "Recycling id %d"%id
+        if DEBUG_IDASSIGNMENT: print "Recycling id %d"%id
 
     def rename_file(self,newfilename=None):
         oldfile = self.file

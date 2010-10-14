@@ -332,7 +332,7 @@ class Parameters:
         # computing prior background/foreground models
 
         # number of frames to sample per video
-        self.prior_nframessample = 100
+        self.prior_nframessample = 5
 
         # number of foreground pixels to sample per location
         self.prior_fg_nsamples_pool = 25

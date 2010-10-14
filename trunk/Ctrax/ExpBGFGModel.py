@@ -30,6 +30,7 @@ We approximate P_exp(l | x) by histogramming with a fixed bin size.
 """
 import numpy as num
 from params import params
+import bg
 import movies
 import annfiles as annot
 import estconncomps as est
@@ -56,8 +57,8 @@ class ExpBGFGModel:
                   obj_detection_dist_nbins=100,
                   isback_dilation_hsize=2,
                   fg_min_sigma = 1.,
-                  bg_min_sigma = 1.
-                  ):
+                  bg_min_sigma = 1.,
+                  min_always_bg_mask_frac = 1.):
         """
         ExpBGFGModel(movienames,annnames)
 
@@ -106,6 +107,7 @@ class ExpBGFGModel:
         self.isback_dilation_hsize = isback_dilation_hsize
         self.fg_min_sigma = fg_min_sigma
         self.bg_min_sigma = bg_min_sigma
+        self.min_always_bg_mask_frac = min_always_bg_mask_frac
 
         # labeled movies
         # for now, we will assume that every frame of each movie
@@ -122,12 +124,14 @@ class ExpBGFGModel:
         self.movie = movies.Movie( self.movienames[0], False )
         self.nr = self.movie.get_height()
         self.nc = self.movie.get_width()
+        params.GRID.setsize((self.nr,self.nc))
 
         # initialize models
         # initialize each model
         self.init_fg_model()
         self.init_bg_model()
         self.init_obj_detection()
+        self.init_always_bg_mask()
         
     def est_marginals(self):
         """
@@ -139,7 +143,6 @@ class ExpBGFGModel:
         p(pixel appearance | background), 
         p(object detection features | foreground), and
         p(object detection features | background)
-
         """
 
         for i in range(self.nmovies):
@@ -158,7 +161,10 @@ class ExpBGFGModel:
         # normalize histograms of distance to object detections
         if DEBUG: print "Computing object detection distance marginal"
         self.est_obj_detection_marginal()
-
+        
+        if DEBUG: print "Estimating always_bg_mask"
+        self.est_always_bg_mask()
+        
     def est_fg_appearance_marginal(self):
         """
         est_fg_appearance_marginal()
@@ -236,8 +242,12 @@ class ExpBGFGModel:
         # open movie
         self.movie = movies.Movie( self.movienames[i], params.interactive )
 
+        # background model
+        self.bg_imgs = bg.BackgroundCalculator(self.movie)
+
         # open annotation
-        self.trx = annot.AnnotationFile( self.annnames[i], doreadtrx=True )
+        self.trx = annot.AnnotationFile( self.annnames[i], bg_imgs=self.bg_imgs, 
+                                        doreadtrx=True )
 
         # choose frames to learn from: for now, assume all frames are tracked
         self.firstframe = self.trx.firstframetracked
@@ -246,6 +256,9 @@ class ExpBGFGModel:
         self.framessample = num.unique(num.round(num.linspace(self.firstframe+1,
                                                               self.lastframe,
                                                               params.prior_nframessample)).astype(int))
+        # update the always_bg mask data structures for this movie
+        self.update_always_bg_mask()
+
         if DEBUG: print "Collecting foreground and background data..."
 
         for j in range(len(self.framessample)):
@@ -258,43 +271,70 @@ class ExpBGFGModel:
             if DEBUG: print "Collecting data for frame %d"%self.frame
 
             # create an image which is True inside the ellipses, False outside
-            self.compute_isfore()
+            self.isfore_mask()
 
-            # update all the models
+            # update all the observation models
             self.update_fg_appearance_marginal()
             self.update_bg_appearance_marginal()
             self.update_obj_detection_marginal()
-        
-    def compute_log_P_appearance_given_fore(self):
+                                
+    def compute_log_lik_appearance_given_fore(self):
         """
-        compute_log_P_appearance_given_fore()
+        compute_log_lik_appearance_given_fore()
         
         computes the log likelihood of each pixel appearance in
         self.im given that the pixel is foreground. 
         """
 
         d2 = ((self.im - self.fg_mu) / (2*self.fg_sigma))**2
-        self.log_P_appearance_given_fore = -d2 - self.fg_log_Z
+        self.log_lik_appearance_given_fore = -d2 - self.fg_log_Z
 
-    def compute_log_P_appearance_given_back(self):
+    def compute_log_lik_appearance_given_back(self):
         """
-        compute_log_P_appearance_given_back()
+        compute_log_lik_appearance_given_back()
         
         computes the log likelihood of each pixel appearance in
         self.im given that the pixel is background. 
         """
 
         d2 = ((self.im - self.bg_mu) / (2*self.bg_sigma))**2
-        self.log_P_appearance_given_back = -d2 - self.bg_log_Z
+        self.log_lik_appearance_given_back = -d2 - self.bg_log_Z
 
-    def compute_log_P_dist_obj_given_fore(self):
-        
-
-        self.obj_detection_dist_frac_fg = self.obj_detection_dist_counts_fg / Z        
-
-    def compute_isfore(self):
+    def compute_log_lik_dist_obj(self):
         """
-        compute_isfore()
+        compute_log_lik_dist_obj()
+        
+        computes the log likelihood of the distance to the nearest object detection
+        for each pixel in the image self.im given that the pixel is in foreground and
+        given that the pixel is in background. 
+        """
+        
+        # detect objects in the current image
+        self.obj_detect()
+
+        # compute distances to detections
+        morph.distance_transform_edt(~self.isobj,distances=self.obj_detection_dist)
+
+        # find which bin each distance falls in
+        idx = num.digitize(self.obj_detection_dist,self.obj_detection_dist_edges)
+
+        # lookup probabilities for each bin idx
+        self.log_lik_dist_obj_given_fore = num.log(self.obj_detection_dist_frac_fg[idx])
+        self.log_lik_dist_obj_given_back = num.log(self.obj_detection_dist_frac_bg[idx])
+
+    def compute_log_lik(self):
+
+        self.compute_log_lik_appearance_given_fore()
+        self.compute_log_lik_appearance_given_back()
+        self.compute_log_lik_dist_obj()
+        self.log_lik_given_fore = self.log_lik_appearance_given_fore + \
+            self.log_lik_dist_obj_given_fore
+        self.log_lik_given_back = self.log_lik_appearance_given_back + \
+            self.log_lik_dist_obj_given_back
+            
+    def isfore_mask(self):
+        """
+        isfore_mask()
 
         Computes a mask self.isfore which is 1 inside of ellipses
         in the current frame and 0 outside. Also computes a mask
@@ -402,6 +442,11 @@ class ExpBGFGModel:
                                bins=self.obj_detection_dist_edges)
         self.obj_detection_dist_counts_bg += counts
                       
+                      
+    def update_priors(self):
+        
+        self.counts_fg[self.isfore] += 1
+        self.counts_tot += 1
 
     def obj_detect(self):
         """
@@ -431,11 +476,13 @@ class ExpBGFGModel:
         # output of dist transform
         self.obj_detection_dist = num.zeros((self.nr,self.nc))
 
-        # edges used for histogramming distance to object detections. use log-spacing. 
+        # edges used for histogramming distance to object detections. use bins 
+        # centered at 0:1:nbins/2, log spacing between nbins/2 and maximum distance 
+        # in the image
         n1 = int(num.floor(self.obj_detection_dist_nbins/2))
         n2 = self.obj_detection_dist_nbins - n1
         edges1 = num.arange(-.5,n1-.5)
-        edges2 = num.unique(num.round(num.exp(num.linspace(num.log(n1+.5),num.log(max(self.nr,self.nc)+.5),n2+1))-.5)+.5)
+        edges2 = num.unique(num.round(num.exp(num.linspace(num.log(n1+.5),num.log(num.sqrt(self.nr**2+self.nc**2)+.5),n2+1))-.5)+.5)
         self.obj_detection_dist_edges = num.concatenate((edges1,edges2))
         self.obj_detection_dist_nbins = len(self.obj_detection_dist_edges) - 1
         self.obj_detection_dist_centers = \
@@ -445,6 +492,10 @@ class ExpBGFGModel:
         # histograms of distances to object detections for foreground and background
         self.obj_detection_dist_counts_fg = num.zeros(self.obj_detection_dist_nbins)
         self.obj_detection_dist_counts_bg = num.zeros(self.obj_detection_dist_nbins)
+
+    def init_always_bg_mask(self):
+        self.always_bg_mask_count = num.zeros((self.nr,self.nc))
+        self.n_always_bg_mask_samples = 0
 
     def make_LoG_filter(self):
         """
@@ -508,7 +559,22 @@ class ExpBGFGModel:
                                output=self.LoG_fil_max,mode='constant',cval=0)
         self.isobj = num.logical_and(self.LoG_fil_out == self.LoG_fil_max,
                                      self.LoG_fil_out >= self.LoG_thresh)
+                                     
+    def update_always_bg_mask(self):
 
+        # TODO: use calibration
+        
+        # current always bg mask
+        always_bg_mask = self.bg_imgs.isarena == False
+        
+        # count number of times each pixel is always background
+        self.always_bg_mask_count += always_bg_mask.astype(float)
+        self.n_always_bg_mask_samples += 1
+
+    def est_always_bg_mask(self):
+        
+        self.always_bg_mask_frac = self.always_bg_mask_count / self.n_always_bg_mask_samples
+        self.always_bg_mask = self.always_bg_mask_frac >= self.min_always_bg_mask_frac        
     
 def create_morph_struct(radius):
     """
@@ -675,32 +741,37 @@ def test1():
     at the start of the function, and plot the results. 
     """
 
-    movienames = ['/media/data/data3/pGAWBCyO-GAL4_TrpA_Rig1Plate01Bowl1_20100820T140408/movie.fmf',]
-    annnames = ['/media/data/data3/pGAWBCyO-GAL4_TrpA_Rig1Plate01Bowl1_20100820T140408/movie.fmf.ann',]
+    movienames = ['E:\Data\FlyBowl\Test1\GMR_13B06_AE_01_TrpA_Rig1Plate01BowlA_20101007T161822/movie.ufmf']
+    annnames = ['E:\Data\FlyBowl\Test1\GMR_13B06_AE_01_TrpA_Rig1Plate01BowlA_20101007T161822/movie.ufmf.ann',]
 
     self = ExpBGFGModel(movienames,annnames)
     
     self.est_marginals()
 
-    plt.subplot(221)
+    plt.subplot(231)
     plt.imshow(self.fg_mu,cmap=cm.gray,vmin=0,vmax=255)
     plt.colorbar()
     plt.title("foreground mean")
 
-    plt.subplot(222)
+    plt.subplot(233)
     plt.imshow(self.fg_sigma)
     plt.colorbar()
     plt.title("foreground standard deviation")
 
-    plt.subplot(223)
+    plt.subplot(232)
     plt.imshow(self.bg_mu,cmap=cm.gray,vmin=0,vmax=255)
     plt.colorbar()
     plt.title("background mean")
 
-    plt.subplot(224)
+    plt.subplot(234)
     plt.imshow(self.bg_sigma)
     plt.colorbar()
     plt.title("background standard deviation")
+    
+    plt.subplot(235)
+    plt.imshow(self.always_bg_mask_frac)
+    plt.colorbar()
+    plt.title("always bg mask frac")
 
     plt.figure()
     sz = (self.nr,self.nc,1)
@@ -712,7 +783,7 @@ def test1():
         # read target positions
         self.trxcurr = self.trx.get_frame(self.frame)
         # create isfore mask
-        self.compute_isfore()
+        self.isfore_mask()
         # detect objects
         self.obj_detect()
         [y,x] = num.where(self.isobj)
@@ -781,3 +852,5 @@ def test2():
     
     return self
     
+if __name__ == "__main__":
+    test1()
