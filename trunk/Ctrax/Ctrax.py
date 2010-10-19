@@ -26,7 +26,14 @@ try:
         avbin = ctypes.cdll.avbin
 except:
     pass
-import pyglet.media as media
+
+from version import USE_AVBIN
+if USE_AVBIN:
+    import pyglet.media as media
+
+import os # use os for manipulating path names
+import sys # use sys for parsing command line
+import time # use time for setting playback rate
 
 import wx
 from wx import xrc
@@ -69,16 +76,28 @@ class CtraxApp( algorithm.CtraxAlgorithm ): # eventually inherits from wx.App
         # parse commandline
         self.ParseCommandLine()
 
+        if DEBUG: print "parsed command line"
+
 	# initialization
         self.InitGUI() # in settings.py
+
+        if DEBUG: print "initialized GUI"
+
 	self.InitState() # in settings.py
+
+        if DEBUG: print "initialized state"
 
         # draw GUI
         self.frame.Show()
+
+        if DEBUG: print "drew GUI"
+
         self.alive = True
 
 	# open movie, ann file
 	self.OpenMovieAndAnn()
+
+        if DEBUG: print "Opened movie and ann file"
 
         if params.interactive:
             print "******** Ctrax Warning and Error Messages ********"
@@ -272,6 +291,7 @@ instead, where <basename> is the base name of the movie.\n"
         try:
             # open movie file
             self.movie = movies.Movie( self.filename, params.interactive )
+            if DEBUG: print "Opened movie " + str(self.filename)
         except:
             # error messages should be handled by the movie object
             self.movie = None
@@ -290,19 +310,25 @@ instead, where <basename> is the base name of the movie.\n"
         self.n_frames = self.movie.get_n_frames()
         self.img_size = [self.movie.get_height(),self.movie.get_width()]
         # get a pointer to the "Ctraxmain" child
+        if DEBUG: print "About to try to draw to window"
         if params.interactive:
             img = num.zeros((self.img_size[0],self.img_size[1]),dtype=num.uint8)
             sys.stdout.flush()
             self.img_wind.update_image_and_drawings("Ctraxmain",
                                                     img,
                                                     format="MONO8")
+            if DEBUG: print "drew img to window"
             sys.stdout.flush()
             self.img_wind_child = self.img_wind.get_child_canvas("Ctraxmain")
             # mouse click
             self.img_wind_child.Bind(wx.EVT_LEFT_DOWN,self.MouseClick)
 
+            if DEBUG: print "bound mouseclick event"
+            
         # setup background-subtraction pieces
         self.bg_imgs = bg.BackgroundCalculator( self.movie )
+
+        if DEBUG: print "initialized backsub data structure"
 
         while True:
             # open annotation file, read header if readable, read
@@ -310,14 +336,21 @@ instead, where <basename> is the base name of the movie.\n"
 
             if params.interactive:
                 start_color = self.status.GetBackgroundColour()
+                if DEBUG: print "got status background color"
                 self.status.SetBackgroundColour( params.status_blue )
+                if DEBUG: print "set status background color"
                 self.status.SetStatusText( "Reading annotation from file",
                                            params.status_box )
+                if DEBUG: print "Set status text"
                 wx.BeginBusyCursor()
+                if DEBUG: print "began busy cursor"
                 wx.Yield()
+                if DEBUG: print "Set status text"
 
             self.ann_file = annot.AnnotationFile( self.ann_filename,
                                                   self.bg_imgs)
+
+            if DEBUG: print "read annotation file"
 
             if params.interactive:
                 self.status.SetBackgroundColour( start_color )

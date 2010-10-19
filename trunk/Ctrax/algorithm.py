@@ -176,6 +176,11 @@ class CtraxAlgorithm (settings.AppWithSettings):
         # estimate the background
         if (not self.IsBGModel()) or params.batch_autodetect_bg_model:
             print "Estimating background model"
+            print "BG Modeling parameters:"
+            print "n_bg_frames = " + str(params.n_bg_frames)
+            print "use_median = " + str(params.use_median)
+            print "bg_firstframe = " + str(params.bg_firstframe)
+            print "bg_lastframe = " + str(params.bg_lastframe)
             if params.interactive:
                 self.bg_imgs.est_bg(self.frame)
             else:

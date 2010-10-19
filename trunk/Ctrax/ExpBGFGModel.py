@@ -1183,4 +1183,5 @@ def ShowModel(model=None,filename=None):
     return model
     
 if __name__ == "__main__":
+    params.interactive = False
     main()

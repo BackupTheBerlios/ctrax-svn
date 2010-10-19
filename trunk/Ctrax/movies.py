@@ -9,8 +9,10 @@ import wx
 import os
 from params import params
 from draw import annotate_bmp
-import pyglet.media as media
 from version import DEBUG_MOVIES as DEBUG
+from version import USE_AVBIN
+if USE_AVBIN:
+    import pyglet.media as media
 
 # version of sbfmf for writing
 __version__ = "0.3b"
@@ -99,7 +101,7 @@ class Movie:
                     self.type = 'avbin'
                 except:
                     if self.interactive:
-                        if not media.have_avbin:
+                        if USE_AVBIN and not media.have_avbin:
                             msgtxt = "Failed opening file \"%s\". AVbin could not be loaded, and compressed AVIs cannot be read."%(filename)
                         else:
                             msgtxt = "Failed opening file \"%s\". AVbin was successfully loaded, but could not read the AVI."%(filename)
