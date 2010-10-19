@@ -21,6 +21,7 @@ from params import params
 import setarena
 import fixbg
 import roi
+import ExpBGFGModel
 
 import motmot.wxvideo.wxvideo as wxvideo
 #import motmot.wxglvideo.simple_overlay as wxvideo # part of Motmot
@@ -114,7 +115,7 @@ class HomoFilt:
 
 class BackgroundCalculator:
     def __init__( self, movie,
-                  hm_cutoff=None, hm_boost=None, hm_order=None, use_thresh=None, use_median=False ):
+                  hm_cutoff=None, hm_boost=None, hm_order=None, use_thresh=None, use_median=False):
         """Initialize background subtractor."""
         params.movie = movie
         #params = ConstantsBG() # so constants are attached if self is passed around
@@ -142,7 +143,10 @@ class BackgroundCalculator:
         # image of which parts flies are not able to walk in
         self.isarena = num.ones(params.movie_size,num.bool)
         self.roi = num.ones(params.movie_size,num.bool)
-
+        
+        # have not set the expbgfgmodel yet
+        self.expbgfgmodel = None
+            
         if params.movie.type == 'sbfmf':
             self.center = params.movie.h_mov.bgcenter.copy()
             self.center.shape = params.movie.h_mov.framesize
@@ -189,6 +193,20 @@ class BackgroundCalculator:
     #    self.lb_high[self.isarena==False] = -num.inf
     #    self.ub_low[self.isarena==False] = num.inf
     #    self.ub_high[self.isarena==False] = num.inf
+
+    def setExpBGFGModel(self,expbgfgmodel_filename):
+        # set experiment-wide background & foreground model
+        try:
+            self.expbgfgmodel = ExpBGFGModel.ExpBGFGModel(picklefile=expbgfgmodel_filename)
+        except Exception, err:
+            s = 'Error loading experiment-wide model from %s:\n%s\n'%(expbgfgmodel_filename,str(err))
+            if params.interactive:
+                wx.MessageBox( s, "Error loading model", wx.ICON_ERROR )
+            else:
+                print s
+            self.expbgfgmodel = None
+            return False
+        return True
 
     def updateParameters(self):
 
@@ -1466,6 +1484,9 @@ class BgSettingsDialog:
         self.nframes = xrc.XRCCTRL( self.frame, "nframes" )
         self.bg_firstframe = xrc.XRCCTRL( self.frame, "bg_firstframe" )
         self.bg_lastframe = xrc.XRCCTRL( self.frame, "bg_lastframe" )
+        self.expbgfgmodel_checkbox = xrc.XRCCTRL( self.frame, "expbgfgmodel_checkbox")
+        self.expbgfgmodel_text = xrc.XRCCTRL( self.frame, "expbgfgmodel_text")
+        self.expbgfgmodel_button = xrc.XRCCTRL( self.frame, "expbgfgmodel_button")
         self.calculate = xrc.XRCCTRL( self.frame, "calculate_button" )
         if params.use_median:
             self.algorithm.SetSelection(params.ALGORITHM_MEDIAN)
@@ -1488,8 +1509,26 @@ class BgSettingsDialog:
                                                pending_color=params.wxvt_bg )
         self.frame.Bind( wx.EVT_CHOICE, self.OnAlgorithmChoice, self.algorithm)
         self.frame.Bind( wx.EVT_BUTTON, self.OnCalculate, self.calculate )
-        self.frame.Show()
 
+        self.expbgfgmodel_text.SetEditable(False)
+        self.frame.Bind(wx.EVT_BUTTON, self.OnChooseExpBGFGModelFileName, self.expbgfgmodel_button)
+        self.frame.Bind(wx.EVT_CHECKBOX, self.OnCheckExpBGFGModel, self.expbgfgmodel_checkbox)
+        self.UpdateExpBGFGModelControls()
+        self.frame.Show()
+        
+    def UpdateExpBGFGModelControls(self):
+        if params.expbgfgmodel_filename is None:
+            self.expbgfgmodel_text.SetValue('None')
+        else:
+            self.expbgfgmodel_text.SetValue(params.expbgfgmodel_filename)
+
+        if not params.use_expbgfgmodel:
+            self.expbgfgmodel_checkbox.SetValue(False)
+            self.expbgfgmodel_button.Enable(False)
+        else:
+            self.expbgfgmodel_checkbox.SetValue(True)
+            self.expbgfgmodel_button.Enable(True)
+            
     def OnCalculate(self,evt):
         wx.BeginBusyCursor()
         wx.Yield()
@@ -1529,7 +1568,42 @@ class BgSettingsDialog:
                 params.use_median = True
             else:
                 params.use_median = False
+                
+    def OnChooseExpBGFGModelFileName(self,evt=None):
 
+        success = False
+        if params.expbgfgmodel_filename is None:
+            dir = ''
+        else:
+            dir = os.path.dirname(params.expbgfgmodel_filename)
+        
+        dlg = wx.FileDialog( self.frame, "Select global back/foreground model", dir, "", "Pickled files (*.pickle)|*.pickle|Any (*)|*", wx.OPEN )
+        didchoose = dlg.ShowModal() == wx.ID_OK
+
+        if didchoose:
+            filename = dlg.GetFilename()
+            dir = dlg.GetDirectory()
+            filename = os.path.join( dir, filename )
+            success = self.bg.setExpBGFGModel(filename)
+            if success:
+                params.expbgfgmodel_filename = filename
+                self.UpdateExpBGFGModelControls()
+
+        dlg.Destroy()
+
+        return success
+
+    def OnCheckExpBGFGModel(self,evt=None):
+        
+        params.use_expbgfgmodel = self.expbgfgmodel_checkbox.IsChecked()
+        if params.use_expbgfgmodel and params.expbgfgmodel_filename is None:
+            success = self.OnChooseExpBGFGModelFileName()
+            if not success:
+                self.expbgfgmodel_checkbox.SetValue(False)
+                params.use_expbgfgmodel = False
+                return
+        self.UpdateExpBGFGModelControls()
+        
 #class StoreThread (threading.Thread):
 #    """This thread's job is to read images, homomorphically filter them,
 #    and place them in memory at a specified location."""

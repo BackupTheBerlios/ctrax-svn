@@ -1207,6 +1207,13 @@ class AnnotationFile:
         shutil.copyfileobj(oldfile,self.file)
         oldfile.close()
 
+    def close(self):
+        if hasattr(self,'file'):
+            try:
+                self.file.close()
+            except:
+                print "could not close annotation file"
+
 def LoadSettings(filename, bg_imgs, doreadbgmodel=False):
     tmpannfile = AnnotationFile(filename,
                                 bg_imgs,

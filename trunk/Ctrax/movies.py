@@ -349,6 +349,13 @@ class Movie:
         self.outfile.write(i)
         self.outfile.write(v)
 
+    def close(self):
+        if hasattr(self,'h_mov'):
+            try:
+                self.h_mov.close()
+            except:
+                print "Could not close"
+
 
 """
 AVI class; written by JB and KMB, altered by Don Olbris.

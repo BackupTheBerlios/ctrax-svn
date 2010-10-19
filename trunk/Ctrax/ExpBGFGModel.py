@@ -36,8 +36,14 @@ import annfiles as annot
 import estconncomps as est
 import scipy.ndimage.morphology as morph
 import scipy.ndimage.filters as filters
+import getopt
+import sys
+import os.path
+import pickle
 
-params.interactive = False
+if params.interactive:
+    import wx
+
 DEBUG = True
 
 if DEBUG:
@@ -48,7 +54,7 @@ if DEBUG:
 
 class ExpBGFGModel:
 
-    def __init__( self, movienames, annnames,
+    def __init__( self, movienames=None, annnames=None, picklefile=None,
                   LoG_hsize=21, 
                   LoG_sigma=5.,
                   LoG_nonmaxsup_sz=5, 
@@ -96,42 +102,57 @@ class ExpBGFGModel:
         pixel appearance [1]. 
         
         """
+        
+        if picklefile is not None:
+            if params.interactive:
+                wx.Yield()
+                wx.BeginBusyCursor()
+            else:
+                print 'Loading pickled global bg/fg models'
+            fid = open(picklefile,'r')
+            model = pickle.load(fid)
+            fid.close()
+            for key,val in model.iteritems():
+                setattr(self,key,val)
+            if params.interactive:
+                wx.EndBusyCursor()
+        else:
 
-        # parameters
-        self.LoG_hsize = LoG_hsize
-        self.LoG_sigma = LoG_sigma
-        self.LoG_nonmaxsup_sz = LoG_nonmaxsup_sz
-        self.LoG_thresh = LoG_thresh
-        self.difftype = difftype
-        self.obj_detection_dist_nbins = obj_detection_dist_nbins
-        self.isback_dilation_hsize = isback_dilation_hsize
-        self.fg_min_sigma = fg_min_sigma
-        self.bg_min_sigma = bg_min_sigma
-        self.min_always_bg_mask_frac = min_always_bg_mask_frac
-
-        # labeled movies
-        # for now, we will assume that every frame of each movie
-        # is labeled
-        self.movienames = movienames
-        self.annnames = annnames
-
-        self.nmovies = len(movienames)
-        if len(self.annnames) != self.nmovies:
-            print "Number of annotation and movie files must match"
-            raise Exception, "Number of annotation and movie files must match"
-
-        # get movie size
-        self.movie = movies.Movie( self.movienames[0], False )
-        self.nr = self.movie.get_height()
-        self.nc = self.movie.get_width()
-        params.GRID.setsize((self.nr,self.nc))
-
-        # initialize models
-        # initialize each model
-        self.init_fg_model()
-        self.init_bg_model()
-        self.init_obj_detection()
-        self.init_always_bg_mask()
+            # parameters
+            self.LoG_hsize = LoG_hsize
+            self.LoG_sigma = LoG_sigma
+            self.LoG_nonmaxsup_sz = LoG_nonmaxsup_sz
+            self.LoG_thresh = LoG_thresh
+            self.difftype = difftype
+            self.obj_detection_dist_nbins = obj_detection_dist_nbins
+            self.isback_dilation_hsize = isback_dilation_hsize
+            self.fg_min_sigma = fg_min_sigma
+            self.bg_min_sigma = bg_min_sigma
+            self.min_always_bg_mask_frac = min_always_bg_mask_frac
+    
+            # labeled movies
+            # for now, we will assume that every frame of each movie
+            # is labeled
+            self.movienames = movienames
+            self.annnames = annnames
+    
+            self.nmovies = len(movienames)
+            if len(self.annnames) != self.nmovies:
+                print "Number of annotation and movie files must match"
+                raise Exception, "Number of annotation and movie files must match"
+    
+            # get movie size
+            self.movie = movies.Movie( self.movienames[0], False )
+            self.nr = self.movie.get_height()
+            self.nc = self.movie.get_width()
+            params.GRID.setsize((self.nr,self.nc))
+    
+            # initialize models
+            # initialize each model
+            self.init_fg_model()
+            self.init_bg_model()
+            self.init_obj_detection()
+            self.init_always_bg_mask()
         
     def est_marginals(self):
         """
@@ -277,6 +298,12 @@ class ExpBGFGModel:
             self.update_fg_appearance_marginal()
             self.update_bg_appearance_marginal()
             self.update_obj_detection_marginal()
+
+        self.movie.close()
+        self.movie = None
+        self.trx.close()
+        self.trx = None
+        self.bg_imgs = None
                                 
     def compute_log_lik_appearance_given_fore(self):
         """
@@ -443,11 +470,6 @@ class ExpBGFGModel:
         self.obj_detection_dist_counts_bg += counts
                       
                       
-    def update_priors(self):
-        
-        self.counts_fg[self.isfore] += 1
-        self.counts_tot += 1
-
     def obj_detect(self):
         """
         obj_detect()
@@ -575,6 +597,74 @@ class ExpBGFGModel:
         
         self.always_bg_mask_frac = self.always_bg_mask_count / self.n_always_bg_mask_samples
         self.always_bg_mask = self.always_bg_mask_frac >= self.min_always_bg_mask_frac        
+    
+    def save(self,outputFileName):
+        
+        fid = open(outputFileName,"w")
+        
+        out = dict()
+        if hasattr(self,'LoG_hsize'):
+            out['LoG_hsize'] = self.LoG_hsize
+        if hasattr(self,'LoG_sigma'):
+            out['LoG_sigma'] = self.LoG_sigma
+        if hasattr(self,'LoG_nonmaxsup_sz'):
+            out['LoG_nonmaxsup_sz'] = self.LoG_nonmaxsup_sz
+        if hasattr(self,'LoG_thresh'):
+            out['LoG_thresh'] = self.LoG_thresh
+        if hasattr(self,'difftype'):
+            out['difftype'] = self.difftype
+        if hasattr(self,'obj_detection_dist_nbins'):
+            out['obj_detection_dist_nbins'] = self.obj_detection_dist_nbins
+        if hasattr(self,'isback_dilation_hsize'):
+            out['isback_dilation_hsize'] = self.isback_dilation_hsize
+        if hasattr(self,'fg_min_sigma'):
+            out['fg_min_sigma'] = self.fg_min_sigma
+        if hasattr(self,'bg_min_sigma'):
+            out['bg_min_sigma'] = self.bg_min_sigma
+        if hasattr(self,'min_always_bg_mask_frac'):
+            out['min_always_bg_mask_frac'] = self.min_always_bg_mask_frac
+        if hasattr(self,'prior_nframessample'):
+            out['prior_nframessample'] = params.prior_nframessample
+        if hasattr(self,'prior_fg_nsamples_pool'):
+            out['prior_fg_nsamples_pool'] = params.prior_fg_nsamples_pool
+        if hasattr(self,'prior_bg_nsamples_pool'):
+            out['prior_bg_nsamples_pool'] = params.prior_bg_nsamples_pool
+        if hasattr(self,'prior_fg_pool_radius_factor'):
+            out['prior_fg_pool_radius_factor'] = params.prior_fg_pool_radius_factor
+        if hasattr(self,'prior_bg_pool_radius_factor'):
+            out['prior_bg_pool_radius_factor'] = params.prior_bg_pool_radius_factor
+        if hasattr(self,'movienames'):
+            out['movienames'] = self.movienames
+        if hasattr(self,'annnames'):
+            out['annnames'] = self.annnames
+        if hasattr(self,'fg_mu'):
+            out['fg_mu'] = self.fg_mu
+        if hasattr(self,'fg_sigma'):
+            out['fg_sigma'] = self.fg_sigma
+        if hasattr(self,'fg_log_Z'):
+            out['fg_log_Z'] = self.fg_log_Z
+        if hasattr(self,'bg_mu'):
+            out['bg_mu'] = self.bg_mu
+        if hasattr(self,'bg_sigma'):
+            out['bg_sigma'] = self.bg_sigma
+        if hasattr(self,'bg_log_Z'):
+            out['bg_log_Z'] = self.bg_log_Z
+        if hasattr(self,'obj_detection_dist_frac_fg'):
+            out['obj_detection_dist_frac_fg'] = self.obj_detection_dist_frac_fg
+        if hasattr(self,'obj_detection_dist_frac_bg'):
+            out['obj_detection_dist_frac_bg'] = self.obj_detection_dist_frac_bg
+        if hasattr(self,'obj_detection_dist_edges'):
+            out['obj_detection_dist_edges'] = self.obj_detection_dist_edges
+        if hasattr(self,'LoG_fil'):
+            out['LoG_fil'] = self.LoG_fil
+        if hasattr(self,'always_bg_mask_frac'):
+            out['always_bg_mask_frac'] = self.always_bg_mask_frac
+        if hasattr(self,'always_bg_mask'):
+            out['always_bg_mask'] = self.always_bg_mask
+
+        pickle.dump(out,fid)
+        fid.close()
+
     
 def create_morph_struct(radius):
     """
@@ -753,7 +843,7 @@ def test1():
     plt.colorbar()
     plt.title("foreground mean")
 
-    plt.subplot(233)
+    plt.subplot(234)
     plt.imshow(self.fg_sigma)
     plt.colorbar()
     plt.title("foreground standard deviation")
@@ -763,12 +853,12 @@ def test1():
     plt.colorbar()
     plt.title("background mean")
 
-    plt.subplot(234)
+    plt.subplot(235)
     plt.imshow(self.bg_sigma)
     plt.colorbar()
     plt.title("background standard deviation")
     
-    plt.subplot(235)
+    plt.subplot(233)
     plt.imshow(self.always_bg_mask_frac)
     plt.colorbar()
     plt.title("always bg mask frac")
@@ -852,5 +942,245 @@ def test2():
     
     return self
     
+def main():
+    """
+    main()
+
+    Compute experiment bg and fg models for a set of movies set
+    at the start of the function, and plot the results. 
+    """
+
+    shortopts = "f:p:m:a:o:"
+    longopts = ["filename=","params=","movie=","ann=","output="]
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
+    except getopt.GetoptError, err:
+        # print help information and exit:
+        print str(err) # will print something like "option -a not recognized"
+        print "ExpBGFGModel options:"
+        print "    -f,--filename <name of file containing list of experiment directories>"
+        print "      Default: expdirs.txt"
+        print "    -p,--params <name of file containing parameters>"
+        print "      Default: <empty string>"
+        print "    -m,--movie <name of movie file within experiment directories>"
+        print "      Default: movie.ufmf"
+        print "    -a,--ann <name of annotation file within experiment directories>"
+        print "      Default: movie.ufmf.ann"
+        print "    -o,--output <name of file to output results to>"
+        print "      Default: ExpBGFGModelResults.pickle"
+        sys.exit(2)
+        
+    expdirsFileName = 'expdirs.txt'
+    paramsFileName = ''
+    movieFileStr = 'movie.ufmf'
+    annFileStr = 'movie.ufmf.ann'
+    outputFileName = 'ExpBGFGModelResults.pickle'
+    
+    for o,a in opts:
+        if o in ("-f","--filename"):
+            expdirsFileName = a
+            print "expdirsFileName = " + a
+        elif o in ("-p","--params"):
+            paramsFileName = a
+            print "paramsFileName = " + a
+        elif o in ("-m","--movie"):
+            movieFileStr = a
+            print "movieFileStr = " + a
+        elif o in ("-a","--ann"):
+            annFileStr = a
+            print "annFileStr = " + a
+        elif o in ("-o","--output"):
+            outputFileName = a
+            print "outputFileName = " + a
+        else:
+            assert False, "unhandled option"
+
+    # read in the experiment directories
+    fid = open(expdirsFileName,"r")
+    expdirs = []
+    movienames = []
+    annnames = []
+    for l in fid:
+        expdir = l.strip()
+        if not os.path.exists(expdir):
+            print "Experiment directory %s does not exist. Skipping."%expdir
+            continue
+        moviename = os.path.join(expdir,movieFileStr)
+        if not os.path.exists(moviename):
+            print "Movie %s does not exist. Skipping experiment %s."%(moviename,expdir)
+            continue
+        annname = os.path.join(expdir,annFileStr)
+        if not os.path.exists(annname):
+            print "Annotation file %s does not exist. Skipping experiment %s."%(annname,expdir)
+            continue
+        expdirs.append(expdir)
+        movienames.append(moviename)
+        annnames.append(annname)
+    fid.close()
+        
+    # default parameters
+    LoG_hsize=21 
+    LoG_sigma=5.
+    LoG_nonmaxsup_sz=5 
+    LoG_thresh=.5
+    difftype='darkfglightbg'
+    obj_detection_dist_nbins=100
+    isback_dilation_hsize=2
+    fg_min_sigma = 1.
+    bg_min_sigma = 1.
+    min_always_bg_mask_frac = 1. 
+    
+    if paramsFileName != '':
+        # parse parameters file
+        fid = open(paramsFileName,"r")
+    
+        for l in fid:
+            l = l.strip()
+            if l[0] == '#':
+                continue
+            l = l.split('=',1)
+            if len(l) < 2:
+                print "Skipping parameter line '%s'"%l
+                continue
+            l[0] = l[0].strip()
+            l[1] = l[1].strip()
+            if l[0] == 'LoG_hsize':
+                LoG_hsize = float(l[1])
+            elif l[0] == 'LoG_sigma':
+                LoG_sigma = float(l[1])
+            elif l[0] == 'LoG_nonmaxsup_sz':
+                LoG_nonmaxsup_sz = float(l[1]) 
+            elif l[0] == 'LoG_thresh':
+                LoG_thresh = float(l[1])
+            elif l[0] == 'difftype':
+                difftype = l[1]
+            elif l[0] == 'obj_detection_dist_nbins':
+                obj_detection_dist_nbins = float(l[1])
+            elif l[0] == 'isback_dilation_hsize':
+                isback_dilation_hsize = float(l[1])
+            elif l[0] == 'fg_min_sigma':
+                fg_min_sigma = float(l[1])
+            elif l[0] == 'bg_min_sigma':
+                bg_min_sigma = float(l[1])
+            elif l[0] == 'min_always_bg_mask_frac':
+                min_always_bg_mask_frac = float(l[1]) 
+            elif l[0] == 'prior_nframessample':
+                params.prior_nframessample = float(l[1])
+            elif l[0] == 'prior_fg_nsamples_pool':
+                params.prior_fg_nsamples_pool = float(l[1])
+            elif l[0] == 'prior_bg_nsamples_pool':
+                params.prior_bg_nsamples_pool = float(l[1])
+            elif l[0] == 'prior_fg_pool_radius_factor':
+                params.prior_fg_pool_radius_factor = float(l[1])
+            elif l[0] == 'prior_bg_pool_radius_factor':
+                params.prior_bg_pool_radius_factor = float(l[1])
+        fid.close()
+
+    model = ExpBGFGModel(movienames,annnames,
+                        LoG_hsize=LoG_hsize, 
+                        LoG_sigma=LoG_sigma,
+                        LoG_nonmaxsup_sz=LoG_nonmaxsup_sz, 
+                        LoG_thresh=LoG_thresh,
+                        difftype=difftype,
+                        obj_detection_dist_nbins=obj_detection_dist_nbins,
+                        isback_dilation_hsize=isback_dilation_hsize,
+                        fg_min_sigma=fg_min_sigma,
+                        bg_min_sigma=bg_min_sigma,
+                        min_always_bg_mask_frac=min_always_bg_mask_frac)
+    
+    model.est_marginals()
+    model.save(outputFileName)
+    
+    plt.subplot(231)
+    plt.imshow(model.fg_mu,cmap=cm.gray,vmin=0,vmax=255)
+    plt.colorbar()
+    plt.title("foreground mean")
+
+    plt.subplot(233)
+    plt.imshow(model.fg_sigma)
+    plt.colorbar()
+    plt.title("foreground standard deviation")
+
+    plt.subplot(232)
+    plt.imshow(model.bg_mu,cmap=cm.gray,vmin=0,vmax=255)
+    plt.colorbar()
+    plt.title("background mean")
+
+    plt.subplot(234)
+    plt.imshow(model.bg_sigma)
+    plt.colorbar()
+    plt.title("background standard deviation")
+    
+    plt.subplot(235)
+    plt.imshow(model.always_bg_mask_frac)
+    plt.colorbar()
+    plt.title("always bg mask frac")
+
+    plt.figure()
+    plt.plot(model.obj_detection_dist_centers,model.obj_detection_dist_frac_bg,'k.-',
+             model.obj_detection_dist_centers,model.obj_detection_dist_frac_fg,'r.-')
+    plt.legend(('bg','fg'))
+    plt.xlabel('Dist to obj detection')
+    plt.ylabel('P(dist | label)')
+
+    plt.show()
+
+    return model
+
+def ShowModel(model=None,filename=None):
+
+    if model is None and filename is None:
+        sys.error('Either model or filename must be input')
+
+    if model is None:
+        
+        file = open(filename,'r')
+        model = pickle.load(file)
+
+    model['obj_detection_dist_centers'] = \
+        (model['obj_detection_dist_edges'][1:] + \
+             model['obj_detection_dist_edges'][:-1])/2.
+
+    plt.subplot(231)
+    plt.imshow(model['fg_mu'],cmap=cm.gray,vmin=0,vmax=255)
+    plt.colorbar()
+    plt.title("foreground mean")
+
+    plt.subplot(234)
+    plt.imshow(model['fg_sigma'])
+    plt.colorbar()
+    plt.title("foreground standard deviation")
+
+    plt.subplot(232)
+    plt.imshow(model['bg_mu'],cmap=cm.gray,vmin=0,vmax=255)
+    plt.colorbar()
+    plt.title("background mean")
+
+    plt.subplot(235)
+    plt.imshow(model['bg_sigma'])
+    plt.colorbar()
+    plt.title("background standard deviation")
+    
+    plt.subplot(233)
+    plt.imshow(model['always_bg_mask_frac'])
+    plt.colorbar()
+    plt.title("always bg mask frac")
+
+    plt.subplot(236)
+    plt.imshow(model['always_bg_mask'],cmap=cm.gray)
+    plt.colorbar()
+    plt.title("always bg mask")
+
+    plt.figure()
+    plt.plot(model['obj_detection_dist_centers'],model['obj_detection_dist_frac_bg'],'k.-',
+             model['obj_detection_dist_centers'],model['obj_detection_dist_frac_fg'],'r.-')
+    plt.legend(('bg','fg'))
+    plt.xlabel('Dist to obj detection')
+    plt.ylabel('P(dist | label)')
+
+    plt.show()
+
+    return model
+    
 if __name__ == "__main__":
-    test1()
+    main()

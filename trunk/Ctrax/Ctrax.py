@@ -10,25 +10,23 @@
 #if wxversion.checkInstalled(WXVER):
 #    wxversion.select(WXVER)
 
+import os # use os for manipulating path names
+import sys # use sys for parsing command line
+import time # use time for setting playback rate
+
 # we need to import pyglet.media before scipy.linalg.decomp is 
 # imported by kcluster, as this seems to cause have_avbin to be false
 # on windows
 # and now we need to import ctypes before media because this seems to 
 # be necessary to be able to find the avbin dll on windows. 
 # man!
-
 try:
     if sys.platform == 'win32' or sys.platform == 'cygwin':
         import ctypes
-        import sys
         avbin = ctypes.cdll.avbin
 except:
     pass
 import pyglet.media as media
-
-import os # use os for manipulating path names
-import sys # use sys for parsing command line
-import time # use time for setting playback rate
 
 import wx
 from wx import xrc
@@ -398,8 +396,8 @@ instead, where <basename> is the base name of the movie.\n"
 
         else:
 
-            wx.MessageBox( "No ann file chosen. Aborting open.", 
-                           "No ann file chosen", wx.ICON_WARNING )
+            wx.MessageBox( "No movie chosen. Aborting open.", 
+                           "No movie chosen", wx.ICON_WARNING )
 
             
 
