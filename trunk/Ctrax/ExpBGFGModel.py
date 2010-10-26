@@ -112,8 +112,13 @@ class ExpBGFGModel:
             fid = open(picklefile,'r')
             model = pickle.load(fid)
             fid.close()
+            model['obj_detection_dist_centers'] = \
+                (model['obj_detection_dist_edges'][1:] + \
+                 model['obj_detection_dist_edges'][:-1])/2.
+
             for key,val in model.iteritems():
                 setattr(self,key,val)
+            (self.nr,self.nc) = self.bg_mu.shape
             if params.interactive:
                 wx.EndBusyCursor()
         else:
@@ -232,6 +237,7 @@ class ExpBGFGModel:
                   self.bg_sigma,self.bg_poolradius,
                   self.bg_min_sigma)
 
+        # log( sqrt(2*pi) * sigma ) = .5*log(2*pi) + log(sigma)
         self.bg_log_Z = .5*num.log(2*num.pi) + num.log(self.bg_sigma)    
 
     def est_obj_detection_marginal(self):
@@ -305,29 +311,31 @@ class ExpBGFGModel:
         self.trx = None
         self.bg_imgs = None
                                 
-    def compute_log_lik_appearance_given_fore(self):
+    def compute_log_lik_appearance_given_fore(self,r0=0,r1=num.inf):
         """
         compute_log_lik_appearance_given_fore()
         
         computes the log likelihood of each pixel appearance in
         self.im given that the pixel is foreground. 
         """
+        r1 = min(r1,num.inf)
+        d2 = (self.im[r0:r1] - self.fg_mu[r0:r1])**2 / (2*self.fg_sigma[r0:r1]**2)
+        self.log_lik_appearance_given_fore = -d2 - self.fg_log_Z[r0:r1]
 
-        d2 = ((self.im - self.fg_mu) / (2*self.fg_sigma))**2
-        self.log_lik_appearance_given_fore = -d2 - self.fg_log_Z
-
-    def compute_log_lik_appearance_given_back(self):
+    def compute_log_lik_appearance_given_back(self,r0=0,r1=num.inf):
         """
         compute_log_lik_appearance_given_back()
         
         computes the log likelihood of each pixel appearance in
         self.im given that the pixel is background. 
         """
+        
+        r1 = min(r1,num.inf)
 
-        d2 = ((self.im - self.bg_mu) / (2*self.bg_sigma))**2
-        self.log_lik_appearance_given_back = -d2 - self.bg_log_Z
+        d2 = (self.im[r0:r1] - self.bg_mu[r0:r1])**2 / (2*self.bg_sigma[r0:r1]**2)
+        self.log_lik_appearance_given_back = -d2 - self.bg_log_Z[r0:r1]
 
-    def compute_log_lik_dist_obj(self):
+    def compute_log_lik_dist_obj(self,r0=0,r1=num.inf):
         """
         compute_log_lik_dist_obj()
         
@@ -336,28 +344,39 @@ class ExpBGFGModel:
         given that the pixel is in background. 
         """
         
+        r1 = min(r1,self.nr)
+        
         # detect objects in the current image
-        self.obj_detect()
+        self.obj_detect(r0=r0,r1=r1)
 
         # compute distances to detections
-        morph.distance_transform_edt(~self.isobj,distances=self.obj_detection_dist)
+        morph.distance_transform_edt(~self.isobj,
+                                     distances=self.obj_detection_dist[r0:r1])
+        nr = r1 - r0
 
         # find which bin each distance falls in
-        idx = num.digitize(self.obj_detection_dist,self.obj_detection_dist_edges)
+        idx = num.digitize(num.reshape(self.obj_detection_dist[r0:r1],(nr*self.nc,)),self.obj_detection_dist_edges)
+        idx.shape = (nr,self.nc)
 
         # lookup probabilities for each bin idx
         self.log_lik_dist_obj_given_fore = num.log(self.obj_detection_dist_frac_fg[idx])
         self.log_lik_dist_obj_given_back = num.log(self.obj_detection_dist_frac_bg[idx])
 
-    def compute_log_lik(self):
+    def compute_log_lik(self,r0=0,r1=num.inf):
 
-        self.compute_log_lik_appearance_given_fore()
-        self.compute_log_lik_appearance_given_back()
-        self.compute_log_lik_dist_obj()
+        self.compute_log_lik_appearance_given_fore(r0=r0,r1=r1)
+        self.compute_log_lik_appearance_given_back(r0=r0,r1=r1)
+        self.compute_log_lik_dist_obj(r0=r0,r1=r1)
         self.log_lik_given_fore = self.log_lik_appearance_given_fore + \
             self.log_lik_dist_obj_given_fore
         self.log_lik_given_back = self.log_lik_appearance_given_back + \
             self.log_lik_dist_obj_given_back
+            
+    def compute_log_lik_ratio(self,r0=0,r1=num.inf):
+        
+        self.compute_log_lik(r0=r0,r1=r1)
+        self.log_lik_ratio = self.log_lik_given_fore - self.log_lik_given_back
+        return self.log_lik_ratio
             
     def isfore_mask(self):
         """
@@ -470,7 +489,7 @@ class ExpBGFGModel:
         self.obj_detection_dist_counts_bg += counts
                       
                       
-    def obj_detect(self):
+    def obj_detect(self,r0=0,r1=num.inf):
         """
         obj_detect()
 
@@ -478,7 +497,12 @@ class ExpBGFGModel:
         LoG filtering. 
         """
 
-        self.LoGfilter()
+        r1 = min(r1,self.nr)
+
+        self.LoGfilter(r0=r0,r1=r1)
+        
+        if hasattr(self,'always_bg_mask') and self.always_bg_mask is not None:
+            self.isobj[self.always_bg_mask[r0:r1]] = False
 
     def init_obj_detection(self):
         """
@@ -511,9 +535,10 @@ class ExpBGFGModel:
             (self.obj_detection_dist_edges[1:] + \
                  self.obj_detection_dist_edges[:-1])/2.
 
-        # histograms of distances to object detections for foreground and background
-        self.obj_detection_dist_counts_fg = num.zeros(self.obj_detection_dist_nbins)
-        self.obj_detection_dist_counts_bg = num.zeros(self.obj_detection_dist_nbins)
+        # histograms of distances to object detections for foreground and background:
+        # initialize to 1 so that there is never a 0 probability
+        self.obj_detection_dist_counts_fg = num.ones(self.obj_detection_dist_nbins)
+        self.obj_detection_dist_counts_bg = num.ones(self.obj_detection_dist_nbins)
 
     def init_always_bg_mask(self):
         self.always_bg_mask_count = num.zeros((self.nr,self.nc))
@@ -559,28 +584,47 @@ class ExpBGFGModel:
             self.LoG_fil = num.abs(self.LoG_fil)
         
 
-    def LoGfilter(self):
+    def LoGfilter(self,r0=0,r1=num.inf):
         """
         LoGfilter()
 
         Apply LoG filtering to the current frame to detect blobs. 
         """
         
+        r1 = min(r1,num.inf)
+        
         # LoG filter
-        filters.correlate(self.im.astype(float),
+        if not hasattr(self,'LoG_fil_out'):
+            # output of LoG filtering
+            self.LoG_fil_out = num.zeros((self.nr,self.nc))
+            
+        if not hasattr(self,'LoG_fil_max'):
+            # output of nonmaximal suppression
+            self.LoG_fil_max = num.zeros((self.nr,self.nc))
+
+        if not hasattr(self,'obj_detection_dist'):
+            # output of dist transform
+            self.obj_detection_dist = num.zeros((self.nr,self.nc))
+            
+        # pad borders
+        off = max(self.LoG_hsize,self.LoG_nonmaxsup_sz) 
+        r00 = max(0,r0-off)
+        r11 = min(self.nr,r1+off)
+
+        filters.correlate(self.im[r00:r11].astype(float),
                           self.LoG_fil,
-                          output=self.LoG_fil_out,
+                          output=self.LoG_fil_out[r00:r11],
                           mode='nearest')
 
         # depending on difftype, we will only look for positive, negative or both values
         if self.difftype == 'other':
-            self.LoG_fil_out = num.abs(self.LoG_fil_out)
+            self.LoG_fil_out[r00:r11] = num.abs(self.LoG_fil_out[r00:r11])
 
         # non-maximal suppression + threshold
-        filters.maximum_filter(self.LoG_fil_out,size=self.LoG_nonmaxsup_sz,
-                               output=self.LoG_fil_max,mode='constant',cval=0)
-        self.isobj = num.logical_and(self.LoG_fil_out == self.LoG_fil_max,
-                                     self.LoG_fil_out >= self.LoG_thresh)
+        filters.maximum_filter(self.LoG_fil_out[r00:r11],size=self.LoG_nonmaxsup_sz,
+                               output=self.LoG_fil_max[r00:r11],mode='constant',cval=0)
+        self.isobj = num.logical_and(self.LoG_fil_out[r0:r1] == self.LoG_fil_max[r0:r1],
+                                     self.LoG_fil_out[r0:r1] >= self.LoG_thresh)
                                      
     def update_always_bg_mask(self):
 
@@ -665,6 +709,158 @@ class ExpBGFGModel:
         pickle.dump(out,fid)
         fid.close()
 
+
+    def show(self):
+
+        plt.subplot(231)
+        plt.imshow(self.fg_mu,cmap=cm.gray,vmin=0,vmax=255)
+        plt.colorbar()
+        plt.title("foreground mean")
+    
+        plt.subplot(234)
+        plt.imshow(self.fg_sigma)
+        plt.colorbar()
+        plt.title("foreground standard deviation")
+    
+        plt.subplot(232)
+        plt.imshow(self.bg_mu,cmap=cm.gray,vmin=0,vmax=255)
+        plt.colorbar()
+        plt.title("background mean")
+    
+        plt.subplot(235)
+        plt.imshow(self.bg_sigma)
+        plt.colorbar()
+        plt.title("background standard deviation")
+        
+        plt.subplot(233)
+        plt.imshow(self.always_bg_mask_frac)
+        plt.colorbar()
+        plt.title("always bg mask frac")
+    
+        plt.subplot(236)
+        plt.imshow(self.always_bg_mask,cmap=cm.gray)
+        plt.colorbar()
+        plt.title("always bg mask")
+    
+        plt.figure()
+        plt.plot(self.obj_detection_dist_centers,self.obj_detection_dist_frac_bg,'k.-',
+                 self.obj_detection_dist_centers,self.obj_detection_dist_frac_fg,'r.-')
+        plt.legend(('bg','fg'))
+        plt.xlabel('Dist to obj detection')
+        plt.ylabel('P(dist | label)')
+    
+        plt.show()
+        
+    def showtest(self,moviename=None,moviei=0,nframessample=4,cmin=-num.infty,cmax=num.infty):
+        
+        if moviename is None:
+            moviename = self.movienames[moviei]
+            
+        self.movie = movies.Movie( moviename, params.interactive )
+        self.nr = self.movie.get_height()
+        self.nc = self.movie.get_width()
+
+        framessample = num.unique(num.round(num.linspace(0,self.movie.get_n_frames()-1,nframessample)).astype(int))
+        
+        nr = nframessample
+        nc = 5
+        
+        plt.figure()
+        vmin_noninf = num.zeros(nc)
+        vmin_noninf[:] = num.infty
+        vmax_noninf = num.zeros(nc)
+        vmax_noninf[:] = -num.infty
+        vmin = num.zeros(nc)
+        vmin[:] = num.infty
+        vmax = num.zeros(nc)
+        vmax[:] = -num.infty
+        
+        hims = []
+        for i in range(nframessample):
+            
+            self.frame = framessample[i]
+            print 'Frame %d (%d/%d)'%(self.frame,i+1,nframessample)
+            self.im,self.timestamp = self.movie.get_frame(self.frame)
+            log_lik_ratio = self.compute_log_lik_ratio()
+            
+            j = 1
+            h0 = plt.subplot(nr,nc,nc*i+j)
+            tmp = self.log_lik_appearance_given_fore.copy()
+            tmp[self.always_bg_mask] = num.nan
+            him = []
+            him.append(plt.imshow(tmp))
+            plt.axis('off')
+            plt.axis('image')
+            plt.title('ll(intensity|fg), %d'%self.frame)
+            (vmin,vmax,vmin_noninf,vmax_noninf) = update_clim(self.log_lik_appearance_given_fore,vmin,vmax,vmin_noninf,vmax_noninf,j)
+            plt.colorbar()
+            
+            j += 1
+            plt.subplot(nr,nc,nc*i+j,sharex=h0,sharey=h0)
+            tmp = self.log_lik_appearance_given_back.copy()
+            tmp[self.always_bg_mask] = num.nan
+            him.append(plt.imshow(tmp))
+            plt.axis('off')
+            plt.title('ll(intensity|bg), %d'%self.frame)
+            (vmin,vmax,vmin_noninf,vmax_noninf) = update_clim(self.log_lik_appearance_given_back,vmin,vmax,vmin_noninf,vmax_noninf,j)
+            plt.colorbar()
+
+            j += 1
+            plt.subplot(nr,nc,nc*i+j,sharex=h0,sharey=h0)
+            tmp = self.log_lik_dist_obj_given_fore.copy()
+            tmp[self.always_bg_mask] = num.nan
+            him.append(plt.imshow(tmp))
+            plt.axis('off')
+            plt.title('ll(distobj|fg), %d'%self.frame)
+            (vmin,vmax,vmin_noninf,vmax_noninf) = update_clim(self.log_lik_dist_obj_given_fore,vmin,vmax,vmin_noninf,vmax_noninf,j)
+            plt.colorbar()
+
+            j += 1
+            plt.subplot(nr,nc,nc*i+4,sharex=h0,sharey=h0)
+            tmp = self.log_lik_dist_obj_given_back.copy()
+            tmp[self.always_bg_mask] = num.nan
+            him.append(plt.imshow(tmp))
+            plt.axis('off')
+            plt.title('ll(distobj|bg), %d'%self.frame)
+            (vmin,vmax,vmin_noninf,vmax_noninf) = update_clim(self.log_lik_dist_obj_given_back,vmin,vmax,vmin_noninf,vmax_noninf,j)
+            plt.colorbar()
+            
+            j += 1
+            plt.subplot(nr,nc,nc*i+j,sharex=h0,sharey=h0)
+            tmp = log_lik_ratio.copy()
+            tmp[self.always_bg_mask] = num.nan
+            him.append(plt.imshow(tmp))
+            plt.axis('off')
+            plt.title('ll(im|fg) - ll(im|bg), %d'%self.frame)
+            (vmin,vmax,vmin_noninf,vmax_noninf) = update_clim(log_lik_ratio,vmin,vmax,vmin_noninf,vmax_noninf,j)
+            plt.colorbar()
+            
+            hims.append(him)
+            plt.draw()
+            
+        dv = vmax_noninf - vmin_noninf
+        idx = vmin < vmin_noninf
+        vmin_noninf[idx] = vmin_noninf[idx] - dv[idx]*.025
+        idx = vmax > vmax_noninf
+        vmax_noninf[idx] = vmax_noninf[idx] + dv[idx]*.025
+
+        for j in range(nc):
+            for i in range(nr):
+                hims[i][j].set_clim(vmin_noninf[j],vmax_noninf[j])
+                
+        print "Done."
+        
+        plt.show()
+            
+def update_clim(x,vmin,vmax,vmin_noninf,vmax_noninf,j):
+    
+    vmin[j-1] = min(num.min(x),vmin[j-1])
+    vmax[j-1] = max(num.max(x),vmax[j-1])
+    vmin_noninf[j-1] = min(num.min(x[False == num.isinf(x)]),vmin_noninf[j-1])
+    vmax_noninf[j-1] = max(num.max(x[False == num.isinf(x)]),vmax_noninf[j-1])
+
+    return (vmin,vmax,vmin_noninf,vmax_noninf)
+            
     
 def create_morph_struct(radius):
     """
@@ -1090,95 +1286,7 @@ def main():
     
     model.est_marginals()
     model.save(outputFileName)
-    
-    plt.subplot(231)
-    plt.imshow(model.fg_mu,cmap=cm.gray,vmin=0,vmax=255)
-    plt.colorbar()
-    plt.title("foreground mean")
-
-    plt.subplot(233)
-    plt.imshow(model.fg_sigma)
-    plt.colorbar()
-    plt.title("foreground standard deviation")
-
-    plt.subplot(232)
-    plt.imshow(model.bg_mu,cmap=cm.gray,vmin=0,vmax=255)
-    plt.colorbar()
-    plt.title("background mean")
-
-    plt.subplot(234)
-    plt.imshow(model.bg_sigma)
-    plt.colorbar()
-    plt.title("background standard deviation")
-    
-    plt.subplot(235)
-    plt.imshow(model.always_bg_mask_frac)
-    plt.colorbar()
-    plt.title("always bg mask frac")
-
-    plt.figure()
-    plt.plot(model.obj_detection_dist_centers,model.obj_detection_dist_frac_bg,'k.-',
-             model.obj_detection_dist_centers,model.obj_detection_dist_frac_fg,'r.-')
-    plt.legend(('bg','fg'))
-    plt.xlabel('Dist to obj detection')
-    plt.ylabel('P(dist | label)')
-
-    plt.show()
-
-    return model
-
-def ShowModel(model=None,filename=None):
-
-    if model is None and filename is None:
-        sys.error('Either model or filename must be input')
-
-    if model is None:
-        
-        file = open(filename,'r')
-        model = pickle.load(file)
-
-    model['obj_detection_dist_centers'] = \
-        (model['obj_detection_dist_edges'][1:] + \
-             model['obj_detection_dist_edges'][:-1])/2.
-
-    plt.subplot(231)
-    plt.imshow(model['fg_mu'],cmap=cm.gray,vmin=0,vmax=255)
-    plt.colorbar()
-    plt.title("foreground mean")
-
-    plt.subplot(234)
-    plt.imshow(model['fg_sigma'])
-    plt.colorbar()
-    plt.title("foreground standard deviation")
-
-    plt.subplot(232)
-    plt.imshow(model['bg_mu'],cmap=cm.gray,vmin=0,vmax=255)
-    plt.colorbar()
-    plt.title("background mean")
-
-    plt.subplot(235)
-    plt.imshow(model['bg_sigma'])
-    plt.colorbar()
-    plt.title("background standard deviation")
-    
-    plt.subplot(233)
-    plt.imshow(model['always_bg_mask_frac'])
-    plt.colorbar()
-    plt.title("always bg mask frac")
-
-    plt.subplot(236)
-    plt.imshow(model['always_bg_mask'],cmap=cm.gray)
-    plt.colorbar()
-    plt.title("always bg mask")
-
-    plt.figure()
-    plt.plot(model['obj_detection_dist_centers'],model['obj_detection_dist_frac_bg'],'k.-',
-             model['obj_detection_dist_centers'],model['obj_detection_dist_frac_fg'],'r.-')
-    plt.legend(('bg','fg'))
-    plt.xlabel('Dist to obj detection')
-    plt.ylabel('P(dist | label)')
-
-    plt.show()
+    model.show()
 
     return model
     

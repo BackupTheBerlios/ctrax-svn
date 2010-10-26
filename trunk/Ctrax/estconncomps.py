@@ -39,9 +39,10 @@ def ell2cov(a,b,theta):
 def cov2ell2(S00,S11,S01):
     # compute axis lengths from covariance matrix
     tmp1 = S00 + S11
-    tmp2 = num.sqrt(4.0*S01**2.0 + (S00 - S11)**2.0)
-    eigA = (tmp1+tmp2)/2.0
-    eigB = (tmp1-tmp2)/2.0
+    tmp2 = num.sqrt(max(0,4.0*S01**2.0 + (S00 - S11)**2.0))
+    # only less than 0 because of numerical errors
+    eigA = max(0,(tmp1+tmp2)/2.0)
+    eigB = max(0,(tmp1-tmp2)/2.0)
     # compute angle
     angle = 0.5*num.arctan2( 2.0*S01, S00 - S11 )
     if eigB > eigA:
@@ -55,9 +56,10 @@ def cov2ell2(S00,S11,S01):
 def cov2ell(S):
     # compute axis lengths from covariance matrix
     tmp1 = S[0,0] + S[1,1]
-    tmp2 = num.sqrt(4.0*S[0,1]**2.0 + (S[0,0] - S[1,1])**2.0)
-    eigA = (tmp1+tmp2)/2.0
-    eigB = (tmp1-tmp2)/2.0
+    tmp2 = num.sqrt(max(0,4.0*S[0,1]**2.0 + (S[0,0] - S[1,1])**2.0))
+    # only less than 0 cuzza numerical errors
+    eigA = max(0,(tmp1+tmp2)/2.0)
+    eigB = max(0,(tmp1-tmp2)/2.0)
     # compute angle
     angle = 0.5*num.arctan2( 2.0*S[0,1], S[0,0] - S[1,1] )
     if eigB > eigA:

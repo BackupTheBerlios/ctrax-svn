@@ -108,7 +108,8 @@
                 <weight>bold</weight>
                 <underlined>0</underlined>
                 <family>swiss</family>
-                <face>Sans</face>
+                <face>MS Shell Dlg 2</face>
+                <encoding></encoding>
               </font>
             </object>
             <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
@@ -116,6 +117,15 @@
           <object class="sizeritem">
             <object class="wxTextCtrl" name="bg_firstframe">
               <value>0</value>
+              <font>
+                <size>10</size>
+                <style>normal</style>
+                <weight>bold</weight>
+                <underlined>0</underlined>
+                <family>swiss</family>
+                <face>Sans</face>
+                <encoding>WINDOWS-1252</encoding>
+              </font>
             </object>
           </object>
           <object class="sizeritem">
@@ -166,19 +176,19 @@
             <object class="wxCheckBox" name="expbgfgmodel_checkbox">
               <label>Use Prior Model:   </label>
               <font>
-                <size>8</size>
+                <size>10</size>
                 <style>normal</style>
                 <weight>bold</weight>
                 <underlined>0</underlined>
                 <family>swiss</family>
-                <face>Tahoma</face>
+                <face>Sans</face>
                 <encoding>WINDOWS-1252</encoding>
               </font>
             </object>
           </object>
           <object class="sizeritem">
             <object class="wxTextCtrl" name="expbgfgmodel_text">
-              <size>145,20</size>
+              <size>125,20</size>
               <value>None</value>
               <style>wxTE_READONLY</style>
             </object>
@@ -198,6 +208,50 @@
         <object class="wxStaticText">
           <size>360,45</size>
           <label>Name of file containing global, prior models of the foreground and background appearance, trained using ExpBGFGModel.</label>
+          <font>
+            <size>8</size>
+            <style>normal</style>
+            <weight>normal</weight>
+            <underlined>0</underlined>
+            <family>swiss</family>
+            <face>Sans</face>
+          </font>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticLine" name="">
+          <size>360,10</size>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <size>250,16</size>
+              <label>Prior Log-Likelihood Ratio Threshold:  </label>
+              <font>
+                <size>10</size>
+                <style>normal</style>
+                <weight>bold</weight>
+                <underlined>0</underlined>
+                <family>swiss</family>
+                <face>Sans</face>
+              </font>
+            </object>
+            <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="llr_thresh">
+              <value>0</value>
+            </object>
+          </object>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticText">
+          <size>360,45</size>
+          <label>Threshold for log-likelihood ratio of foreground over background. Only pixels that are below the threhsold will be used in the bg model computation. </label>
           <font>
             <size>8</size>
             <style>normal</style>
@@ -236,6 +290,9 @@
           </object>
         </object>
         <flag>wxALIGN_CENTRE_HORIZONTAL</flag>
+      </object>
+      <object class="spacer">
+        <size>0,10</size>
       </object>
     </object>
   </object>

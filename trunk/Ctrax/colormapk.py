@@ -46,10 +46,31 @@ def colormap_image(imin,cmap=None,cbounds=None):
         assert(cbounds[0]<=cbounds[1])
         # threshold at cbounds
         im = im.clip(cbounds[0],cbounds[1])
-
+        
+    neginfidx = num.isneginf(im)
+    isneginf = num.any(neginfidx)
+    posinfidx = num.isposinf(im)
+    isposinf = num.any(posinfidx)
+    nanidx = num.isnan(im)
+    isnan = num.any(nanidx)
+        
     # scale the image to be between 0 and cmap.N-1
-    im -= im.min()
-    im /= im.max()
+    goodidx = [num.logical_not(num.logical_or(num.logical_or(neginfidx,posinfidx),nanidx))]
+    minv = im[goodidx].min()
+    maxv = im[goodidx].max()
+    dv = maxv - minv
+    if isposinf:
+        maxv = maxv + dv * .025
+        im[posinfidx] = maxv
+        #print "Some elements of image are +infty"
+        
+    if isneginf or isnan:
+        minv = minv - dv * .025
+        im[neginfidx] = minv
+        im[nanidx] = minv
+        #print "Some elements of image are -infty or nan"
+
+    im = (im - minv) / (maxv-minv)
     im *= (float(cmap.shape[0]-1))
 
     # round
@@ -69,4 +90,6 @@ def colormap_image(imin,cmap=None,cbounds=None):
     rgb *= 255
     rgb = rgb.astype(num.uint8)
 
-    return rgb
+    clim = [minv,maxv]
+
+    return rgb,clim

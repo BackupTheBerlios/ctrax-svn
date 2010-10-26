@@ -692,6 +692,10 @@ class AnnotationFile:
             sz = self.bg_imgs.std.size*SIZEOFDOUBLE
             self.file.write("background std:%d\n"%sz)
             self.file.write(self.bg_imgs.std)
+        if hasattr(self.bg_imgs,'fracframesisback'):
+            sz = self.bg_imgs.fracframesisback.size*SIZEOFDOUBLE
+            self.file.write("fracframesisback:%d\n"%sz)
+            self.file.write(self.bg_imgs.fracframesisback)            
         if hasattr(self.bg_imgs,'hfnorm'):
             sz = self.bg_imgs.hfnorm.size*SIZEOFDOUBLE
             self.file.write("hfnorm:%d\n"%sz)
@@ -752,7 +756,17 @@ class AnnotationFile:
 
         self.file.write('do_fix_lost:%d\n'%params.do_fix_lost)
         self.file.write('lostdetection_length:%d\n'%params.lostdetection_length)
-
+        
+        # expbgfgmodel params
+        if params.expbgfgmodel_filename is None:
+            expbgfgmodel_filename = ''
+        else:
+            expbgfgmodel_filename = params.expbgfgmodel_filename
+        self.file.write('expbgfgmodel_filename:%s\n'%expbgfgmodel_filename)
+        self.file.write('use_expbgfgmodel:%d\n'%params.use_expbgfgmodel)
+        self.file.write('expbgfgmodel_llr_thresh:%f\n'%params.expbgfgmodel_llr_thresh)
+        self.file.write('min_frac_frames_isback:%f\n'%params.min_frac_frames_isback)
+                
         self.file.write('movie_name:' + params.movie_name + '\n')
 
         self.max_jump = params.max_jump
@@ -924,6 +938,13 @@ class AnnotationFile:
                     self.bg_imgs.std.shape = params.movie_size
                 else:
                     self.file.seek(sz,1)
+            elif parameter == 'fracframesisback':
+                sz = int(value)
+                if doreadbgmodel:
+                    self.bg_imgs.fracframesisback = num.fromstring(self.file.read(sz),'<d')
+                    self.bg_imgs.fracframesisback.shape = params.movie_size
+                else:
+                    self.file.seek(sz,1)
             elif parameter == 'hfnorm':
                 sz = int(value)
                 if doreadbgmodel and (self.bg_imgs is not None):
@@ -1014,6 +1035,19 @@ class AnnotationFile:
                 params.do_fix_lost = bool(int(value))
             elif parameter == 'lostdetection_length':
                 params.lostdetection_length = int(value)
+            elif parameter == 'expbgfgmodel_filename':
+                if value == '':
+                    params.expbgfgmodel_filename = None
+                else:
+                    params.expbgfgmodel_filename = value
+                    if doreadbgmodel and (self.bg_imgs is not None):
+                        self.bg_imgs.setExpBGFGModel(params.expbgfgmodel_filename)
+            elif parameter == 'use_expbgfgmodel':
+                params.use_expbgfgmodel = bool(int(value))
+            elif parameter == 'expbgfgmodel_llr_thresh':
+                params.expbgfgmodel_llr_thresh = float(value)
+            elif parameter == 'min_frac_frames_isback':
+                params.min_frac_frames_isback = float(value)                
             elif parameter == 'movie_name':
                 params.annotation_movie_name = value
             elif parameter == 'start_frame':

@@ -305,7 +305,7 @@ class SetArena:
         self.edgemag_zero = self.edgemag.copy()
         self.edgemag_zero[self.edgemag < params.arena_edgethresh] = 0
         wx.Yield()
-        self.image_shown = colormapk.colormap_image(self.edgemag_zero)
+        self.image_shown,clim = colormapk.colormap_image(self.edgemag_zero)
         #self.image_shown = self.edgemag_zero
 
     def display_parameters(self,cbo=None):

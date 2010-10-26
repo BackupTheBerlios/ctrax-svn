@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resource>
   <object class="wxFrame" name="frame_Ctrax_bg">
-    <title>Background/Threshold</title>
     <object class="wxMenuBar" name="menu">
       <object class="wxMenu" name="menu_window">
         <label>Window</label>
@@ -12,167 +11,213 @@
       </object>
     </object>
     <object class="wxBoxSizer">
-      <orient>wxHORIZONTAL</orient>
       <object class="sizeritem">
         <object class="wxBoxSizer">
           <orient>wxVERTICAL</orient>
           <object class="sizeritem">
-            <object class="wxScrollBar" name="slider_thresh">
-              <tooltip>Connected component must contain at least
+            <object class="wxBoxSizer">
+              <orient>wxHORIZONTAL</orient>
+              <object class="sizeritem">
+                <object class="wxBoxSizer">
+                  <object class="sizeritem">
+                    <object class="wxScrollBar" name="slider_thresh">
+                      <tooltip>Connected component must contain at least
 one pixel above the high threshold.</tooltip>
-              <help>Connected component must contain at least
+                      <help>Connected component must contain at least
 one pixel above the high threshold.</help>
-              <style>wxSB_VERTICAL</style>
-            </object>
-            <flag>wxALIGN_CENTRE</flag>
-            <minsize>-1,500</minsize>
-          </object>
-          <object class="sizeritem">
-            <object class="wxStaticText" name="text_thresh">
-              <label>High
+                      <style>wxSB_VERTICAL</style>
+                    </object>
+                    <flag>wxALIGN_CENTRE</flag>
+                    <minsize>-1,590</minsize>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxStaticText" name="text_thresh">
+                      <label>High
 Thresh</label>
-              <font>
-                <size>10</size>
-                <style>normal</style>
-                <weight>bold</weight>
-                <underlined>0</underlined>
-                <family>swiss</family>
-                <face>Sans</face>
-              </font>
-              <tooltip>Connected component must contain at least
+                      <font>
+                        <size>10</size>
+                        <style>normal</style>
+                        <weight>bold</weight>
+                        <underlined>0</underlined>
+                        <family>swiss</family>
+                        <face>Sans</face>
+                      </font>
+                      <tooltip>Connected component must contain at least
 one pixel above the high threshold.</tooltip>
-              <style>wxALIGN_CENTRE</style>
-            </object>
-            <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL</flag>
-          </object>
-          <object class="sizeritem">
-            <object class="wxTextCtrl" name="threshold_text_input">
-              <value>0</value>
-              <size>50,20</size>
-              <style>wxTE_PROCESS_ENTER|wxTE_CENTRE</style>
-              <tooltip>Connected component must contain at least
+                      <style>wxALIGN_CENTRE</style>
+                    </object>
+                    <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL</flag>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxTextCtrl" name="threshold_text_input">
+                      <value>0</value>
+                      <size>50,20</size>
+                      <style>wxTE_PROCESS_ENTER|wxTE_CENTRE</style>
+                      <tooltip>Connected component must contain at least
 one pixel above the high threshold.</tooltip>
+                    </object>
+                    <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL</flag>
+                  </object>
+                  <orient>wxVERTICAL</orient>
+                </object>
+              </object>
+              <object class="sizeritem">
+                <object class="wxBoxSizer">
+                  <object class="sizeritem">
+                    <object class="wxScrollBar" name="slider_low_thresh">
+                      <tooltip>If a pixel is above the low threshold and near a
+pixel above the high threshold, it is foreground.</tooltip>
+                      <style>wxSB_VERTICAL</style>
+                    </object>
+                    <flag>wxALIGN_CENTRE</flag>
+                    <minsize>-1,590</minsize>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxStaticText" name="text_low_thresh">
+                      <label>Low
+Thresh</label>
+                      <font>
+                        <size>10</size>
+                        <style>normal</style>
+                        <weight>bold</weight>
+                        <underlined>0</underlined>
+                        <family>swiss</family>
+                        <face>Sans</face>
+                      </font>
+                      <tooltip>If a pixel is above the low threshold and near a
+pixel above the high threshold, it is foreground.</tooltip>
+                      <style>wxALIGN_CENTRE</style>
+                    </object>
+                    <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL</flag>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxTextCtrl" name="low_threshold_text_input">
+                      <size>50,20</size>
+                      <value>0</value>
+                      <tooltip>If a pixel is above the low threshold and near a
+pixel above the high threshold, it is foreground.</tooltip>
+                      <style>wxTE_PROCESS_ENTER|wxTE_CENTRE</style>
+                    </object>
+                    <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL</flag>
+                  </object>
+                  <orient>wxVERTICAL</orient>
+                </object>
+              </object>
             </object>
-            <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL</flag>
           </object>
           <object class="spacer">
-            <size>0,20</size>
+            <size>0,25</size>
           </object>
           <object class="sizeritem">
             <object class="wxButton" name="done_button">
+              <size>80,30</size>
               <label>Done</label>
               <font>
                 <size>10</size>
-                <family>swiss</family>
                 <style>normal</style>
                 <weight>bold</weight>
                 <underlined>0</underlined>
+                <family>swiss</family>
                 <face>Sans</face>
               </font>
             </object>
-            <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL</flag>
+            <flag>wxALIGN_CENTRE_HORIZONTAL</flag>
           </object>
         </object>
-        <flag>wxALIGN_CENTER</flag>
       </object>
       <object class="sizeritem">
         <object class="wxBoxSizer">
-          <orient>wxVERTICAL</orient>
+          <orient>wxHORIZONTAL</orient>
           <object class="sizeritem">
-            <object class="wxScrollBar" name="slider_low_thresh">
-              <style>wxSB_VERTICAL</style>
-              <tooltip>If a pixel is above the low threshold and near a
-pixel above the high threshold, it is foreground.</tooltip>
+            <object class="wxBoxSizer">
+              <object class="sizeritem">
+                <object class="wxPanel" name="panel_img">
+                  <bg>#AAAAAA</bg>
+                </object>
+                <option>1</option>
+                <flag>wxSHAPED|wxALIGN_CENTRE_HORIZONTAL</flag>
+                <minsize>643,643</minsize>
+                <ratio>642,642</ratio>
+              </object>
+              <object class="sizeritem">
+                <object class="wxBoxSizer">
+                  <object class="sizeritem">
+                    <object class="wxStaticText" name="text_range">
+                      <label>Range: [0,255]</label>
+                      <font>
+                        <size>10</size>
+                        <style>normal</style>
+                        <weight>bold</weight>
+                        <underlined>0</underlined>
+                        <family>swiss</family>
+                        <face>Sans</face>
+                      </font>
+                      <style>wxALIGN_RIGHT</style>
+                    </object>
+                    <flag>wxLEFT|wxALIGN_LEFT</flag>
+                  </object>
+                  <object class="spacer">
+                    <size>300,0</size>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxStaticText" name="text_frame">
+                      <pos>500,0</pos>
+                      <label>Frame</label>
+                      <font>
+                        <size>10</size>
+                        <style>normal</style>
+                        <weight>bold</weight>
+                        <underlined>0</underlined>
+                        <family>swiss</family>
+                        <face>Sans</face>
+                      </font>
+                    </object>
+                    <flag>wxRIGHT|wxALIGN_RIGHT</flag>
+                  </object>
+                  <orient>wxHORIZONTAL</orient>
+                </object>
+                <flag>wxALIGN_CENTRE</flag>
+                <minsize>640,0</minsize>
+              </object>
+              <object class="sizeritem">
+                <object class="wxScrollBar" name="slider_frame">
+                  <size>641,-1</size>
+                  <value>0</value>
+                  <thumbsize>1</thumbsize>
+                  <pagesize>30</pagesize>
+                  <style>wxSB_HORIZONTAL</style>
+                </object>
+                <flag>wxALIGN_CENTRE</flag>
+              </object>
+              <object class="spacer">
+                <size>0,5</size>
+              </object>
+              <object class="sizeritem">
+                <object class="wxChoice" name="view_type_input">
+                  <content>
+                    <item>Background Image</item>
+                    <item>Distance from Background</item>
+                    <item>Foreground/Background Classification</item>
+                    <item>Background-Only Areas</item>
+                    <item>Normalization Image</item>
+                    <item>Connected Components</item>
+                    <item>Ellipse Fits</item>
+                  </content>
+                  <selection>0</selection>
+                </object>
+                <flag>wxALIGN_CENTRE</flag>
+              </object>
+              <object class="spacer">
+                <size>0,5</size>
+              </object>
+              <orient>wxVERTICAL</orient>
             </object>
             <flag>wxALIGN_CENTRE</flag>
-            <minsize>-1,500</minsize>
-          </object>
-          <object class="sizeritem">
-            <object class="wxStaticText" name="text_low_thresh">
-              <label>Low
-Thresh</label>
-              <font>
-                <size>10</size>
-                <style>normal</style>
-                <weight>bold</weight>
-                <underlined>0</underlined>
-                <family>swiss</family>
-                <face>Sans</face>
-              </font>
-              <tooltip>If a pixel is above the low threshold and near a
-pixel above the high threshold, it is foreground.</tooltip>
-              <style>wxALIGN_CENTRE</style>
-            </object>
-            <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL</flag>
-          </object>
-          <object class="sizeritem">
-            <object class="wxTextCtrl" name="low_threshold_text_input">
-              <size>50,20</size>
-              <value>0</value>
-              <tooltip>If a pixel is above the low threshold and near a
-pixel above the high threshold, it is foreground.</tooltip>
-              <style>wxTE_PROCESS_ENTER|wxTE_CENTRE</style>
-            </object>
-            <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL</flag>
           </object>
           <object class="spacer">
-            <size>0,50</size>
+            <size>20,0</size>
           </object>
         </object>
-        <flag>wxALIGN_CENTER</flag>
-      </object>
-      <object class="sizeritem">
-        <object class="wxBoxSizer">
-          <orient>wxVERTICAL</orient>
-          <object class="sizeritem">
-            <object class="wxPanel" name="panel_img"/>
-            <option>1</option>
-            <flag>wxSHAPED</flag>
-            <minsize>641,513</minsize>
-            <ratio>640,512</ratio>
-          </object>
-          <object class="sizeritem">
-            <object class="wxStaticText" name="text_frame">
-              <label>Frame</label>
-              <font>
-                <size>10</size>
-                <family>swiss</family>
-                <style>normal</style>
-                <weight>bold</weight>
-                <underlined>0</underlined>
-                <face>Sans</face>
-              </font>
-            </object>
-            <flag>wxALIGN_CENTER</flag>
-          </object>
-          <object class="sizeritem">
-            <object class="wxScrollBar" name="slider_frame">
-              <size>641,-1</size>
-              <style>wxSB_HORIZONTAL</style>
-              <value>0</value>
-              <thumbsize>1</thumbsize>
-              <pagesize>30</pagesize>
-            </object>
-            <flag>wxALIGN_CENTRE</flag>
-          </object>
-          <object class="sizeritem">
-            <object class="wxChoice" name="view_type_input">
-              <content>
-                <item>Background Image</item>
-                <item>Distance from Background</item>
-                <item>Foreground/Background Classification</item>
-                <item>Background-Only Areas</item>
-                <item>Normalization Image</item>
-                <item>Connected Components</item>
-                <item>Ellipse Fits</item>
-              </content>
-              <selection>0</selection>
-            </object>
-            <flag>wxALIGN_CENTRE</flag>
-          </object>
-        </object>
-        <option>1</option>
-        <flag>wxEXPAND</flag>
       </object>
       <object class="sizeritem">
         <object class="wxBoxSizer">
@@ -551,6 +596,97 @@ foreground.</tooltip>
             </object>
           </object>
           <object class="sizeritem">
+            <object class="wxPanel" name="expbgfgmodel_panel">
+              <object class="wxBoxSizer">
+                <orient>wxVERTICAL</orient>
+                <object class="sizeritem">
+                  <object class="wxStaticText" name="expbgfgmodel_text">
+                    <size>200,18</size>
+                    <label>Prior Model Parameters:</label>
+                    <font>
+                      <size>10</size>
+                      <style>normal</style>
+                      <weight>bold</weight>
+                      <underlined>0</underlined>
+                      <family>swiss</family>
+                      <face>Sans</face>
+                    </font>
+                    <tooltip>Parameters relevant to the prior for bg model computation.</tooltip>
+                    <help>Parameters relevant to the prior for bg model computation.</help>
+                  </object>
+                </object>
+                <object class="sizeritem">
+                  <object class="wxBoxSizer">
+                    <orient>wxHORIZONTAL</orient>
+                    <object class="sizeritem">
+                      <object class="wxStaticText" name="min_frac_frames_isback_text">
+                        <size>140,18</size>
+                        <label>Min frac. frames bg:</label>
+                        <font>
+                          <size>10</size>
+                          <style>normal</style>
+                          <weight>bold</weight>
+                          <underlined>0</underlined>
+                          <family>swiss</family>
+                          <face>Sans</face>
+                        </font>
+                        <tooltip>Minimum fraction of frames that must be classified as background by the prior model in order for us to use the background model estimate for this video.</tooltip>
+                        <help>Minimum fraction of frames that must be classified as background by the prior model in order for us to use the background model estimate for this video.</help>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxTextCtrl" name="min_frac_frames_isback">
+                        <value>0.1</value>
+                        <tooltip>Minimum fraction of frames that must be classified as background by the prior model in order for us to use the background model estimate for this video.</tooltip>
+                        <help>Minimum fraction of frames that must be classified as background by the prior model in order for us to use the background model estimate for this video.</help>
+                      </object>
+                    </object>
+                  </object>
+                </object>
+                <object class="sizeritem">
+                  <object class="wxBoxSizer">
+                    <orient>wxHORIZONTAL</orient>
+                    <object class="sizeritem">
+                      <object class="wxStaticText" name="expbgfgmodel_fill_text">
+                        <size>140,18</size>
+                        <label>Fill missing bg with:</label>
+                        <font>
+                          <size>10</size>
+                          <style>normal</style>
+                          <weight>bold</weight>
+                          <underlined>0</underlined>
+                          <family>swiss</family>
+                          <face>Sans</face>
+                        </font>
+                        <tooltip>If there are not enough frames to estimate the background model reliably, we can either fill with the prior background mean and std appearance, or fill by interpolating from neighboring pixels.</tooltip>
+                        <help>If there are not enough frames to estimate the background model reliably, we can either fill with the prior background mean and std appearance, or fill by interpolating from neighboring pixels.</help>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxChoice" name="expbgfgmodel_fill">
+                        <size>200,18</size>
+                        <content>
+                          <item>Prior background model</item>
+                          <item>Interpolation</item>
+                        </content>
+                        <selection>1</selection>
+                        <tooltip>If there are not enough frames to estimate the background model reliably, we can either fill with the prior background mean and std appearance, or fill by interpolating from neighboring pixels.</tooltip>
+                        <help>If there are not enough frames to estimate the background model reliably, we can either fill with the prior background mean and std appearance, or fill by interpolating from neighboring pixels.</help>
+                      </object>
+                    </object>
+                  </object>
+                </object>
+              </object>
+              <bg>#AAAAAA</bg>
+              <hidden>1</hidden>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticLine">
+              <size>400,10</size>
+            </object>
+          </object>
+          <object class="sizeritem">
             <object class="wxButton" name="fixbg_button">
               <label>Fix Background Model ...</label>
               <tooltip>Fix errors in background model estimation by filling selected regions of the model through interpolation.</tooltip>
@@ -560,6 +696,8 @@ foreground.</tooltip>
           </object>
         </object>
       </object>
+      <orient>wxHORIZONTAL</orient>
     </object>
+    <title>Background/Threshold</title>
   </object>
 </resource>

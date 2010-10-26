@@ -127,6 +127,35 @@ class Parameters:
         self.SHOW_DEV = 4
         self.SHOW_CC = 5
         self.SHOW_ELLIPSES = 6
+        self.SHOW_EXPBGFGMODEL_LLR = 7
+        self.SHOW_EXPBGFGMODEL_ISBACK = 8
+        self.SHOW_EXPBGFGMODEL_BGMU = 9
+        self.SHOW_EXPBGFGMODEL_FGMU = 10
+        self.SHOW_EXPBGFGMODEL_BGSIGMA = 11
+        self.SHOW_EXPBGFGMODEL_FGSIGMA = 12
+        self.SHOW_EXPBGFGMODEL_FRACFRAMESISBACK = 13
+        self.SHOW_EXPBGFGMODEL_MISSINGDATA = 14
+        
+        self.BG_SHOW_STRINGS = ['Background Image',
+                                'Distance from Background',
+                                'Foreground/Background Classification',
+                                'Background-Only Areas',
+                                'Normalization Image',
+                                'Connected Components',
+                                'Ellipse Fits']
+        self.EXPBGFGMODEL_SHOW_STRINGS = ['Prior Log-Likelihood Ratio',
+                                          'Use in Background Model',
+                                          'Prior Background Mean Px Intensity',
+                                          'Prior Foreground Mean Px Intensity',
+                                          'Prior Background Std Px Intensity',
+                                          'Prior Foreground Std Px Intensity',
+                                          'Frac Frames in Bg Model',
+                                          'Bg Missing Data']
+        self.SHOW_EXPBGFGMODEL = [self.SHOW_EXPBGFGMODEL_LLR,self.SHOW_EXPBGFGMODEL_ISBACK,
+                                  self.SHOW_EXPBGFGMODEL_BGMU,self.SHOW_EXPBGFGMODEL_FGMU,
+                                  self.SHOW_EXPBGFGMODEL_BGSIGMA,self.SHOW_EXPBGFGMODEL_FGSIGMA,
+                                  self.SHOW_EXPBGFGMODEL_FRACFRAMESISBACK,self.SHOW_EXPBGFGMODEL_MISSINGDATA]
+        
         self.BG_TYPE_LIGHTONDARK = 0
         self.BG_TYPE_DARKONLIGHT = 1
         self.BG_TYPE_OTHER = 2
@@ -192,7 +221,9 @@ class Parameters:
         # interval to use for estimating background
         self.bg_firstframe = 0
         self.bg_lastframe = 99999
-
+        # maximum number of pixels (should = bytes?) to allocate for temporary storage while computing the bg median
+        # equivalent to 100 x (480x640) images
+        self.bg_median_maxbytesallocate = 30720000
         # Background Subtraction Parameters
 
         # do we assume dark on light, light on dark, or no assumption?
@@ -336,6 +367,17 @@ class Parameters:
 
         self.expbgfgmodel_filename = None
         self.use_expbgfgmodel = False
+        
+        # threshold for log-likelihood ratio of foreground over background
+        # if llr is < thresh, then include in the background model
+        self.expbgfgmodel_llr_thresh = 0
+        
+        # fraction of sampled frames that we require to be classified as background according
+        # to the prior expbgfgmodel to trust our estimates. otherwise, we will fill missing sections
+        # either with the prior mean and standard deviation or by interpolation 
+        self.min_frac_frames_isback = .1
+        self.expbgfgmodel_fill = 'Interpolation'
+        self.EXPBGFGMODEL_FILL_STRINGS = ['Prior BG Model','Interpolation']
 
         # number of foreground pixels to sample per location
         self.prior_fg_nsamples_pool = 25

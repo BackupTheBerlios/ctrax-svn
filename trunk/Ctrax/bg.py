@@ -22,6 +22,7 @@ import setarena
 import fixbg
 import roi
 import ExpBGFGModel
+#import matplotlib.pyplot as plt
 
 import motmot.wxvideo.wxvideo as wxvideo
 #import motmot.wxglvideo.simple_overlay as wxvideo # part of Motmot
@@ -237,10 +238,8 @@ class BackgroundCalculator:
 
     def meanstd( self, parent=None ):
 
-        # shortcut names for oft-used values
-        bg_lastframe = min(params.bg_lastframe,params.n_frames-1)
-        nframes = bg_lastframe - params.bg_firstframe + 1
-        n_bg_frames = min(nframes,params.n_bg_frames)
+        # which frames will we sample
+        (nframesskip,n_bg_frames,bg_lastframe) = self.est_bg_selectframes()
 
         if params.interactive and not params.batch_executing:
 
@@ -260,15 +259,19 @@ class BackgroundCalculator:
 
         nr = params.movie_size[0]
         nc = params.movie_size[1]
-        # we will estimate background from every nframesskip-th frame
-        nframesskip = int(num.floor(nframes/n_bg_frames))
 
         # initialize mean and std to 0
         self.mean = num.zeros((nr,nc))
         self.std = num.zeros((nr,nc))
 
         # main computation
-        nframesused = 0
+        
+        # normalization for mean, std
+        if params.use_expbgfgmodel:
+            Z = num.zeros((nr,nc))
+        else:
+            nframesused = 0
+            
         for i in range(params.bg_firstframe,bg_lastframe+1,nframesskip):
 
             if params.interactive and not params.batch_executing:
@@ -288,55 +291,124 @@ class BackgroundCalculator:
             # read in the data
             im, stamp = params.movie.get_frame( int(i) )
             im = im.astype( num.float )
-            # add to the mean
-            self.mean += im
-            # add to the variance
-            self.std += im**2
+            
+            # classify based on expbgfgmodel
+            if params.use_expbgfgmodel:
+                # which pixels should be added to the model
+                isback = self.thresh_expbgfgmodel_llr(im)
+                # add to the mean
+                self.mean[isback] += im[isback]
+                # add to the variance
+                self.std[isback] += im[isback]**2
+                Z += isback.astype(float)
+            else:
+                # add to the mean
+                self.mean += im
+                # add to the variance
+                self.std += im**2
             nframesused += 1
 
         # normalize
-        self.mean /= num.double(nframesused)
-        self.std /= num.double(nframesused)
-        # actually compute variance, std
+        if params.use_expbgfgmodel:
+            self.mean /= Z
+            self.std /= Z
+            missingdata = Z/float(nframesused) <= params.min_frac_frames_isback
+            self.mean[missingdata] = self.expbgfgmodel.bg_mu[missingdata]
+            self.std[missingdata] = self.expbgfgmodel.bg_sigma[missingdata]
+        else:
+            self.mean /= num.double(nframesused)
+            self.std /= num.double(nframesused)
+            
+        # actually compute std
         self.std = num.sqrt(self.std - self.mean**2)
         
         if params.interactive and not params.batch_executing:
             progressbar.Destroy()
 
         return True
+    
+    def expbgfgmodel_llr(self,im,r0=0,r1=num.inf):
 
-    def flexmedmad( self, parent=None ):
+        r1 = min(r1,im.shape[0])
+        self.expbgfgmodel.im = im
+        log_lik_ratio = self.expbgfgmodel.compute_log_lik_ratio(r0=r0,r1=r1)
+        if self.expbgfgmodel.always_bg_mask is not None:
+            log_lik_ratio[self.expbgfgmodel.always_bg_mask] = -num.inf
+        return log_lik_ratio
+    
+    def thresh_expbgfgmodel_llr(self,im,r0=0,r1=num.inf):
+
+        log_lik_ratio = self.expbgfgmodel_llr(im,r0=r0,r1=r1)
+        isback = log_lik_ratio < params.expbgfgmodel_llr_thresh
+#        h0 = plt.subplot(131)
+#        plt.imshow(im)
+#        plt.axis('image')
+#        h0 = plt.subplot(132,sharex=h0,sharey=h0)
+#        plt.imshow(log_lik_ratio)
+#        plt.colorbar()
+#        plt.title('llr')
+#        plt.subplot(133,sharex=h0,sharey=h0)
+#        plt.imshow(isback)
+#        plt.title('isback')
+#        plt.show()
+        return isback
+    
+    def est_bg_selectframes(self):
+        
+        # which frames will we sample?
         bg_lastframe = min(params.bg_lastframe,params.n_frames-1)
         nframesmovie = bg_lastframe - params.bg_firstframe + 1
-
         nframes = min(params.n_bg_frames,nframesmovie)
-        nr = params.movie_size[0]
-        nc = params.movie_size[1]
-        framesize = nr*nc
         # we will estimate background from every nframesskip-th frame
-        #nframesskip = int(num.floor(10000/params.n_bg_frames))
         nframesskip = int(num.floor(nframesmovie/nframes))
 
+        return (nframesskip,nframes,bg_lastframe)
+
+    def flexmedmad( self, parent=None ):
+        
+        # estimate standard deviation assuming a Gaussian distribution
+        # from the fact that half the data falls within mad
+        # MADTOSTDFACTOR = 1./norminv(.75)
+        MADTOSTDFACTOR = 1.482602
+
+        # frame size
+        nr = params.movie_size[0]
+        nc = params.movie_size[1]
+
+        # which frames will we sample?
+        (nframesskip,nframes,bg_lastframe) = self.est_bg_selectframes()
+
         # which frame is the middle frame for computing the median?
+        # this will be ignored if use_expbgfgmodel
         iseven = num.mod(nframes,2) == 0
         middle1 = num.floor(nframes/2)
         middle2 = middle1-1
 
         # number of rows to read in at a time; based on the assumption 
         # that we comfortably hold 100*(400x400) frames in memory. 
-        nrsmall = num.int(num.floor(100.0*400.0*400.0/num.double(nc)/num.double(nframes)))
+        nrsmall = num.int(num.floor(params.bg_median_maxbytesallocate/num.double(nc)/num.double(nframes)))
         if nrsmall < 1:
             nrsmall = 1
         if nrsmall > nr:
             nrsmall = nr
+
         # number of rows left in the last iteration might be less than nrsmall 
         nrsmalllast = num.mod(nr, nrsmall)
         # if evenly divides,  set last number of rows to nrsmall
         if nrsmalllast == 0:
             nrsmalllast = nrsmall
+            
         # buffer holds the pixels for each frame that are read in. 
         # it holds nrsmall*nc pixels for each frame of nframes 
         buffersize = nrsmall*nc*nframes
+        
+        # allocate the buffer(s)
+        buf = num.zeros((nframes,nrsmall,nc),dtype=num.uint8)
+        if params.use_expbgfgmodel:
+            buf_isback = num.zeros((nframes,nrsmall,nc),dtype=bool)
+            Z = num.zeros((nrsmall,nc))
+            idx = num.tile(num.resize(num.arange(nrsmall*nc),(nrsmall*nc,1)),(1,nframes))
+            grid = num.indices((nrsmall,nc))
 
         # prepare for cancel
         if params.interactive and not params.batch_executing:
@@ -359,29 +431,50 @@ class BackgroundCalculator:
         # allocate memory for median and mad
         self.med = num.zeros((nr,nc))
         self.mad = num.zeros((nr,nc))
+        self.fracframesisback = num.zeros((nr,nc))
 
+        # which row offset are we on?
         offseti = 0
 
+        # loop over row offsets
         for rowoffset in range(0,nr,nrsmall):
+
             if DEBUG: print "row offset = %d."%rowoffset
 
+            # number of rows in this computation
             # if this is the last iteration, there may not be npixelssmall left
             # store in npixelscurr the number of pixels that are to be read in,
             # store in seekperframecurr the amount to seek after reading.
             rowoffsetnext = int(min(rowoffset+nrsmall,nr))
             nrowscurr = rowoffsetnext - rowoffset
 
-            # allocate memory for buffer that holds data read in in current pass
-            buf = num.zeros((nframes,nrowscurr,nc),dtype=num.uint8)
+            # if this is the last pass, we may need a smaller buffer
+            if nrowscurr < nrsmall:
+                buf = buf[:nrowscurr]
+                if params.use_expbgfgmodel:
+                    buf_isback = buf_isback[:nrowscurr]
+                    Z = Z[:nrowscurr]
+                    idx = num.tile(num.resize(num.arange(nrowscurr*nc),(nrowscurr*nc,1)),(1,nframes))
+                    grid = num.indices((nrowscurr,nc))
+
+            # we permute the axes of the buffer, so resize. we don't care what the values are, so 
+            # no need to unpermute, just reshape
+            buf.shape = (nframes,nrowscurr,nc)
+            if params.use_expbgfgmodel:
+                buf_isback.shape = (nframes,nrowscurr,nc)
+            
+            if params.use_expbgfgmodel:
+                Z[:] = 0
 
             if DEBUG: print 'Reading ...'
-
+            
             # loop through frames
             frame = params.bg_firstframe
             for i in range(nframes):
 
                 if params.interactive and not params.batch_executing:
-                    (keepgoing,skip) = progressbar.Update(value=offseti*nframes + i,newmsg='Reading in piece of frame %d (%d / %d), offset = %d (%d / %d)'%(frame,i+1,nframes,rowoffset,offseti+1,noffsets))
+                    (keepgoing,skip) = progressbar.Update(value=offseti*nframes + i,
+                                                          newmsg='Reading in piece of frame %d (%d / %d), offset = %d (%d / %d)'%(frame,i+1,nframes,rowoffset,offseti+1,noffsets))
                     if not keepgoing:
                         progressbar.Destroy()
                         if isbackup:
@@ -394,49 +487,199 @@ class BackgroundCalculator:
 
                 # read in the entire frame
                 data,stamp = params.movie.get_frame(frame)
-
+                
                 # crop out the rows we are interested in
-                buf[i,:,:]  = data[rowoffset:rowoffsetnext,:]
+                buf[i,:,:]  = data[rowoffset:rowoffsetnext]
 
+                # should we use this frame in the background computation?
+                if params.use_expbgfgmodel:
+                    buf_isback[i,:,:] = self.thresh_expbgfgmodel_llr(data,r0=rowoffset,r1=rowoffsetnext)
+                    Z += buf_isback[i,:,:].astype(float)
+                    
                 frame = frame + nframesskip
 
             # compute the median and median absolute difference at each 
             # pixel location
             if DEBUG: print 'Computing ...'
-            # sort all the histories to get the median
+            
+            # permute axes so that it is rows x columns x frames
             buf = num.rollaxis(num.rollaxis(buf,2,0),2,0)
-            buf.sort(axis=2,kind='mergesort')
-            # store the median
-            self.med[rowoffset:rowoffsetnext,:] = buf[:,:,middle1]
-            if iseven:
-                self.med[rowoffset:rowoffsetnext,:] += buf[:,:,middle2]
-                self.med[rowoffset:rowoffsetnext,:] /= 2.
+
+            # median computation more complicated if we are ignoring some frames
+            if params.use_expbgfgmodel:
                 
-            # store the absolute difference
-            buf = num.double(buf)
-            for j in range(nframes):
-                buf[:,:,j] = num.abs(buf[:,:,j] - self.med[rowoffset:rowoffsetnext,:])
+                # permute isback axes as well
+                buf_isback = num.rollaxis(num.rollaxis(buf_isback,2,0),2,0)
+                
+                # sort the data
+                
+                # reshape the data for easier indexing
+                buf.shape = (nrowscurr*nc,nframes)
+                buf_isback.shape = (nrowscurr*nc,nframes)
+                
+                # get the sorted order
+                ord = num.argsort(buf,axis=1,kind='mergesort')
+                
+                # apply the order
+                buf = num.reshape(buf[idx.flatten(),ord.flatten()],(nrowscurr,nc,nframes))
+                buf_isback = num.reshape(buf_isback[idx.flatten(),ord.flatten()],(nrowscurr,nc,nframes))
 
-            # sort
-            buf.sort(axis=2,kind='mergesort')
+                # which sample(s) of the data should we choose
+                iseven = num.mod(Z,2) == 0
+                middle1 = num.floor(Z/2)
+                middle2 = middle1-1
 
-            # store the median absolute difference
-            self.mad[rowoffset:rowoffsetnext,:] = buf[:,:,middle1]
-            if iseven:
-                self.mad[rowoffset:rowoffsetnext,:] += buf[:,:,middle2]
-                self.mad[rowoffset:rowoffsetnext,:] /= 2.
+                # which frame does this correspond to?
+                Zcurr = num.zeros((nrowscurr,nc))
+                frameidx1 = num.zeros((nrowscurr,nc),dtype=int)
+                frameidx2 = num.zeros((nrowscurr,nc),dtype=int)
+                for i in range(nframes):
+                    frameidx1[Zcurr == middle1] = i
+                    frameidx2[Zcurr == middle2] = i
+                    Zcurr[buf_isback[:,:,i]] += 1
+                                                
+                # grab data for relevant frames
+                med = num.resize(buf[grid[0].flatten(),grid[1].flatten(),frameidx1.flatten()],(nrowscurr,nc))
+                med2 = num.resize(buf[grid[0].flatten(),grid[1].flatten(),frameidx2.flatten()],(nrowscurr,nc))
+
+                # important to cast to floats, otherwise averaging doesn't work
+                med = med.astype(float)
+                med2 = med2.astype(float)
+
+                # average together two samples for even numbers of samples
+                if iseven.any():
+                    med[iseven] += med2[iseven]
+                    med[iseven] /= 2.
+
+                self.med[rowoffset:rowoffsetnext] = med
+
+                # store how many frames were used                    
+                self.fracframesisback[rowoffset:rowoffsetnext] = Z/float(nframes)
+                
+                # store the absolute difference
+                for j in range(nframes):
+                    # use maximum because buf is uint8s
+                    buf[:,:,j] = num.maximum(buf[:,:,j] - self.med[rowoffset:rowoffsetnext,:],
+                                            self.med[rowoffset:rowoffsetnext,:] - buf[:,:,j])
+
+                # sort the data
+                
+                # reshape the data for easier indexing
+                buf.shape = (nrowscurr*nc,nframes)
+                buf_isback.shape = (nrowscurr*nc,nframes)
+
+                # get the sorted order
+                ord = num.argsort(buf,axis=1,kind='mergesort')
+
+                # apply the order
+                buf = num.reshape(buf[idx.flatten(),ord.flatten()],(nrowscurr,nc,nframes))
+                buf_isback = num.reshape(buf_isback[idx.flatten(),ord.flatten()],(nrowscurr,nc,nframes))
+
+                # which sample(s) of the data should we choose
+                Zcurr = num.zeros((nrowscurr,nc))
+                frameidx1 = num.zeros((nrowscurr,nc),dtype=int)
+                frameidx2 = num.zeros((nrowscurr,nc),dtype=int)
+                for i in range(nframes):
+                    frameidx1[Zcurr == middle1] = i
+                    frameidx2[Zcurr == middle2] = i
+                    Zcurr[buf_isback[:,:,i]] += 1
+                
+                # prior value
+                bgsigma = self.expbgfgmodel.bg_sigma[rowoffset:rowoffsetnext]
+
+                # grab data for relevant frames
+                grid = num.indices((nrowscurr,nc))
+                mad = num.resize(buf[grid[0].flatten(),grid[1].flatten(),frameidx1.flatten()],(nrowscurr,nc))
+                mad2 = num.resize(buf[grid[0].flatten(),grid[1].flatten(),frameidx2.flatten()],(nrowscurr,nc))
+                
+                # important to cast to floats, otherwise averaging doesn't work
+                mad = mad.astype(float)
+                mad2 = mad2.astype(float)
+                
+                if iseven.any():
+                    mad[iseven] += mad2[iseven]
+                    mad[iseven] /= 2.
+
+                # estimate standard deviation assuming a Gaussian distribution
+                # from the fact that half the data falls within mad
+                # MADTOSTDFACTOR = 1./norminv(.75)
+                mad *= MADTOSTDFACTOR
+                self.mad[rowoffset:rowoffsetnext] = mad
+                
+            else:  
+                buf.sort(axis=2,kind='mergesort')
+                # store the median
+                self.med[rowoffset:rowoffsetnext,:] = buf[:,:,middle1]
+                if iseven:
+                    self.med[rowoffset:rowoffsetnext,:] += buf[:,:,middle2]
+                    self.med[rowoffset:rowoffsetnext,:] /= 2.
+                
+                # store the absolute difference
+                buf = num.double(buf)
+                for j in range(nframes):
+                    buf[:,:,j] = num.abs(buf[:,:,j] - self.med[rowoffset:rowoffsetnext,:])
+    
+                # sort
+                buf.sort(axis=2,kind='mergesort')
+    
+                # store the median absolute difference
+                self.mad[rowoffset:rowoffsetnext,:] = buf[:,:,middle1]
+                if iseven:
+                    self.mad[rowoffset:rowoffsetnext,:] += buf[:,:,middle2]
+                    self.mad[rowoffset:rowoffsetnext,:] /= 2.
+
+                # estimate standard deviation assuming a Gaussian distribution
+                # from the fact that half the data falls within mad
+                # MADTOSTDFACTOR = 1./norminv(.75)
+                self.mad[rowoffset:rowoffsetnext,:] *= MADTOSTDFACTOR
 
             offseti += 1
 
-        # estimate standard deviation assuming a Gaussian distribution
-        # from the fact that half the data falls within mad
-        # MADTOSTDFACTOR = 1./norminv(.75)
-        MADTOSTDFACTOR = 1.482602
-        self.mad *= MADTOSTDFACTOR
-
+#        if params.use_expbgfgmodel:
+#            plt.subplot(1,2,1)
+#            plt.imshow(self.med)
+#            plt.axis('image')
+#            plt.title('med')
+#            plt.subplot(1,2,2)
+#            plt.imshow(self.fracframesisback)
+#            plt.title('fracframesisback')
+#            plt.axis('image')
+#            plt.show()
+            
         if params.interactive and not params.batch_executing:
             progressbar.Destroy()
         return True
+    
+    def ExpBGFGModel_FillMissingData(self):
+        
+        # make sure there is a model
+        if not hasattr(self,'fracframesisback'):
+        
+            if params.interactive:
+                resp = wx.MessageBox("fracframesisback is not stored in this bg model. (Re)compute background model?","nframesback missing",wx.OK|wx.CANCEL)
+                if resp == wx.OK:
+                    self.OnCalculate()
+            else:
+                print "fracframesisback is not stored in this bg model. Skipping filling in missing data"
+            return
+
+        missingdata = self.fracframesisback <= params.min_frac_frames_isback
+        if missingdata.any():
+            if params.expbgfgmodel_fill == 'Interpolation':
+                fixbg.fix_holes(self.center.copy(),self.center,missingdata)
+                fixbg.fix_holes(self.dev.copy(),self.dev,missingdata)
+            else:
+                self.center[missingdata] = self.expbgfgmodel.bg_mu[missingdata]
+                self.dev[missingdata] = self.expbgfgmodel.bg_sigma[missingdata]
+                
+        if num.any(num.isnan(self.center)):
+            raise ValueError('After filling in missing values, bg center has nan values.')
+
+        if num.any(num.isnan(self.dev)):
+            raise ValueError('After filling in missing values, bg dev has nan values.')
+        
+        if num.any(self.dev == 0):
+            raise ValueError('After filling in missing values, bg dev has some elements of value 0.')
         
     def medmad( self, parent=None ):
 
@@ -625,7 +868,7 @@ class BackgroundCalculator:
 
         return True
 
-    def est_bg( self, parent=None ):
+    def est_bg( self, parent=None, reestimate=True ):
         
         # make sure number of background frames is at most number of frames in movie
         if params.n_bg_frames > params.n_frames:
@@ -638,9 +881,10 @@ class BackgroundCalculator:
             if params.movie.type == 'fmf' or \
                     (params.movie.type == 'avi' and \
                          params.movie.h_mov.bits_per_pixel == 8):
-                succeeded = self.medmad(parent)
-                if not succeeded:
-                    return
+                if reestimate or not hasattr(self,'med'):
+                    succeeded = self.medmad(parent)
+                    if not succeeded:
+                        return
                 #(self.med,self.mad) = medmad(params.movie.filename,params.n_bg_frames,
                 #                             params.movie_size[0],params.movie_size[1],
                 #                             nframesskip,params.movie.h_mov.bytes_per_chunk,
@@ -656,19 +900,22 @@ class BackgroundCalculator:
                 if DEBUG: print 'center.shape = ' + str(self.center.shape)
                 if DEBUG: print 'dev.shape = ' + str(self.dev.shape)
             else:
-                succeeded = self.flexmedmad(parent)
-                if not succeeded:
-                    return
+                if reestimate or not hasattr(self,'med'):
+                    succeeded = self.flexmedmad(parent)
+                    if not succeeded:
+                        return
                 self.center = self.med.copy()
                 self.dev = self.mad.copy()
                 #wx.MessageBox( "Only FMFs are supported for background estimation so far.",
                 #               "Error", wx.ICON_ERROR )
+
         else:
             if params.movie.type == 'fmf' or params.movie.type == 'avi' \
                     or params.movie.type == 'avbin':
-                succeeded = self.meanstd(parent)
-                if not succeeded:
-                    return
+                if reestimate or not hasattr(self,'mean'):
+                    succeeded = self.meanstd(parent)
+                    if not succeeded:
+                        return
                 #(self.mean,self.std) = meanstd(params.movie.filename,params.n_bg_frames,
                 #                               params.movie_size[0],params.movie_size[1],
                 #                               nframesskip,params.movie.h_mov.bytes_per_chunk,
@@ -686,8 +933,18 @@ class BackgroundCalculator:
             else:
                 wx.MessageBox( "Invalid movie type",
                                "Error", wx.ICON_ERROR )
+        if num.any(num.isnan(self.dev)):
+            raise ValueError('Computed bg dev has nan values.')
+
+        if num.any(num.isnan(self.center)):
+            raise ValueError('Computed bg center has nan values.')
+                          
         self.dev[self.dev < params.bg_std_min] = params.bg_std_min
         self.dev[self.dev > params.bg_std_max] = params.bg_std_max
+
+        if params.use_expbgfgmodel:
+            self.ExpBGFGModel_FillMissingData()
+        
         self.thresh = self.dev*params.n_bg_std_thresh
         self.thresh_low = self.dev*params.n_bg_std_thresh_low
 
@@ -734,8 +991,15 @@ class BackgroundCalculator:
             else:
                 # otherwise, we care about both directions
                 dfore[self.isarena] = num.abs(im[self.isarena] - self.center[self.isarena])
+                
+            if num.any(num.isnan(dfore)):
+                raise ValueError('Difference between image and bg center has nan values')
 
             dfore[self.isarena] /= self.dev[self.isarena]
+            
+            if num.any(num.isnan(dfore)):
+                raise ValueError('Normalized distance between image and bg center has nan values')
+            
             if params.n_bg_std_thresh > params.n_bg_std_thresh_low:
                 bwhigh = num.zeros(im.shape,dtype=bool)
                 bwlow = num.zeros(im.shape,dtype=bool)
@@ -896,6 +1160,7 @@ class BackgroundCalculator:
         
         # control handles
         self.frame_text = xrc.XRCCTRL( self.frame, "text_frame" )
+        self.range_text = xrc.XRCCTRL( self.frame, "text_range" )
         #self.reset_button = xrc.XRCCTRL( self.frame, "button_reset" )
         #if self.old_thresh is None:
         #    self.reset_button.Enable( False )
@@ -929,6 +1194,12 @@ class BackgroundCalculator:
         self.frame_slider.SetScrollbar(self.show_frame,0,params.n_frames-1,params.n_frames/10)
         # which image are we showing
         self.bg_img_chooser = xrc.XRCCTRL( self.frame, "view_type_input" )
+        if params.use_expbgfgmodel:
+            self.bg_img_chooser.SetItems(params.BG_SHOW_STRINGS+params.EXPBGFGMODEL_SHOW_STRINGS)
+        else:
+            self.bg_img_chooser.SetItems(params.BG_SHOW_STRINGS)
+        if self.show_img_type > self.bg_img_chooser.GetCount():
+            self.show_img_type = 0
         self.bg_img_chooser.SetSelection(self.show_img_type)
         self.frame.Bind( wx.EVT_CHOICE, self.OnImgChoice, self.bg_img_chooser)
         # background type
@@ -1005,6 +1276,25 @@ class BackgroundCalculator:
         self.closing_radius_textinput.Enable(params.do_use_morphology)
         self.closing_struct = self.create_morph_struct(params.closing_radius)
 
+        # prior model stuff
+
+        # whether to show the panel
+        self.expbgfgmodel_panel = xrc.XRCCTRL(self.frame,"expbgfgmodel_panel")
+        self.expbgfgmodel_panel.Show(params.use_expbgfgmodel)
+        
+        # minimum fraction of frames nec. for estimating bg model
+        self.min_frac_frames_isback_textinput = xrc.XRCCTRL(self.frame,"min_frac_frames_isback")
+        wxvt.setup_validated_float_callback( self.min_frac_frames_isback_textinput,
+                                               xrc.XRCID("min_frac_frames_isback"),
+                                               self.OnMinFracFramesIsBackTextEnter,
+                                               pending_color=params.wxvt_bg )
+        
+        # fill
+        self.expbgfgmodel_fill_chooser = xrc.XRCCTRL(self.frame,"expbgfgmodel_fill")
+        self.expbgfgmodel_fill_chooser.SetItems(params.EXPBGFGMODEL_FILL_STRINGS)
+        self.expbgfgmodel_fill_chooser.SetSelection(params.EXPBGFGMODEL_FILL_STRINGS.index(params.expbgfgmodel_fill))        
+        self.frame.Bind( wx.EVT_CHOICE, self.OnExpBGFGModelFillChoice, self.expbgfgmodel_fill_chooser)
+        
         self.fixbg_button = xrc.XRCCTRL(self.frame,"fixbg_button")
         self.frame.Bind(wx.EVT_BUTTON,self.OnFixBgClick,self.fixbg_button)
         self.fixbg_window_open = False
@@ -1191,6 +1481,40 @@ class BackgroundCalculator:
 
         if evt is not None:
             self.DoSub()
+            
+    def OnMinFracFramesIsBackTextEnter(self,evt=None):         
+        textentered = self.min_frac_frames_isback_textinput.GetValue()
+        # convert to number
+        try:
+            val = float(textentered)
+        except ValueError:
+            # if not a number, then set the value to the previous threshold
+            self.min_frac_frames_isback_textinput.SetValue('%f'%params.min_frac_frames_isback)
+            return
+        
+        # only do something if the number changes
+        if val == params.min_frac_frames_isback:
+            return
+
+        params.min_frac_frames_isback = val
+        # update the model
+        wx.BeginBusyCursor()
+        wx.Yield()
+        self.est_bg(self.frame,reestimate=False)
+        wx.EndBusyCursor()
+        
+        # update the display
+        self.DoSub()        
+
+    def OnExpBGFGModelFillChoice(self,evt=None):
+        params.expbgfgmodel_fill = self.expbgfgmodel_fill_chooser.GetStringSelection()
+        wx.BeginBusyCursor()
+        wx.Yield()
+        self.est_bg(self.frame,reestimate=False)
+        wx.EndBusyCursor()
+        
+        # update the display
+        self.DoSub()        
 
     def UpdateIsArena(self):
         # update isarena
@@ -1351,12 +1675,10 @@ class BackgroundCalculator:
                 return
 
             # make sure it is in a valid interval
-            if numentered < 0:
-                numentered = 0
-            if maxnumentered < 0:
-                maxnumentered = 0
-            if numentered > 255:
-                maxnumentered = 255
+            if numentered < .001:
+                numentered = .001
+            if maxnumentered < .001:
+                maxnumentered = .001
             params.bg_std_min = numentered
             params.bg_std_max = maxnumentered
             self.bg_minstd_textinput.SetValue('%.2f'%params.bg_std_min)
@@ -1420,37 +1742,48 @@ class BackgroundCalculator:
         """Do background subtraction."""
         wx.BeginBusyCursor()
         wx.Yield()
-        (self.dfore,self.bw,self.cc,self.ncc) = self.sub_bg(self.show_frame)
+        # do backsub if necessary
+        if self.show_img_type in [params.SHOW_DISTANCE,params.SHOW_THRESH,
+                                  params.SHOW_CC,params.SHOW_ELLIPSES]:
+            (self.dfore,self.bw,self.cc,self.ncc) = self.sub_bg(self.show_frame)
         self.windowsize = [self.img_panel.GetRect().GetHeight(),self.img_panel.GetRect().GetWidth()]
         if self.show_img_type == params.SHOW_BACKGROUND:
             img_8 = imagesk.double2mono8(self.center,donormalize=False)
             self.img_wind.update_image_and_drawings('bg',img_8,format='MONO8')
+            self.SetPreviewRange(0,255)
         elif self.show_img_type == params.SHOW_DISTANCE:
             #self.img = self.dfore.copy()
             img_8 = imagesk.double2mono8(self.dfore)
             self.img_wind.update_image_and_drawings('bg',img_8,format='MONO8')
+            self.SetPreviewRange(self.dfore.min(),self.dfore.max())
         elif self.show_img_type == params.SHOW_THRESH:
             img_8 = imagesk.double2mono8(self.bw.astype(float))
             self.img_wind.update_image_and_drawings('bg',img_8,format='MONO8')
+            self.SetPreviewRange(0,1)
         elif self.show_img_type == params.SHOW_NONFORE:
             isnotarena = self.isarena == False
             img_8 = imagesk.double2mono8(isnotarena.astype(float))
             self.img_wind.update_image_and_drawings('bg',img_8,format='MONO8')
+            self.SetPreviewRange(0,1)
         elif self.show_img_type == params.SHOW_DEV:
             mu = num.mean(self.dev)
             sig = num.std(self.dev)
             if sig == 0:
-                resp = wx.MessageBox("Normalization image is uniformly " + str(mu),"Uniform Normalization Image",wx.OK)
+                #resp = wx.MessageBox("Normalization image is uniformly " + str(mu),"Uniform Normalization Image",wx.OK)
                 img_8 = imagesk.double2mono8(self.dev)
+                n1 = mu
+                n2 = mu
             else:
-                n1 = mu - 3.*sig
+                n1 = max(0,mu - 3.*sig)
                 n2 = mu + 3.*sig
                 img_8 = imagesk.double2mono8(self.dev.clip(n1,n2))
             self.img_wind.update_image_and_drawings('bg',img_8,format='MONO8')
+            self.SetPreviewRange(n1,n2)
         elif self.show_img_type == params.SHOW_CC:
             #self.img = colormap_image(L)
-            img_8 = colormap_image(self.cc)
+            img_8,clim = colormap_image(self.cc)
             self.img_wind.update_image_and_drawings('bg',img_8,format='RGB8')
+            self.SetPreviewRange(clim[0],clim[1])
         elif self.show_img_type == params.SHOW_ELLIPSES:
             # find ellipse observations
             obs = find_ellipses(self.dfore,self.cc,self.ncc,False)
@@ -1466,9 +1799,82 @@ class BackgroundCalculator:
                                                     linesegs=linesegs,
                                                     lineseg_colors=linecolors
                                                     )
-
+            self.SetPreviewRange(0,255)
+        elif self.show_img_type in params.SHOW_EXPBGFGMODEL: 
+            # check for expbgfgmodel
+            if not params.use_expbgfgmodel or not hasattr(self,'expbgfgmodel') or \
+            self.expbgfgmodel is None:
+                resp = wx.MessageBox("No prior model loaded.","No prior model loaded",wx.OK)
+            else:
+                if self.show_img_type == params.SHOW_EXPBGFGMODEL_LLR:
+                    # read the current image, classify pixels
+                    im, stamp = params.movie.get_frame( int(self.show_frame) )
+                    llr = self.expbgfgmodel_llr(im)
+                    img_8,clim = colormap_image(llr)
+                    self.img_wind.update_image_and_drawings('bg',img_8,format='RGB8')
+                    self.SetPreviewRange(clim[0],clim[1])
+                elif self.show_img_type == params.SHOW_EXPBGFGMODEL_ISBACK:
+                    im, stamp = params.movie.get_frame( int(self.show_frame) )
+                    isback = self.thresh_expbgfgmodel_llr(im)
+                    img_8 = imagesk.double2mono8(isback.astype(float))
+                    self.img_wind.update_image_and_drawings('bg',img_8,format='MONO8')
+                    self.SetPreviewRange(0,1)
+                elif self.show_img_type == params.SHOW_EXPBGFGMODEL_BGMU:
+                    img_8 = imagesk.double2mono8(self.expbgfgmodel.bg_mu,donormalize=False)
+                    self.img_wind.update_image_and_drawings('bg',img_8,format='MONO8')
+                    self.SetPreviewRange(0,255)
+                elif self.show_img_type == params.SHOW_EXPBGFGMODEL_FGMU:
+                    img_8 = imagesk.double2mono8(self.expbgfgmodel.fg_mu,donormalize=False)
+                    self.img_wind.update_image_and_drawings('bg',img_8,format='MONO8')
+                    self.SetPreviewRange(0,255)
+                elif self.show_img_type == params.SHOW_EXPBGFGMODEL_BGSIGMA:
+                    mu = num.mean(self.expbgfgmodel.bg_sigma)
+                    sig = num.std(self.expbgfgmodel.bg_sigma)
+                    if sig == 0:
+                        #resp = wx.MessageBox("Standard deviation is uniformly " + str(mu),"Uniform Standard Deviation Image",wx.OK)
+                        n1 = mu
+                        n2 = mu
+                        img_8 = imagesk.double2mono8(self.expbgfgmodel.bg_sigma)
+                    else:
+                        n1 = max(0,mu - 3.*sig)
+                        n2 = mu + 3.*sig
+                        img_8 = imagesk.double2mono8(self.expbgfgmodel.bg_sigma.clip(n1,n2))
+                    self.img_wind.update_image_and_drawings('bg',img_8,format='MONO8')
+                    self.SetPreviewRange(n1,n2)
+                elif self.show_img_type == params.SHOW_EXPBGFGMODEL_FGSIGMA:
+                    mu = num.mean(self.expbgfgmodel.fg_sigma)
+                    sig = num.std(self.expbgfgmodel.fg_sigma)
+                    if sig == 0:
+                        #resp = wx.MessageBox("Standard deviation is uniformly " + str(mu),"Uniform Standard Deviation Image",wx.OK)
+                        img_8 = imagesk.double2mono8(self.expbgfgmodel.fg_sigma)
+                        n1 = mu
+                        n2 = mu
+                    else:
+                        n1 = max(0,mu - 3.*sig)
+                        n2 = mu + 3.*sig
+                        img_8 = imagesk.double2mono8(self.expbgfgmodel.fg_sigma.clip(n1,n2))
+                    self.img_wind.update_image_and_drawings('bg',img_8,format='MONO8')
+                    self.SetPreviewRange(n1,n2)
+                elif self.show_img_type == params.SHOW_EXPBGFGMODEL_FRACFRAMESISBACK:
+                    if not hasattr(self,'fracframesisback') or self.fracframesisback is None:
+                        resp = wx.MessageBox("fracframesisback not yet computed","fracframesisback Not Computed",wx.OK)
+                        return
+                    img_8,clim = colormap_image(self.fracframesisback)
+                    self.img_wind.update_image_and_drawings('bg',img_8,format='RGB8')
+                    self.SetPreviewRange(clim[0],clim[1])
+                elif self.show_img_type == params.SHOW_EXPBGFGMODEL_MISSINGDATA:
+                    if not hasattr(self,'fracframesisback') or self.fracframesisback is None:
+                        resp = wx.MessageBox("fracframesisback not yet computed","fracframesisback Not Computed",wx.OK)
+                        return
+                    missingdata = self.fracframesisback <= params.min_frac_frames_isback
+                    img_8 = imagesk.double2mono8(missingdata.astype(float))
+                    self.img_wind.update_image_and_drawings('bg',img_8,format='MONO8')
+                    self.SetPreviewRange(0,1)
         self.img_wind.Refresh(eraseBackground=False)
         wx.EndBusyCursor()
+
+    def SetPreviewRange(self,l,u):
+        self.range_text.SetLabel("Range: [" + str(l) + "," + str(u) + "]")
 
 class BgSettingsDialog:
 
@@ -1487,6 +1893,7 @@ class BgSettingsDialog:
         self.expbgfgmodel_checkbox = xrc.XRCCTRL( self.frame, "expbgfgmodel_checkbox")
         self.expbgfgmodel_text = xrc.XRCCTRL( self.frame, "expbgfgmodel_text")
         self.expbgfgmodel_button = xrc.XRCCTRL( self.frame, "expbgfgmodel_button")
+        self.expbgfgmodel_llr_thresh = xrc.XRCCTRL(self.frame, "llr_thresh")
         self.calculate = xrc.XRCCTRL( self.frame, "calculate_button" )
         if params.use_median:
             self.algorithm.SetSelection(params.ALGORITHM_MEDIAN)
@@ -1513,6 +1920,12 @@ class BgSettingsDialog:
         self.expbgfgmodel_text.SetEditable(False)
         self.frame.Bind(wx.EVT_BUTTON, self.OnChooseExpBGFGModelFileName, self.expbgfgmodel_button)
         self.frame.Bind(wx.EVT_CHECKBOX, self.OnCheckExpBGFGModel, self.expbgfgmodel_checkbox)
+        
+        wxvt.setup_validated_integer_callback( self.expbgfgmodel_llr_thresh,
+                                               xrc.XRCID("llr_thresh"),
+                                               self.OnTextValidatedLLRThresh,
+                                               pending_color=params.wxvt_bg )
+        
         self.UpdateExpBGFGModelControls()
         self.frame.Show()
         
@@ -1529,7 +1942,9 @@ class BgSettingsDialog:
             self.expbgfgmodel_checkbox.SetValue(True)
             self.expbgfgmodel_button.Enable(True)
             
-    def OnCalculate(self,evt):
+        self.expbgfgmodel_llr_thresh.SetValue(str(params.expbgfgmodel_llr_thresh))
+            
+    def OnCalculate(self,evt=None):
         wx.BeginBusyCursor()
         wx.Yield()
         self.bg.est_bg(self.frame)
@@ -1560,6 +1975,14 @@ class BgSettingsDialog:
         params.bg_lastframe = tmp
         if not tmp == tmp0:
             self.bg_lastframe.SetValue(str(params.bg_lastframe))
+
+    def OnTextValidatedLLRThresh(self,evt):
+        try:
+            tmp = float(self.expbgfgmodel_llr_thresh.GetValue())
+        except:
+            self.expbgfgmodel_llr_thresh.SetValue(str(params.expbgfgmodel_llr_thresh))
+            return
+        params.expbgfgmodel_llr_thresh = tmp
 
     def OnAlgorithmChoice(self,evt):
         new_alg_type = self.algorithm.GetSelection()
