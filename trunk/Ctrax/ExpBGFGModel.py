@@ -61,10 +61,18 @@ class ExpBGFGModel:
                   LoG_thresh=.5,
                   difftype='darkfglightbg',
                   obj_detection_dist_nbins=100,
-                  isback_dilation_hsize=2,
+                  isback_dilation_hsize=10,
                   fg_min_sigma = 1.,
                   bg_min_sigma = 1.,
-                  min_always_bg_mask_frac = 1.):
+                  min_always_bg_mask_frac = 1.,
+                  min_frac_cc_covered = .01,
+                  min_area_cc_covered = 1,
+                  backsub_n_bg_std_thresh = 10.,
+                  backsub_n_bg_std_thresh_low = 1.,
+                  backsub_do_use_morphology = False,
+                  backsub_opening_radius = 0,
+                  backsub_closing_radius = 0
+                  ):
         """
         ExpBGFGModel(movienames,annnames)
 
@@ -95,12 +103,27 @@ class ExpBGFGModel:
         obj_detection_dist_nbins: Number of log-spaced bins for distance
         to nearest object detection [100]. 
         isback_dilation_hsize: Size of ones matrix for eroding ~isfore
-        to compute isback [2]. 
+        to compute isback [10]. 
         fg_min_sigma: Minimum standard deviation for the foreground
         pixel appearance [1]. 
         bg_min_sigma: Minimum standard deviation for the background 
         pixel appearance [1]. 
-        
+        min_frac_cc_covered: Minimum fraction of a foreground connected component that
+        must be covered by the tracked ellipse in order for the component to be added
+        as foreground [.01].
+        min_area_cc_covered: Minimum number of pixels of a connected component that
+        must be covered by the tracked ellipse in order for the component to be added
+        as foreground [1].
+        backsub_n_bg_std_thresh: High threshold for background subtraction for the 
+        sampled frame [10].
+        backsub_n_bg_std_thresh_low: Low threshold for background subtraction for the
+        sampled frame [1].
+        backsub_do_use_morphology: Whether to do morphology after background subtraction
+        [False].
+        backsub_opening_radius: Radius of opening structural element after background
+        subtraction [0].
+        backsub_closing_radius: Radius of closing structural element after background
+        subtraction [0].         
         """
         
         if picklefile is not None:
@@ -119,6 +142,7 @@ class ExpBGFGModel:
             for key,val in model.iteritems():
                 setattr(self,key,val)
             (self.nr,self.nc) = self.bg_mu.shape
+
             if params.interactive:
                 wx.EndBusyCursor()
         else:
@@ -134,7 +158,14 @@ class ExpBGFGModel:
             self.fg_min_sigma = fg_min_sigma
             self.bg_min_sigma = bg_min_sigma
             self.min_always_bg_mask_frac = min_always_bg_mask_frac
-    
+            self.min_frac_cc_covered = min_frac_cc_covered
+            self.min_area_cc_covered = min_area_cc_covered
+            self.backsub_n_bg_std_thresh = backsub_n_bg_std_thresh
+            self.backsub_n_bg_std_thresh_low = backsub_n_bg_std_thresh_low
+            self.backsub_do_use_morphology = backsub_do_use_morphology
+            self.backsub_opening_radius = backsub_opening_radius
+            self.backsub_closing_radius = backsub_closing_radius
+
             # labeled movies
             # for now, we will assume that every frame of each movie
             # is labeled
@@ -276,6 +307,9 @@ class ExpBGFGModel:
         self.trx = annot.AnnotationFile( self.annnames[i], bg_imgs=self.bg_imgs, 
                                         doreadtrx=True )
 
+
+        self.setup_backsub()
+
         # choose frames to learn from: for now, assume all frames are tracked
         self.firstframe = self.trx.firstframetracked
         self.lastframe = self.trx.lastframetracked
@@ -378,7 +412,112 @@ class ExpBGFGModel:
         self.log_lik_ratio = self.log_lik_given_fore - self.log_lik_given_back
         return self.log_lik_ratio
             
+    def setup_backsub(self):
+
+        params.n_bg_std_thresh = self.backsub_n_bg_std_thresh
+        params.n_bg_std_thresh_low = self.backsub_n_bg_std_thresh_low
+        params.do_use_morphology = self.backsub_do_use_morphology
+        params.opening_radius = self.backsub_opening_radius
+        params.closing_radius = self.backsub_closing_radius
+        if params.do_use_morphology:
+            self.bg_imgs.opening_struct = self.bg_imgs.create_morph_struct(params.opening_radius)
+            self.bg_imgs.closing_struct = self.bg_imgs.create_morph_struct(params.closing_radius)
+
+    def backsub(self):
+
+        return self.bg_imgs.sub_bg(self.frame)
+
     def isfore_mask(self):
+
+        self.isfore = num.zeros((self.nr,self.nc),dtype=bool)
+        idx = num.zeros((self.nr,self.nc),dtype=bool)
+        #print 'backsub_n_bg_std_thresh = ' + str(params.n_bg_std_thresh)
+        #print 'backsub_n_bg_std_thresh should be ' + str(self.backsub_n_bg_std_thresh)
+        #print 'backsub_n_bg_std_thresh_low = ' + str(params.n_bg_std_thresh_low)
+        #print 'backsub_do_use_morphology = ' + str(params.do_use_morphology)
+        #print 'backsub_opening_radius = ' + str(params.opening_radius)
+        #print 'backsub_closing_radius = ' + str(params.closing_radius)
+        #print 'min_frac_cc_covered = ' + str(self.min_frac_cc_covered)
+        #print 'min_area_cc_covered = ' + str(self.min_area_cc_covered)
+        (self.dfore,self.bw,self.cc,self.ncc) = self.backsub()
+
+        # area of each connected component
+        areas = num.zeros(self.ncc)
+        for i in range(self.ncc):
+            areas[i] = num.alen(num.flatnonzero(self.cc==i+1))
+
+        for ell in self.trxcurr.itervalues():
+
+            # find pixels inside this ellipse
+            (r1,r2,c1,c2) = est.getboundingboxtight(ell,(self.nr,self.nc))
+            isfore1 = est.ellipsepixels(ell,num.array([r1,r2,c1,c2]))
+
+            # which cc(s) does this correspond to?
+            r,c = isfore1.nonzero()
+            counts,edges = num.histogram(self.cc[int(r1)+r,int(c1)+c],num.arange(1,self.ncc+2))
+            fraccovered = counts / areas
+            iscovered = fraccovered >= self.min_frac_cc_covered
+            mode = num.argmax(counts)
+            if counts[mode] > self.min_area_cc_covered:
+                iscovered[mode] = True
+            #print "counts = " + str(counts)
+            #print "areas = " + str(areas)
+            #print "fraccovered = " + str(fraccovered)
+            #print "mode = " + str(mode)
+
+            # set isfore to True for these ccs
+            for i in num.flatnonzero(iscovered):
+                self.isfore[self.cc==i+1] = True
+
+            #h0 = plt.subplot(131)
+            #plt.imshow(self.im)
+            #plt.hold(True)
+            #plt.plot(ell.x,ell.y,'ro')
+            #plt.axis('image')
+            #plt.title('image')
+            #plt.subplot(132,sharex=h0,sharey=h0)
+            #plt.title('cc')
+            #plt.imshow(self.cc)
+            #plt.subplot(133,sharex=h0,sharey=h0)
+            #isforecurr = num.zeros((self.nr,self.nc),dtype=bool)
+            #for i in num.flatnonzero(iscovered):
+            #    isforecurr[self.cc==i+1] = True
+            #plt.imshow(isforecurr)
+            #if num.any(isforecurr):
+            #    rcurr,ccurr = num.where(isforecurr)
+            #    r0curr = num.min(rcurr)-1
+            #    r1curr = num.max(rcurr)+1
+            #    c0curr = num.min(ccurr)-1
+            #    c1curr = num.max(ccurr)+1
+            #    plt.hold(True)
+            #    plt.plot(num.array([c0curr,c0curr,c1curr,c1curr,c0curr]),
+            #             num.array([r0curr,r1curr,r1curr,r0curr,r0curr]),'w-')
+            #plt.title('isfore curr')
+            #plt.show()
+
+
+        # compute isback by dilating and flipping
+        self.isback = morph.binary_dilation(self.isfore,self.dilation_struct) == False
+
+        #h0 = plt.subplot(151)
+        #plt.imshow(self.im)
+        #plt.axis('tight')
+        #plt.axis('image')
+        #plt.title('image')
+        #plt.subplot(152,sharex=h0,sharey=h0)
+        #plt.title('cc')
+        #plt.imshow(self.cc)
+        #plt.subplot(153,sharex=h0,sharey=h0)
+        #plt.imshow(self.isfore)
+        #plt.title('isfore')
+        #plt.subplot(154,sharex=h0,sharey=h0)
+        #plt.imshow(self.isback)
+        #plt.subplot(155,sharex=h0,sharey=h0)
+        #plt.imshow(num.logical_and(self.bw,self.isfore==False))
+        #plt.title('ignored fg pixels')
+        #plt.show()
+            
+    def isfore_mask_old(self):
         """
         isfore_mask()
 
@@ -667,15 +806,29 @@ class ExpBGFGModel:
             out['bg_min_sigma'] = self.bg_min_sigma
         if hasattr(self,'min_always_bg_mask_frac'):
             out['min_always_bg_mask_frac'] = self.min_always_bg_mask_frac
-        if hasattr(self,'prior_nframessample'):
+        if hasattr(self,'min_frac_cc_covered'):
+            out['min_frac_cc_covered'] = self.min_frac_cc_covered
+        if hasattr(self,'min_area_cc_covered'):
+            out['min_area_cc_covered'] = self.min_area_cc_covered
+        if hasattr(self,'backsub_n_bg_std_thresh'):
+            out['backsub_n_bg_std_thresh'] = self.backsub_n_bg_std_thresh
+        if hasattr(self,'backsub_n_bg_std_thresh_low'):
+            out['backsub_n_bg_std_thresh_low'] = self.backsub_n_bg_std_thresh_low
+        if hasattr(self,'backsub_do_use_morphology'):
+            out['backsub_do_use_morphology'] = self.backsub_do_use_morphology
+        if hasattr(self,'backsub_opening_radius'):
+            out['backsub_opening_radius'] = self.backsub_opening_radius
+        if hasattr(self,'backsub_closing_radius'):
+            out['backsub_closing_radius'] = self.backsub_closing_radius
+        if hasattr(params,'prior_nframessample'):
             out['prior_nframessample'] = params.prior_nframessample
-        if hasattr(self,'prior_fg_nsamples_pool'):
+        if hasattr(params,'prior_fg_nsamples_pool'):
             out['prior_fg_nsamples_pool'] = params.prior_fg_nsamples_pool
-        if hasattr(self,'prior_bg_nsamples_pool'):
+        if hasattr(params,'prior_bg_nsamples_pool'):
             out['prior_bg_nsamples_pool'] = params.prior_bg_nsamples_pool
-        if hasattr(self,'prior_fg_pool_radius_factor'):
+        if hasattr(params,'prior_fg_pool_radius_factor'):
             out['prior_fg_pool_radius_factor'] = params.prior_fg_pool_radius_factor
-        if hasattr(self,'prior_bg_pool_radius_factor'):
+        if hasattr(params,'prior_bg_pool_radius_factor'):
             out['prior_bg_pool_radius_factor'] = params.prior_bg_pool_radius_factor
         if hasattr(self,'movienames'):
             out['movienames'] = self.movienames
@@ -1221,11 +1374,18 @@ def main():
     LoG_thresh=.5
     difftype='darkfglightbg'
     obj_detection_dist_nbins=100
-    isback_dilation_hsize=2
+    isback_dilation_hsize=10
     fg_min_sigma = 1.
     bg_min_sigma = 1.
     min_always_bg_mask_frac = 1. 
-    
+    min_frac_cc_covered = .01
+    min_area_cc_covered = 1
+    backsub_n_bg_std_thresh = 10.
+    backsub_n_bg_std_thresh_low = 1.
+    backsub_do_use_morphology = False
+    backsub_opening_radius = 0
+    backsub_closing_radius = 0
+
     if paramsFileName != '':
         # parse parameters file
         fid = open(paramsFileName,"r")
@@ -1260,6 +1420,20 @@ def main():
                 bg_min_sigma = float(l[1])
             elif l[0] == 'min_always_bg_mask_frac':
                 min_always_bg_mask_frac = float(l[1]) 
+            elif l[0] == 'min_frac_cc_covered':
+                min_frac_cc_covered = float(l[1])
+            elif l[0] == 'min_area_cc_covered':
+                min_area_cc_covered = float(l[1])
+            elif l[0] == 'backsub_n_bg_std_thresh':
+                backsub_n_bg_std_thresh = float(l[1])
+            elif l[0] == 'backsub_n_bg_std_thresh_low':
+                backsub_n_bg_std_thresh_low = float(l[1])
+            elif l[0] == 'backsub_do_use_morphology':
+                backsub_do_use_morphology = float(l[1]) == 1
+            elif l[0] == 'backsub_opening_radius':
+                backsub_opening_radius = int(float(l[1]))
+            elif l[0] == 'backsub_closing_radius':
+                backsub_closing_radius = int(float(l[1]))
             elif l[0] == 'prior_nframessample':
                 params.prior_nframessample = float(l[1])
             elif l[0] == 'prior_fg_nsamples_pool':
@@ -1282,7 +1456,15 @@ def main():
                         isback_dilation_hsize=isback_dilation_hsize,
                         fg_min_sigma=fg_min_sigma,
                         bg_min_sigma=bg_min_sigma,
-                        min_always_bg_mask_frac=min_always_bg_mask_frac)
+                        min_always_bg_mask_frac=min_always_bg_mask_frac,
+                        min_frac_cc_covered = min_frac_cc_covered,
+                        min_area_cc_covered = min_area_cc_covered,
+                        backsub_n_bg_std_thresh = backsub_n_bg_std_thresh,
+                        backsub_n_bg_std_thresh_low = backsub_n_bg_std_thresh_low,
+                        backsub_do_use_morphology = backsub_do_use_morphology,
+                        backsub_opening_radius = backsub_opening_radius,
+                        backsub_closing_radius = backsub_closing_radius
+                        )
     
     model.est_marginals()
     model.save(outputFileName)

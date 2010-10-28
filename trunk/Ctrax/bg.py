@@ -958,22 +958,29 @@ class BackgroundCalculator:
         self.hfnorm = self.hf.apply(self.center) / tmp
         self.hfnorm[issmall & (self.hfnorm<1.)] = 1.        
 
-    def sub_bg(self,framenumber,docomputecc=True,dobuffer=False):
+    def sub_bg(self,framenumber=None,docomputecc=True,dobuffer=False,im=None,stamp=None):
         """Reads image, subtracts background, then thresholds."""
 
         # check to see if frame is in the buffer
-        if framenumber >= self.buffer_start and \
+        if framenumber is not None and \
+                framenumber >= self.buffer_start and \
                 framenumber < self.buffer_end:
             (dfore,bw) = self.sub_bg_from_buffer(framenumber)
         else:
 
+            if framenumber is None and (im is None or stamp is None):
+                raise ValueError('Either framenumber or im and stamp must be input')
             # read in the image
             # IndexError if requested frame < 0
             # NoMoreFramesException if frame is >= n_frames
             # ValueError if the frame size read in does not equal the buffer
             #   for uncompressed AVI
 
-            self.curr_im, stamp = params.movie.get_frame( int(framenumber) )
+            if im is None or stamp is None:
+                self.curr_im, stamp = params.movie.get_frame( int(framenumber) )
+            else:
+                self.curr_im = im
+
             im = self.curr_im.astype( num.float )
             self.curr_stamp = stamp
 
