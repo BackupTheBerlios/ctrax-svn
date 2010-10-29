@@ -333,7 +333,7 @@ class BackgroundCalculator:
         self.expbgfgmodel.im = im
         log_lik_ratio = self.expbgfgmodel.compute_log_lik_ratio(r0=r0,r1=r1)
         if self.expbgfgmodel.always_bg_mask is not None:
-            log_lik_ratio[self.expbgfgmodel.always_bg_mask] = -num.inf
+            log_lik_ratio[self.expbgfgmodel.always_bg_mask[r0:r1]] = -num.inf
         return log_lik_ratio
     
     def thresh_expbgfgmodel_llr(self,im,r0=0,r1=num.inf):

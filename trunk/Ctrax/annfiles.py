@@ -693,7 +693,7 @@ class AnnotationFile:
             self.file.write("background std:%d\n"%sz)
             self.file.write(self.bg_imgs.std)
         if hasattr(self.bg_imgs,'fracframesisback'):
-            sz = self.bg_imgs.fracframesisback.size*SIZEOFDOUBLE
+            sz = num.prod(self.bg_imgs.fracframesisback.size)*SIZEOFDOUBLE
             self.file.write("fracframesisback:%d\n"%sz)
             self.file.write(self.bg_imgs.fracframesisback)            
         if hasattr(self.bg_imgs,'hfnorm'):
@@ -822,7 +822,8 @@ class AnnotationFile:
                 continue
             if parameter == 'background median' or parameter == 'background mean' or \
                    parameter == 'background mad' or parameter == 'background std' or \
-                   parameter == 'hfnorm' or parameter == 'roipolygons':
+                   parameter == 'hfnorm' or parameter == 'roipolygons' or \
+                   parameter == 'fracframesisback':
                 sz = int(value)
                 self.file.seek(sz,1)
             elif parameter == 'data format':
