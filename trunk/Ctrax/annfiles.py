@@ -683,6 +683,10 @@ class AnnotationFile:
             sz = self.bg_imgs.mean.size*SIZEOFDOUBLE
             self.file.write("background mean:%d\n"%sz)
             self.file.write(self.bg_imgs.mean)
+        if hasattr(self.bg_imgs,'center'):
+            sz = num.prod(self.bg_imgs.center.size)*SIZEOFDOUBLE
+            self.file.write("background center:%d\n"%sz)
+            self.file.write(self.bg_imgs.center)
         self.file.write('bg_norm_type:%d\n'%params.bg_norm_type)
         if hasattr(self.bg_imgs,'mad'):
             sz = self.bg_imgs.mad.size*SIZEOFDOUBLE
@@ -692,6 +696,10 @@ class AnnotationFile:
             sz = self.bg_imgs.std.size*SIZEOFDOUBLE
             self.file.write("background std:%d\n"%sz)
             self.file.write(self.bg_imgs.std)
+        if hasattr(self.bg_imgs,'dev'):
+            sz = num.prod(self.bg_imgs.dev.size)*SIZEOFDOUBLE
+            self.file.write("background dev:%d\n"%sz)
+            self.file.write(self.bg_imgs.dev)
         if hasattr(self.bg_imgs,'fracframesisback'):
             sz = num.prod(self.bg_imgs.fracframesisback.size)*SIZEOFDOUBLE
             self.file.write("fracframesisback:%d\n"%sz)
@@ -700,6 +708,9 @@ class AnnotationFile:
             sz = self.bg_imgs.hfnorm.size*SIZEOFDOUBLE
             self.file.write("hfnorm:%d\n"%sz)
             self.file.write(self.bg_imgs.hfnorm)
+        if hasattr(params,'movie_size'):
+            self.file.write("movie_height:%d\n"%params.movie_size[0])
+            self.file.write("movie_width:%d\n"%params.movie_size[1])
         if hasattr(params,'roipolygons'):
             s = pickle.dumps(params.roipolygons)
             self.file.write("roipolygons:%d\n"%len(s))
@@ -727,6 +738,7 @@ class AnnotationFile:
 
         # motion model parameters
         self.file.write('max_jump:%.2f\n'%params.max_jump)
+        self.file.write('min_jump:%.2f\n'%params.min_jump)
         self.file.write('ang_dist_wt:%.2f\n'%params.ang_dist_wt)
         self.file.write('center_dampen:%.2f\n'%params.dampen)
         self.file.write('angle_dampen:%.2f\n'%params.angle_dampen)
@@ -770,6 +782,7 @@ class AnnotationFile:
         self.file.write('movie_name:' + params.movie_name + '\n')
 
         self.max_jump = params.max_jump
+        self.min_jump = params.max_jump
         self.file.write('start_frame:%d\n'%start_frame)
         
         self.file.write('data format:%s\n'%dataformatstring)
@@ -823,6 +836,7 @@ class AnnotationFile:
             if parameter == 'background median' or parameter == 'background mean' or \
                    parameter == 'background mad' or parameter == 'background std' or \
                    parameter == 'hfnorm' or parameter == 'roipolygons' or \
+                   parameter == 'background center' or parameter == 'background dev' or \
                    parameter == 'fracframesisback':
                 sz = int(value)
                 self.file.seek(sz,1)
@@ -923,6 +937,13 @@ class AnnotationFile:
                     self.bg_imgs.mean.shape = params.movie_size
                 else:
                     self.file.seek(sz,1)
+            elif parameter == 'background center':
+                sz = int(value)
+                if doreadbgmodel and (self.bg_imgs is not None):
+                    self.bg_imgs.center = num.fromstring(self.file.read(sz),'<d')
+                    self.bg_imgs.center.shape = params.movie_size
+                else:
+                    self.file.seek(sz,1)
             elif parameter == 'bg_norm_type':
                 params.bg_norm_type = int(value)
             elif parameter == 'background mad':
@@ -937,6 +958,13 @@ class AnnotationFile:
                 if doreadbgmodel:
                     self.bg_imgs.std = num.fromstring(self.file.read(sz),'<d')
                     self.bg_imgs.std.shape = params.movie_size
+                else:
+                    self.file.seek(sz,1)
+            elif parameter == 'background dev':
+                sz = int(value)
+                if doreadbgmodel and (self.bg_imgs is not None):
+                    self.bg_imgs.dev = num.fromstring(self.file.read(sz),'<d')
+                    self.bg_imgs.dev.shape = params.movie_size
                 else:
                     self.file.seek(sz,1)
             elif parameter == 'fracframesisback':
@@ -996,6 +1024,9 @@ class AnnotationFile:
             elif parameter == 'max_jump':
                 params.max_jump = float(value)
                 self.max_jump = params.max_jump
+            elif parameter == 'min_jump':
+                params.min_jump = float(value)
+                self.min_jump = params.min_jump
             elif parameter == 'ang_dist_wt':
                 params.ang_dist_wt = float(value)
             elif parameter == 'center_dampen':

@@ -300,6 +300,8 @@ class Parameters:
         self.ang_dist_wt = 100.
         # maximum distance a fly can move between frames
         self.max_jump = 100.
+        # minimum distance to be called a jump
+        self.min_jump = 50.
         # dampening constant
         self.dampen = 0. # weighting term used in cvpred()
         self.angle_dampen = 0.5 

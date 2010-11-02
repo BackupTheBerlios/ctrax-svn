@@ -1,19 +1,69 @@
 import numpy as num
 import scipy.stats as stats
 from params import params
-import bg
 import annfiles as annot
+import matplotlib.pyplot as plt
+import os.path
+import pickle
+import getopt
+import sys
+
+if params.interactive:
+    import wx
+
+DEBUG = True
+DELTAPLOT = .05
 
 class ExpTrackingSettings:
 
-    def __init__( self, annnames=None ):
-
-        self.annnames = annnames
-        self.nmovies = len(annnames)
+    def __init__( self, annnames=None,
+                  picklefile=None, 
+                  nframessample = 100,
+                  min_major_percentile = 1.,
+                  max_major_percentile = 99.,
+                  min_minor_percentile = 1.,
+                  max_minor_percentile = 99.,
+                  min_area_percentile = 1.,
+                  max_area_percentile = 99.,
+                  min_ecc_percentile = 1.,
+                  max_ecc_percentile = 99.,
+                  jump_distance_delta = .1
+                  ):
         
-        # initialize models
-        self.init_shape_models()
-        self.init_motion_models()
+        if picklefile is not None:
+            if params.interactive:
+                wx.Yield()
+                wx.BeginBusyCursor()
+            else:
+                print 'Loading pickled tracking settings models'
+            fid = open(picklefile,'r')
+            model = pickle.load(fid)
+            fid.close()
+
+            for key,val in model.iteritems():
+                setattr(self,key,val)
+
+            if params.interactive:
+                wx.EndBusyCursor()
+        else:
+        
+            self.annnames = annnames
+            self.nmovies = len(annnames)
+    
+            self.nframessample = nframessample
+            self.min_major_percentile = min_major_percentile
+            self.max_major_percentile = max_major_percentile
+            self.min_minor_percentile = min_minor_percentile
+            self.max_minor_percentile = max_minor_percentile
+            self.min_area_percentile = min_area_percentile
+            self.max_area_percentile = max_area_percentile
+            self.min_ecc_percentile = min_ecc_percentile
+            self.max_ecc_percentile = max_ecc_percentile
+            self.jump_distance_delta = jump_distance_delta
+            
+            # initialize models
+            self.init_shape_models()
+            self.init_motion_models()
 
     def init_shape_models(self):
 
@@ -43,6 +93,8 @@ class ExpTrackingSettings:
         for ell in self.trxcurr.itervalues():
             self.majors.append(ell.size.height*4.)
             self.minors.append(ell.size.width*4.)
+            if not hasattr(ell,'area') or ell.area < 0:
+                ell.compute_area()
             self.areas.append(ell.area)
             self.eccs.append(ell.size.width / ell.size.height)
             self.movieis.append(self.moviei)
@@ -51,10 +103,10 @@ class ExpTrackingSettings:
 
     def update_motion_models(self):
 
-        for id,ellcurr in trxcurr.iteritems():
+        for id,ellcurr in self.trxcurr.iteritems():
             if self.trxprev.hasItem(id) and self.trxprevprev.hasItem(id):
-                ellprev = trxprev[id]
-                ellprevprev = trxprevprev[id]
+                ellprev = self.trxprev[id]
+                ellprevprev = self.trxprevprev[id]
                 dx = ellprev.center.x - ellprevprev.center.x
                 dy = ellprev.center.y - ellprevprev.center.y
                 dangle = ((ellprev.angle - ellprevprev.angle + num.pi/2.) \
@@ -76,7 +128,10 @@ class ExpTrackingSettings:
 
                 self.xcurrs.append(num.nan)
                 self.ycurrs.append(num.nan)
-                self.angles.append(num.nan)
+                self.xprevs.append(num.nan)
+                self.yprevs.append(num.nan)
+                self.anglecurrs.append(num.nan)
+                self.angleprevs.append(num.nan)
                 self.dxs.append(num.nan)
                 self.dys.append(num.nan)
                 self.dangles.append(num.nan)
@@ -96,11 +151,11 @@ class ExpTrackingSettings:
         #self.movie = movies.Movie( self.movienames[i], params.interactive )
 
         # background model
-        self.bg_imgs = bg.BackgroundCalculator(self.movie)
+        #self.bg_imgs = bg.BackgroundCalculator(self.movie)
 
         # open annotation
-        self.trx = annot.AnnotationFile( self.annnames[i], bg_imgs=self.bg_imgs, 
-                                        doreadtrx=True )
+        self.trx = annot.AnnotationFile( self.annnames[i], doreadbgmodel=False, 
+                                         doreadtrx=True )
 
 
         # choose frames to learn from: for now, assume all frames are tracked
@@ -111,7 +166,7 @@ class ExpTrackingSettings:
                                                               self.lastframe,
                                                               self.nframessample)).astype(int))
 
-        if DEBUG: print "Collecting data for movie %d = %s..."%(self.moviei,self.movienames[self.moviei])
+        if DEBUG: print "Collecting data for movie %d, annfile = %s..."%(self.moviei,self.annnames[self.moviei])
 
         for j in range(len(self.framessample)):
 
@@ -127,11 +182,11 @@ class ExpTrackingSettings:
             self.update_shape_models()
             self.update_motion_models()
 
-        self.movie.close()
-        self.movie = None
+        #self.movie.close()
+        #self.movie = None
         self.trx.close()
         self.trx = None
-        self.bg_imgs = None
+        #self.bg_imgs = None
         
     def est_settings(self):
         """
@@ -154,14 +209,14 @@ class ExpTrackingSettings:
         self.areas = num.array(self.areas)
         self.eccs = num.array(self.eccs)
 
-        self.min_major = stats.scoreatpercentile(self.majors,self.min_major_percentile)
-        self.max_major = stats.scoreatpercentile(self.majors,self.max_major_percentile)
-        self.min_minor = stats.scoreatpercentile(self.minors,self.min_minor_percentile)
-        self.max_minor = stats.scoreatpercentile(self.minors,self.max_minor_percentile)
-        self.min_area = stats.scoreatpercentile(self.areas,self.min_area_percentile)
-        self.max_area = stats.scoreatpercentile(self.areas,self.max_area_percentile)
-        self.min_ecc = stats.scoreatpercentile(self.eccs,self.min_ecc_percentile)
-        self.max_ecc = stats.scoreatpercentile(self.eccs,self.max_ecc_percentile)
+        self.min_major = genprctile(self.majors,self.min_major_percentile)
+        self.max_major = genprctile(self.majors,self.max_major_percentile)
+        self.min_minor = genprctile(self.minors,self.min_minor_percentile)
+        self.max_minor = genprctile(self.minors,self.max_minor_percentile)
+        self.min_area = genprctile(self.areas,self.min_area_percentile)
+        self.max_area = genprctile(self.areas,self.max_area_percentile)
+        self.min_ecc = genprctile(self.eccs,self.min_ecc_percentile)
+        self.max_ecc = genprctile(self.eccs,self.max_ecc_percentile)
         self.mean_major = num.mean(self.majors)
         self.mean_minor = num.mean(self.minors)
         self.mean_area = num.mean(self.areas)
@@ -178,7 +233,7 @@ class ExpTrackingSettings:
         self.dxs = num.array(self.dxs)
         self.dys = num.array(self.dys)
         self.dangles = num.array(self.dangles)
-        idx = num.array(self.is_motion_data)
+        self.is_motion_data = num.array(self.is_motion_data,dtype=bool)
 
         # min( [ (xcurrs-xprevs) - alpha*dxs ].T * (xcurrs-xprevs) - alpha*dxs ] + \
         #      [ (ycurrs-yprevs) - alpha*dys ].T * (ycurrs-yprevs) - alpha*dys ] )
@@ -187,27 +242,32 @@ class ExpTrackingSettings:
         # ((ycurrs-yprevs) - alpha*dxs).T*dxs = 0
         # (xcurrs-xprevs).T * dxs + (ycurrs-yprevs).T * dys = alpha*(dxs.T * dxs + dys.T * dy)
         # alpha = [ (xcurrs-xprevs).T * dxs + (ycurrs-yprevs).T * dys ] / (dxs.T * dxs + dys.T * dy)
-        alpha = ( num.sum( (self.xcurrs[idx]-self.xprevs[idx])*self.dxs ) + \
-                  num.sum( (self.ycurrs[idx]-self.yprevs[idx])*self.dys ) ) / \
-                ( num.sum( self.dxs[idx]**2. ) + num.sum( self.dys[idx]**2. ) )
+        alpha = ( num.sum( (self.xcurrs[self.is_motion_data]-self.xprevs[self.is_motion_data])*self.dxs[self.is_motion_data] ) + \
+                  num.sum( (self.ycurrs[self.is_motion_data]-self.yprevs[self.is_motion_data])*self.dys[self.is_motion_data] ) ) / \
+                ( num.sum( self.dxs[self.is_motion_data]**2. ) + num.sum( self.dys[self.is_motion_data]**2. ) )
+        alpha = max(alpha,0.)
+        alpha = min(alpha,1.)
         self.center_dampen = 1. - alpha
 
-        alpha = num.sum( self.anglecurrs[idx]*self.dangles[idx] ) / \
-                num.sum( self.dangles[idx]**2. )
+        alpha = num.sum( self.anglecurrs[self.is_motion_data]*self.dangles[self.is_motion_data] ) / \
+                num.sum( self.dangles[self.is_motion_data]**2. )
+        alpha = max(alpha,0.)
+        alpha = min(alpha,1.)
         self.angle_dampen = 1. - alpha
 
         # choose the weight of angle error
         self.xpreds = self.xprevs + self.dxs*(1.-self.center_dampen)
         self.ypreds = self.yprevs + self.dys*(1.-self.center_dampen)
         self.anglepreds = self.angleprevs + self.dangles*(1.-self.angle_dampen)
-        self.center_err2 = num.mean((self.xpreds-self.xcurrs)**2) + \
-            num.sum((self.ypreds-self.ycurrs)**2)
-        self.angle_err2 = num.mean( (self.anglepreds-self.anglecurrs+num.pi/2.)%num.pi - num.pi/2. )
+        self.center_err2s = (self.xpreds-self.xcurrs)**2 + (self.ypreds-self.ycurrs)**2.
+        self.center_err2 = num.mean(self.center_err2s[self.is_motion_data])
+        self.angle_err2s = ((self.anglepreds-self.anglecurrs+num.pi/2.)%num.pi - num.pi/2.)**2.
+        self.angle_err2 = num.mean(self.angle_err2s[self.is_motion_data])
         self.angle_weight = self.center_err2 / self.angle_err2
 
         # choose the maximum jump distance
-        self.dist = num.sqrt(self.center_err2 +self.angle_weight*self.angle_err2)
-        self.max_jump_distance = num.max(self.dist)*(1.+self.jump_distance_delta)
+        self.dists = num.sqrt(self.center_err2s +self.angle_weight*self.angle_err2s)
+        self.max_jump_distance = num.max(self.dists[self.is_motion_data])*(1.+self.jump_distance_delta)
 
     def save(self,outputFileName):
         
@@ -305,14 +365,18 @@ class ExpTrackingSettings:
             out['ypreds'] = self.ypreds
         if hasattr(self,'anglepreds'):
             out['anglepreds'] = self.anglepreds
+        if hasattr(self,'center_err2s'):
+            out['center_err2s'] = self.center_err2s
+        if hasattr(self,'angle_err2s'):
+            out['angle_err2s'] = self.angle_err2s
         if hasattr(self,'center_err2'):
             out['center_err2'] = self.center_err2
         if hasattr(self,'angle_err2'):
             out['angle_err2'] = self.angle_err2
         if hasattr(self,'angle_weight'):
             out['angle_weight'] = self.angle_weight
-        if hasattr(self,'dist'):
-            out['dist'] = self.dist
+        if hasattr(self,'dists'):
+            out['dists'] = self.dists
         if hasattr(self,'max_jump_distance'):
             out['max_jump_distance'] = self.max_jump_distance
 
@@ -329,15 +393,18 @@ class ExpTrackingSettings:
         
         nbins = 100
 
-        self.counts_centererr,self.edges_centererr = num.histogram(num.sqrt(self.center_err2),nbins)
-        self.frac_angleerr = self.counts_angleerr / sum(self.counts_angleerr)
+        self.counts_centererr,self.edges_centererr = num.histogram(num.sqrt(self.center_err2s[self.is_motion_data]),nbins)
+        self.counts_centererr = self.counts_centererr.astype(float)
+        self.frac_centererr = self.counts_centererr / sum(self.counts_centererr)
         self.centers_centererr = (self.edges_centererr[:-1]+self.edges_centererr[1:])/2.
 
-        self.counts_angleerr,self.edges_angleerr = num.histogram(num.sqrt(self.angle_err2),nbins)
+        self.counts_angleerr,self.edges_angleerr = num.histogram(num.sqrt(self.angle_err2s[self.is_motion_data]),nbins)
+        self.counts_angleerr = self.counts_angleerr.astype(float)
         self.frac_angleerr = self.counts_angleerr / sum(self.counts_angleerr)
         self.centers_angleerr = (self.edges_angleerr[:-1]+self.edges_angleerr[1:])/2.
 
-        self.counts_dist,self.edges_dist = num.histogram(self.dist,nbins)
+        self.counts_dist,self.edges_dist = num.histogram(self.dists[self.is_motion_data],nbins)
+        self.counts_dist = self.counts_dist.astype(float)
         self.frac_dist = self.counts_dist / num.sum(self.counts_dist)
         self.centers_dist = (self.edges_dist[:-1]+self.edges_dist[1:])/2.
 
@@ -346,14 +413,14 @@ class ExpTrackingSettings:
         plt.subplot(131)        
         plt.plot(self.centers_centererr,self.frac_centererr,'k.-')
         maxy = num.max(self.frac_centererr)
-        ax = num.array([self.edges_centererr[0],self.edges_centererr[-1],-maxy*.01,maxy*1.01])
+        ax = num.array([self.edges_centererr[0],self.edges_centererr[-1],-maxy*DELTAPLOT,maxy*(1.+DELTAPLOT)])
         plt.axis(ax)
         plt.title('center dist')
 
         plt.subplot(132)        
         plt.plot(self.centers_angleerr,self.frac_angleerr,'k.-')
         maxy = num.max(self.frac_angleerr)
-        ax = num.array([self.edges_angleerr[0],self.edges_angleerr[-1],-maxy*.01,maxy*1.01])
+        ax = num.array([self.edges_angleerr[0],self.edges_angleerr[-1],-maxy*DELTAPLOT,maxy*(1.+DELTAPLOT)])
         plt.axis(ax)
         plt.title('angle dist')
         
@@ -361,8 +428,8 @@ class ExpTrackingSettings:
         plt.plot(self.centers_dist,self.frac_dist,'k.-')
         plt.hold(True)
         maxy = num.max(self.frac_dist)
-        ax = num.array([self.edges_dist[0],max(self.max_jump_distance*1.01,self.edges_dist[-1]),-maxy*.01,maxy*1.01])
-        plt.plot(self.max_jump_distance+num.zeros(2),ax([2,3]),'r-')
+        ax = num.array([self.edges_dist[0],max(self.max_jump_distance*(1.+DELTAPLOT),self.edges_dist[-1]),-maxy*DELTAPLOT,maxy*(1.+DELTAPLOT)])
+        plt.plot(self.max_jump_distance+num.zeros(2),ax[[2,3]],'r-')
         plt.axis(ax)
         plt.title('dist')
 
@@ -379,6 +446,7 @@ class ExpTrackingSettings:
         
         # histogram of area axis lengths
         self.counts_area,self.edges_area = num.histogram(self.areas,nbins)
+        self.counts_area = self.counts_area.astype(float)
         self.frac_area = self.counts_area / num.sum(self.counts_area)
         self.centers_area = (self.edges_area[:-1]+self.edges_area[1:])/2.
 
@@ -388,16 +456,16 @@ class ExpTrackingSettings:
         plt.subplot(221)
         plt.plot(self.centers_area,self.frac_area,'k.-')
         plt.hold(True)
-        maxy = num.max(self.frac_area)
-        ax = num.array([self.edges_area[0],self.edges_area[-1],-maxy*.01,maxy*1.01])
-        plt.plot(self.min_area+num.zeros(2),ax([2,3]),'r-')
-        plt.plot(self.mean_area+num.zeros(2),ax([2,3]),'r-')
-        plt.plot(self.max_area+num.zeros(2),ax([2,3]),'r-')
+        ax = get_axis(self.edges_area,self.frac_area,self.min_area,self.max_area)
+        plt.plot(self.min_area+num.zeros(2),ax[[2,3]],'r-')
+        plt.plot(self.mean_area+num.zeros(2),ax[[2,3]],'r-')
+        plt.plot(self.max_area+num.zeros(2),ax[[2,3]],'r-')
         plt.axis(ax)
         plt.title('area')
 
         # histogram of major axis lengths
         self.counts_major,self.edges_major = num.histogram(self.majors,nbins)
+        self.counts_major = self.counts_major.astype(float)
         self.frac_major = self.counts_major / num.sum(self.counts_major)
         self.centers_major = (self.edges_major[:-1]+self.edges_major[1:])/2.
 
@@ -405,16 +473,16 @@ class ExpTrackingSettings:
         plt.subplot(222)
         plt.plot(self.centers_major,self.frac_major,'k.-')
         plt.hold(True)
-        maxy = num.max(self.frac_major)
-        ax = num.array([self.edges_major[0],self.edges_major[-1],-maxy*.01,maxy*1.01])
-        plt.plot(self.min_major+num.zeros(2),ax([2,3]),'r-')
-        plt.plot(self.mean_major+num.zeros(2),ax([2,3]),'r-')
-        plt.plot(self.max_major+num.zeros(2),ax([2,3]),'r-')
+        ax = get_axis(self.edges_major,self.frac_major,self.min_major,self.max_major)
+        plt.plot(self.min_major+num.zeros(2),ax[[2,3]],'r-')
+        plt.plot(self.mean_major+num.zeros(2),ax[[2,3]],'r-')
+        plt.plot(self.max_major+num.zeros(2),ax[[2,3]],'r-')
         plt.axis(ax)
         plt.title('major')
 
         # histogram of minor axis lengths
         self.counts_minor,self.edges_minor = num.histogram(self.minors,nbins)
+        self.counts_minor = self.counts_minor.astype(float)
         self.frac_minor = self.counts_minor / num.sum(self.counts_minor)
         self.centers_minor = (self.edges_minor[:-1]+self.edges_minor[1:])/2.
 
@@ -422,16 +490,16 @@ class ExpTrackingSettings:
         plt.subplot(223)
         plt.plot(self.centers_minor,self.frac_minor,'k.-')
         plt.hold(True)
-        maxy = num.max(self.frac_minor)
-        ax = num.array([self.edges_minor[0],self.edges_minor[-1],-maxy*.01,maxy*1.01])
-        plt.plot(self.min_minor+num.zeros(2),ax([2,3]),'r-')
-        plt.plot(self.mean_minor+num.zeros(2),ax([2,3]),'r-')
-        plt.plot(self.max_minor+num.zeros(2),ax([2,3]),'r-')
+        ax = get_axis(self.edges_minor,self.frac_minor,self.min_minor,self.max_minor)
+        plt.plot(self.min_minor+num.zeros(2),ax[[2,3]],'r-')
+        plt.plot(self.mean_minor+num.zeros(2),ax[[2,3]],'r-')
+        plt.plot(self.max_minor+num.zeros(2),ax[[2,3]],'r-')
         plt.axis(ax)
         plt.title('minor')
 
         # histogram of ecc axis lengths
         self.counts_ecc,self.edges_ecc = num.histogram(self.eccs,nbins)
+        self.counts_ecc = self.counts_ecc.astype(float)
         self.frac_ecc = self.counts_ecc / num.sum(self.counts_ecc)
         self.centers_ecc = (self.edges_ecc[:-1]+self.edges_ecc[1:])/2.
 
@@ -439,11 +507,10 @@ class ExpTrackingSettings:
         plt.subplot(224)
         plt.plot(self.centers_ecc,self.frac_ecc,'k.-')
         plt.hold(True)
-        maxy = num.max(self.frac_ecc)
-        ax = num.array([self.edges_ecc[0],self.edges_ecc[-1],-maxy*.01,maxy*1.01])
-        plt.plot(self.min_ecc+num.zeros(2),ax([2,3]),'r-')
-        plt.plot(self.mean_ecc+num.zeros(2),ax([2,3]),'r-')
-        plt.plot(self.max_ecc+num.zeros(2),ax([2,3]),'r-')
+        ax = get_axis(self.edges_ecc,self.frac_ecc,self.min_ecc,self.max_ecc)
+        plt.plot(self.min_ecc+num.zeros(2),ax[[2,3]],'r-')
+        plt.plot(self.mean_ecc+num.zeros(2),ax[[2,3]],'r-')
+        plt.plot(self.max_ecc+num.zeros(2),ax[[2,3]],'r-')
         plt.axis(ax)
         plt.title('ecc')
 
@@ -467,8 +534,8 @@ def main():
     Compute experiment shape and motion models.
     """
 
-    shortopts = "f:p:m:a:o:"
-    longopts = ["filename=","params=","movie=","ann=","output="]
+    shortopts = "f:p:a:o:"
+    longopts = ["filename=","params=","ann=","output="]
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
     except getopt.GetoptError, err:
@@ -523,39 +590,9 @@ def main():
         annnames.append(annname)
     fid.close()
         
-    # default parameters
-    params = dict()
-    params['nframessample'] = 100
-    params['min_major_percentile'] = 1.
-    params['max_major_percentile'] = 99.
-    params['min_minor_percentile'] = 1.
-    params['max_minor_percentile'] = 99.
-    params['min_area_percentile'] = 1.
-    params['max_area_percentile'] = 99.
-    params['min_ecc_percentile'] = 1.
-    params['max_ecc_percentile'] = 99.
-    params['jump_distance_delta'] = .1
-
     if paramsFileName != '':
-        # parse parameters file
-        fid = open(paramsFileName,"r")
-    
-        for l in fid:
-            l = l.strip()
-            if l[0] == '#':
-                continue
-            l = l.split('=',1)
-            if len(l) < 2:
-                print "Skipping parameter line '%s'"%l
-                continue
-            l[0] = l[0].strip()
-            l[1] = l[1].strip()
-            if l[0] in params.keys():
-                params[l[0]] = float(l[1])
-        fid.close()
-
-    params['nframessample'] = int(params['nframessample'])
-
+        params = read_params(paramsFileName)
+        
     model = ExpTrackingSettings(annnames,
                                 nframessample = params['nframessample'],
                                 min_major_percentile = params['min_major_percentile'],
@@ -573,6 +610,66 @@ def main():
 
     return model
     
+def genprctile(x,prct):
+    if prct < 0 or prct > 100:
+        maxx = num.max(x)
+        minx = num.min(x)
+        dx = maxx - minx
+        if prct < 0:
+            p = minx - (-prct/100.)*dx
+        else:
+            p = maxx + ((prct-100.)/100)*dx
+    else:
+        p = stats.scoreatpercentile(x,prct)
+    return p
+
+def read_params(paramsFileName):
+
+    # default parameters
+    params = dict()
+    params['nframessample'] = 100
+    params['min_major_percentile'] = 1.
+    params['max_major_percentile'] = 99.
+    params['min_minor_percentile'] = 1.
+    params['max_minor_percentile'] = 99.
+    params['min_area_percentile'] = 1.
+    params['max_area_percentile'] = 99.
+    params['min_ecc_percentile'] = 1.
+    params['max_ecc_percentile'] = 99.
+    params['jump_distance_delta'] = .1
+
+    # parse parameters file
+    fid = open(paramsFileName,"r")
+
+    for l in fid:
+        l = l.strip()
+        if l[0] == '#':
+            continue
+        l = l.split('=',1)
+        if len(l) < 2:
+            print "Skipping parameter line '%s'"%l
+            continue
+        l[0] = l[0].strip()
+        l[1] = l[1].strip()
+        if l[0] in params.keys():
+            params[l[0]] = float(l[1])
+    fid.close()
+
+    params['nframessample'] = int(params['nframessample'])
+
+    return params
+
+def get_axis(edges,frac,minv,maxv):
+    ax = num.zeros(4)
+    dv = edges[-1] - edges[0]
+    maxfrac = num.max(frac)
+    ax[0] = min(edges[0],minv-dv*DELTAPLOT)
+    ax[1] = max(edges[-1],maxv+dv*DELTAPLOT)
+    ax[2] = 0-maxfrac*DELTAPLOT
+    ax[3] = maxfrac*(1.+DELTAPLOT)
+    return ax
+
+
 if __name__ == "__main__":
     params.interactive = False
     main()

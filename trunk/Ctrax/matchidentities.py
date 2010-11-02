@@ -100,14 +100,23 @@ def cvpred( X1, X2 ):
     # set position and size as an extrapolation
     for ee in X2.iterkeys():
 	if X1.hasItem(ee):
-	    new_x = X2[ee].center.x + (1.-params.dampen) * \
-		(X2[ee].center.x - X1[ee].center.x)
-	    new_y = X2[ee].center.y + (1.-params.dampen) * \
-		(X2[ee].center.y - X1[ee].center.y)
+
+            # only use the cv prediction if not jumping
+            dx = X2[ee].center.x - X1[ee].center.x
+	    dy = X2[ee].center.y - X1[ee].center.y
+	    centerd = num.sqrt((dx**2. + dy**2.))
+	    if centerd >= params.min_jump:
+                new_x = X2[ee].center.x
+		new_y = X2[ee].center.y
+		dangle = X2[ee].angle
+	    else:
+                new_x = X2[ee].center.x + (1.-params.dampen) * dx
+		new_y = X2[ee].center.y + (1.-params.dampen) * dy
+		dangle = ((X2[ee].angle - X1[ee].angle + num.pi/2.) \
+				  % (num.pi)) - (num.pi/2.)
+
 	    new_w = X2[ee].size.width
 	    new_h = X2[ee].size.height
-	    dangle = ((X2[ee].angle - X1[ee].angle + num.pi/2.) \
-		      % (num.pi)) - (num.pi/2.)
 	    new_angle = X2[ee].angle + (1.-params.angle_dampen) * dangle
 	    new_area = X2[ee].area
 	    X3.append( ell.Ellipse( new_x,new_y, new_w,new_h, new_angle, new_area, X2[ee].identity ) )

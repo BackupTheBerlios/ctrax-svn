@@ -208,10 +208,15 @@ class ChooseOrientations:
 	    yprev = ellprev.center.y
 	    vx = xcurr - xprev
 	    vy = ycurr - yprev
+            dcenter = num.sqrt(vx**2. +vy**2)
 	    # compute angle of velocity
 	    velocityangle = num.arctan2(vy,vx)
             # compute weight for velocity term
-	    w = num.minimum(float(params.max_velocity_angle_weight),params.velocity_angle_weight*num.sqrt(vx**2+vy**2))
+            if dcenter >= params.min_jump:
+                # if jumping, it can jump in an arbitrary direction
+                w = 0
+            else:
+                w = num.minimum(float(params.max_velocity_angle_weight),params.velocity_angle_weight*num.sqrt(vx**2+vy**2))
             # compute for both possible states
             for scurr in [0,1]:
                 

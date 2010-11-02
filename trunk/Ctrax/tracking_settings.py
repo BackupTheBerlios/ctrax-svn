@@ -147,6 +147,7 @@ class TrackingSettings:
         self.max_ecc_input = self.control('max_ecc')
         self.angle_weight_input = self.control('angle_weight')
         self.max_jump_input = self.control('max_jump')
+        self.min_jump_input = self.control('min_jump')
         self.center_dampen_input = self.control('center_dampen')
         self.angle_dampen_input = self.control('angle_dampen')
         self.max_area_delete_input = self.control('max_area_delete')
@@ -223,6 +224,7 @@ class TrackingSettings:
         self.min_area_ignore_input.SetValue(str(params.params.minareaignore))
         self.max_penalty_merge_input.SetValue(str(params.params.maxpenaltymerge))
         self.max_jump_input.SetValue(str(params.params.max_jump))
+        self.min_jump_input.SetValue(str(params.params.min_jump))
         self.angle_weight_input.SetValue(str(params.params.ang_dist_wt))
         self.center_dampen_input.SetValue(str(params.params.dampen))
         self.angle_dampen_input.SetValue(str(params.params.angle_dampen))
@@ -283,7 +285,7 @@ class TrackingSettings:
 
         # motion
 
-        self.bindctrl(('angle_weight','max_jump','center_dampen','angle_dampen'),
+        self.bindctrl(('angle_weight','max_jump','min_jump','center_dampen','angle_dampen'),
                       ('float','float','float','float','float'),
                       self.SetMotion)
 
@@ -552,6 +554,12 @@ class TrackingSettings:
         else:
             self.max_jump_input.SetValue(str(params.params.max_jump))
 
+        min_jump = float(self.min_jump_input.GetValue())
+        if min_jump >= 0:
+            params.params.min_jump = min_jump
+        else:
+            self.min_jump_input.SetValue(str(params.params.min_jump))
+
         center_dampen = float(self.center_dampen_input.GetValue())
         if center_dampen >= 0 and center_dampen <= 1:
             params.params.dampen = center_dampen
@@ -668,6 +676,10 @@ class TrackingSettings:
             for i,obs in enumerate(obs_filtered):
                 plot_new_stuff = imagesk.draw_circle(obs.center.x,
                                                      obs.center.y,params.params.max_jump,
+                                                     params.params.colors[i%len(params.params.colors)])
+                plot_linesegs.extend(plot_new_stuff)
+                plot_new_stuff = imagesk.draw_circle(obs.center.x,
+                                                     obs.center.y,params.params.min_jump,
                                                      params.params.colors[i%len(params.params.colors)])
                 plot_linesegs.extend(plot_new_stuff)
                 

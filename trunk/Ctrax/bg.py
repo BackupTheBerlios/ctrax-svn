@@ -234,6 +234,9 @@ class BackgroundCalculator:
         self.roi = roi.point_inside_polygons(params.movie_size[0],params.movie_size[1],
                                              params.roipolygons)
 
+        if params.use_expbgfgmodel:
+            self.ExpBGFGModel_FillMissingData()
+
         self.UpdateIsArena()
 
     def meanstd( self, parent=None ):
@@ -450,19 +453,13 @@ class BackgroundCalculator:
 
             # if this is the last pass, we may need a smaller buffer
             if nrowscurr < nrsmall:
-                buf = buf[:nrowscurr]
+                buf = buf[:,:nrowscurr,:]
                 if params.use_expbgfgmodel:
-                    buf_isback = buf_isback[:nrowscurr]
+                    buf_isback = buf_isback[:,:nrowscurr,:]
                     Z = Z[:nrowscurr]
                     idx = num.tile(num.resize(num.arange(nrowscurr*nc),(nrowscurr*nc,1)),(1,nframes))
                     grid = num.indices((nrowscurr,nc))
 
-            # we permute the axes of the buffer, so resize. we don't care what the values are, so 
-            # no need to unpermute, just reshape
-            buf.shape = (nframes,nrowscurr,nc)
-            if params.use_expbgfgmodel:
-                buf_isback.shape = (nframes,nrowscurr,nc)
-            
             if params.use_expbgfgmodel:
                 Z[:] = 0
 
@@ -503,13 +500,15 @@ class BackgroundCalculator:
             if DEBUG: print 'Computing ...'
             
             # permute axes so that it is rows x columns x frames
-            buf = num.rollaxis(num.rollaxis(buf,2,0),2,0)
+            buf = num.transpose(buf,[1,2,0])
+            #buf = num.rollaxis(num.rollaxis(buf,2,0),2,0)
 
             # median computation more complicated if we are ignoring some frames
             if params.use_expbgfgmodel:
                 
                 # permute isback axes as well
-                buf_isback = num.rollaxis(num.rollaxis(buf_isback,2,0),2,0)
+                # buf_isback = num.rollaxis(num.rollaxis(buf_isback,2,0),2,0)
+                buf_isback = num.transpose(buf_isback,[1,2,0])
                 
                 # sort the data
                 
@@ -632,6 +631,12 @@ class BackgroundCalculator:
                 # from the fact that half the data falls within mad
                 # MADTOSTDFACTOR = 1./norminv(.75)
                 self.mad[rowoffset:rowoffsetnext,:] *= MADTOSTDFACTOR
+
+            # un-transpose buf:
+            # permute axes so that it is frames x rows x columns x frames
+            buf = num.transpose(buf,[2,0,1])
+            if params.use_expbgfgmodel:
+                buf_isback = num.transpose(buf_isback,[2,0,1])
 
             offseti += 1
 
