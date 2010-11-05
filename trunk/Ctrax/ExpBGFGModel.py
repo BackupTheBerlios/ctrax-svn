@@ -352,7 +352,7 @@ class ExpBGFGModel:
         computes the log likelihood of each pixel appearance in
         self.im given that the pixel is foreground. 
         """
-        r1 = min(r1,num.inf)
+        r1 = min(r1,self.nr)
         d2 = (self.im[r0:r1] - self.fg_mu[r0:r1])**2 / (2*self.fg_sigma[r0:r1]**2)
         self.log_lik_appearance_given_fore = -d2 - self.fg_log_Z[r0:r1]
 
@@ -364,7 +364,7 @@ class ExpBGFGModel:
         self.im given that the pixel is background. 
         """
         
-        r1 = min(r1,num.inf)
+        r1 = min(r1,self.nr)
 
         d2 = (self.im[r0:r1] - self.bg_mu[r0:r1])**2 / (2*self.bg_sigma[r0:r1]**2)
         self.log_lik_appearance_given_back = -d2 - self.bg_log_Z[r0:r1]
@@ -730,7 +730,7 @@ class ExpBGFGModel:
         Apply LoG filtering to the current frame to detect blobs. 
         """
         
-        r1 = min(r1,num.inf)
+        r1 = min(r1,self.nr)
         
         # LoG filter
         if not hasattr(self,'LoG_fil_out'):
@@ -863,6 +863,13 @@ class ExpBGFGModel:
         fid.close()
 
 
+    def set_movie(self,moviename):
+
+        self.movie = movies.Movie( moviename, params.interactive )
+        self.nr = self.movie.get_height()
+        self.nc = self.movie.get_width()
+
+
     def show(self):
 
         plt.subplot(231)
@@ -990,7 +997,11 @@ class ExpBGFGModel:
             
             hims.append(him)
             plt.draw()
-            
+
+        vmin = num.maximum(vmin,cmin)
+        vmin_noninf = num.maximum(vmin_noninf,cmin)
+        vmax = num.minimum(vmax,cmax)
+        vmax_noninf = num.minimum(vmax_noninf,cmax)
         dv = vmax_noninf - vmin_noninf
         idx = vmin < vmin_noninf
         vmin_noninf[idx] = vmin_noninf[idx] - dv[idx]*.025

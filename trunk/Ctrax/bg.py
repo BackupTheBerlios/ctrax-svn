@@ -7,7 +7,8 @@ from numpy import random
 #from scipy.linalg.basic import eps
 import scipy.io
 import sys
-import threading
+#import traceback
+#import threading
 import time
 import wx
 from wx import xrc
@@ -83,6 +84,10 @@ class HomoFilt:
                                                pending_color=params.wxvt_bg )
 
     def OnTextValidated( self, evt ):
+
+        if evt is None:
+            return
+
         """Set global constants based on input settings."""
         # get new values
         new_cutoff = float( self.hm_cutoff_box.GetValue() )
@@ -1224,14 +1229,14 @@ class BackgroundCalculator:
                                              xrc.XRCID("bg_min_std_input"),
                                              self.OnMinStdTextEnter,
                                              pending_color=params.wxvt_bg )
-        self.bg_minstd_textinput.SetValue( '%.2f'%params.bg_std_min )
+        self.bg_minstd_textinput.SetValue( str(params.bg_std_min) )
         # maximum bg std
         self.bg_maxstd_textinput = xrc.XRCCTRL(self.frame,"bg_max_std_input")
         wxvt.setup_validated_float_callback( self.bg_maxstd_textinput,
                                              xrc.XRCID("bg_max_std_input"),
                                              self.OnMinStdTextEnter,
                                              pending_color=params.wxvt_bg )
-        self.bg_maxstd_textinput.SetValue( '%.2f'%params.bg_std_max )
+        self.bg_maxstd_textinput.SetValue( str(params.bg_std_max) )
         # normalization type
         self.bg_norm_chooser = xrc.XRCCTRL(self.frame,"bg_normalization_input")
         self.bg_norm_chooser.SetSelection(params.bg_norm_type)
@@ -1258,14 +1263,14 @@ class BackgroundCalculator:
                                              xrc.XRCID("min_nonfore_intensity_input"),
                                              self.OnMinNonArenaTextEnter,
                                              pending_color=params.wxvt_bg )
-        self.min_nonarena_textinput.SetValue( '%.1f'%params.min_nonarena )
+        self.min_nonarena_textinput.SetValue( str(params.min_nonarena ))
         # min value for isarena
         self.max_nonarena_textinput = xrc.XRCCTRL(self.frame,"max_nonfore_intensity_input")
         wxvt.setup_validated_float_callback( self.max_nonarena_textinput,
                                              xrc.XRCID("max_nonfore_intensity_input"),
                                              self.OnMaxNonArenaTextEnter,
                                              pending_color=params.wxvt_bg )
-        self.max_nonarena_textinput.SetValue( '%.1f'%params.max_nonarena )
+        self.max_nonarena_textinput.SetValue( str(params.max_nonarena ))
 
         # morphology
         self.morphology_checkbox = xrc.XRCCTRL(self.frame,"morphology_checkbox")
@@ -1330,24 +1335,29 @@ class BackgroundCalculator:
             # changing the conversion from scrollbar units to threshold units
             self.scrollbar2thresh = float(maxv) / float(params.sliderres)
             return
-        (self.dfore,self.bw) = self.sub_bg(self.show_frame,docomputecc=False)
+        self.max_slider = 255. #/ num.min(self.dev)
+        #if num.isinf(self.max_slider):
+        #    self.max_slider = 255.
+        #(self.dfore,self.bw) = self.sub_bg(self.show_frame,docomputecc=False)
         # what is the maximum dfore?
-        self.max_slider = num.max(self.dfore)
+        #self.max_slider = num.max(self.dfore)
         self.scrollbar2thresh = float(self.max_slider) / float(params.sliderres)
 
     def SetThreshold(self):
-        #self.thresh_textinput.SetValue( '%.1f'%params.n_bg_std_thresh )
+        #self.thresh_textinput.SetValue( str(params.n_bg_std_thresh ))
         if params.n_bg_std_thresh < params.n_bg_std_thresh_low:
             params.n_bg_std_thresh_low = params.n_bg_std_thresh
         self.thresh_slider.SetThumbPosition( self.GetThresholdScrollbar() )
         self.thresh_low_slider.SetThumbPosition( self.GetThresholdLowScrollbar() )
-        self.thresh_textinput.SetValue('%.1f'%params.n_bg_std_thresh)
-        self.thresh_low_textinput.SetValue('%.1f'%params.n_bg_std_thresh_low)
+        self.thresh_textinput.SetValue(str(params.n_bg_std_thresh))
+        self.thresh_low_textinput.SetValue(str(params.n_bg_std_thresh_low))
+
     def GetThresholdScrollbar(self):
+
         if not hasattr(self,'scrollbar2thresh'):
             self.SetThreshBounds()
         if self.scrollbar2thresh == 0:
-            return 0
+            return 0.
         else:
             return(params.n_bg_std_thresh/self.scrollbar2thresh)
 
@@ -1355,7 +1365,7 @@ class BackgroundCalculator:
         if not hasattr(self,'scrollbar2thresh'):
             self.SetThreshBounds()
         if self.scrollbar2thresh == 0:
-            return 0
+            return 0.
         else:
             return(params.n_bg_std_thresh_low/self.scrollbar2thresh)
 
@@ -1381,22 +1391,38 @@ class BackgroundCalculator:
     #    self.OnThreshSlider( True )
 
     def OnShowBG( self, evt ):
+
+        if evt is None:
+            return
+
         #self.menu.Enable( xrc.XRCID("menu_show_bin"), False )
         self.frame_slider.Enable( False )
         self.DoSub()
         
     def OnShowThresh( self, evt ):
+
+        if evt is None:
+            return
+
         #self.menu.Enable( xrc.XRCID("menu_show_bin"), True )
         self.frame_slider.Enable( True )
         self.DoSub()
 
     def OnImgChoice( self, evt ):
+
+        if evt is None:
+            return
+
         new_img_type = self.bg_img_chooser.GetSelection()
         if new_img_type is not wx.NOT_FOUND:
             self.show_img_type = new_img_type
             self.DoSub()
 
     def OnBgTypeChoice( self, evt ):
+
+        if evt is None:
+            return
+
         new_bg_type = self.bg_type_chooser.GetSelection()
         if new_bg_type is not wx.NOT_FOUND:
             params.bg_type = new_bg_type
@@ -1409,6 +1435,10 @@ class BackgroundCalculator:
                 self.DoSub()
 
     def OnNormChoice( self, evt ):
+
+        if evt is None:
+            return
+
         new_norm_type = self.bg_norm_chooser.GetSelection()
         if new_norm_type is not wx.NOT_FOUND:
             params.bg_norm_type = new_norm_type
@@ -1445,6 +1475,10 @@ class BackgroundCalculator:
                 self.DoSub()
 
     def OnHFClick( self, evt ):
+
+        if evt is None:
+            return
+
         if self.hf_window_open:
             self.hf.frame.Raise()
             return
@@ -1452,22 +1486,30 @@ class BackgroundCalculator:
         self.hf.frame.Show()
 
     def OnDetectArenaCheck( self, evt ):
+
         if evt is None:
             return
+
         params.do_set_circular_arena = self.detect_arena_checkbox.GetValue()
         self.detect_arena_button.Enable(params.do_set_circular_arena)
         self.UpdateIsArena()
         self.DoSub()
 
     def OnMorphologyCheck( self, evt ):
+
         if evt is None:
             return
+
         params.do_use_morphology = self.morphology_checkbox.GetValue()
         self.opening_radius_textinput.Enable(params.do_use_morphology)
         self.closing_radius_textinput.Enable(params.do_use_morphology)
         self.DoSub()
 
     def OnOpeningRadiusTextEnter(self, evt):
+
+        if evt is None:
+            return
+
         textentered = self.opening_radius_textinput.GetValue()
         # convert to number
         try:
@@ -1481,6 +1523,10 @@ class BackgroundCalculator:
             self.DoSub()
 
     def OnClosingRadiusTextEnter(self, evt):
+
+        if evt is None:
+            return
+
         textentered = self.closing_radius_textinput.GetValue()
         # convert to number
         try:
@@ -1494,7 +1540,11 @@ class BackgroundCalculator:
         if evt is not None:
             self.DoSub()
             
-    def OnMinFracFramesIsBackTextEnter(self,evt=None):         
+    def OnMinFracFramesIsBackTextEnter(self,evt=-1):
+
+        if evt is None:
+            return
+
         textentered = self.min_frac_frames_isback_textinput.GetValue()
         # convert to number
         try:
@@ -1518,7 +1568,11 @@ class BackgroundCalculator:
         # update the display
         self.DoSub()        
 
-    def OnExpBGFGModelFillChoice(self,evt=None):
+    def OnExpBGFGModelFillChoice(self,evt=-1):
+
+        if evt is None:
+            return
+
         params.expbgfgmodel_fill = self.expbgfgmodel_fill_chooser.GetStringSelection()
         wx.BeginBusyCursor()
         wx.Yield()
@@ -1544,6 +1598,10 @@ class BackgroundCalculator:
             self.isarena = self.isarena & self.roi
 
     def OnDetectArenaClick( self, evt ):
+
+        if evt is None:
+            return
+
         if self.detect_arena_window_open:
             self.detect_arena.frame.Raise()
             return
@@ -1554,6 +1612,9 @@ class BackgroundCalculator:
         self.detect_arena.frame.Show()
 
     def OnQuitDetectArena( self, evt ):
+
+        if evt is None:
+            return
 
         # save parameters found
         [params.arena_center_x,params.arena_center_y,
@@ -1571,6 +1632,10 @@ class BackgroundCalculator:
         self.DoSub()
 
     def OnFixBgClick( self, evt ):
+
+        if evt is None:
+            return
+
         if self.fixbg_window_open:
             self.fixbg.frame.Raise()
             return
@@ -1581,6 +1646,9 @@ class BackgroundCalculator:
         self.fixbg.frame.Show()
 
     def OnQuitFixBg( self, evt ):
+
+        if evt is None:
+            return
 
         # close frame
         reallyquit = self.fixbg.CheckSave()
@@ -1613,6 +1681,10 @@ class BackgroundCalculator:
         self.fixbg_polygons = polygons[:]
 
     def OnROIClick( self, evt ):
+
+        if evt is None:
+            return
+
         if self.roi_window_open:
             self.roigui.frame.Raise()
             return
@@ -1623,6 +1695,9 @@ class BackgroundCalculator:
         self.roigui.frame.Show()
 
     def OnQuitROI( self, evt ):
+
+        if evt is None:
+            return
 
         # close frame
         reallyquit = self.roigui.CheckSave()
@@ -1642,20 +1717,32 @@ class BackgroundCalculator:
         self.UpdateIsArena()
 
     def OnQuitHF(self, evt ):
+
+        if evt is None:
+            return
+
         self.hf_window_open = False
         self.hf.frame.Hide()
         self.DoSub()
     
     def OnThreshSlider( self, evt ):
+
+        if evt is None:
+            return
+
         params.n_bg_std_thresh = self.ReadScrollbar()
         params.n_bg_std_thresh_low = self.ReadScrollbarLow()
         if params.n_bg_std_thresh_low > params.n_bg_std_thresh:
             params.n_bg_std_thresh_low = params.n_bg_std_thresh
-        self.thresh_textinput.SetValue( '%.1f'%params.n_bg_std_thresh )
-        self.thresh_low_textinput.SetValue( '%.1f'%params.n_bg_std_thresh_low )
+        self.thresh_textinput.SetValue( str(params.n_bg_std_thresh) )
+        self.thresh_low_textinput.SetValue( str(params.n_bg_std_thresh_low) )
         if evt is not None: self.DoSub()
 
     def OnThreshTextEnter( self, evt ):
+
+        if evt is None:
+            return
+
         # get the value entered
         params.n_bg_std_thresh = float(self.thresh_textinput.GetValue())
         params.n_bg_std_thresh_low = float(self.thresh_low_textinput.GetValue())
@@ -1672,6 +1759,10 @@ class BackgroundCalculator:
         if evt is not None: self.DoSub()
 
     def OnMinStdTextEnter( self, evt ):
+
+        if evt is None:
+            return
+
         # get the value entered
         textentered = self.bg_minstd_textinput.GetValue()
         maxtextentered = self.bg_maxstd_textinput.GetValue()
@@ -1682,8 +1773,8 @@ class BackgroundCalculator:
 
             # make sure that min <= max
             if numentered > maxnumentered:
-                self.bg_minstd_textinput.SetValue('%.2f'%params.bg_std_min)
-                self.bg_maxstd_textinput.SetValue('%.2f'%params.bg_std_max)
+                self.bg_minstd_textinput.SetValue(str(params.bg_std_min))
+                self.bg_maxstd_textinput.SetValue(str(params.bg_std_max))
                 return
 
             # make sure it is in a valid interval
@@ -1693,8 +1784,8 @@ class BackgroundCalculator:
                 maxnumentered = .001
             params.bg_std_min = numentered
             params.bg_std_max = maxnumentered
-            self.bg_minstd_textinput.SetValue('%.2f'%params.bg_std_min)
-            self.bg_maxstd_textinput.SetValue('%.2f'%params.bg_std_max)
+            self.bg_minstd_textinput.SetValue(str(params.bg_std_min))
+            self.bg_maxstd_textinput.SetValue(str(params.bg_std_max))
             if params.use_median:
                 self.dev[:] = self.mad
             else:
@@ -1703,8 +1794,8 @@ class BackgroundCalculator:
             self.dev[self.dev > params.bg_std_max] = params.bg_std_max
         except ValueError:
             # if not a number, then set the value to the previous threshold
-            self.bg_minstd_textinput.SetValue('%.2f'%params.bg_std_min)
-            self.bg_maxstd_textinput.SetValue('%.2f'%params.bg_std_max)
+            self.bg_minstd_textinput.SetValue(str(params.bg_std_min))
+            self.bg_maxstd_textinput.SetValue(str(params.bg_std_max))
             return
         if evt is not None:
             self.DoSub()
@@ -1715,6 +1806,10 @@ class BackgroundCalculator:
                 self.DoSub()
 
     def OnMinNonArenaTextEnter( self, evt ):
+
+        if evt is None:
+            return
+
         # get the value entered
         textentered = self.min_nonarena_textinput.GetValue()
         # convert to number
@@ -1722,13 +1817,17 @@ class BackgroundCalculator:
             params.min_nonarena = float(textentered)
         except ValueError:
             # if not a number, then set the value to the previous threshold
-            self.min_nonarena_textinput.SetValue('%.1f'%params.min_nonarena)
+            self.min_nonarena_textinput.SetValue(str(params.min_nonarena))
             return
         if evt is not None:
             self.UpdateIsArena()
             self.DoSub()
 
     def OnMaxNonArenaTextEnter( self, evt ):
+
+        if evt is None:
+            return
+
         # get the value entered
         textentered = self.max_nonarena_textinput.GetValue()
         # convert to number
@@ -1736,7 +1835,7 @@ class BackgroundCalculator:
             params.max_nonarena = float(textentered)
         except ValueError:
             # if not a number, then set the value to the previous threshold
-            self.max_nonarena_textinput.SetValue('%.1f'%params.max_nonarena)
+            self.max_nonarena_textinput.SetValue(str(params.max_nonarena))
             return
         if evt is not None:
             self.UpdateIsArena()
@@ -1744,6 +1843,10 @@ class BackgroundCalculator:
 
 
     def OnFrameSlider( self, evt ):
+
+        if evt is None:
+            return
+
         self.show_frame = self.frame_slider.GetThumbPosition()
         self.frame_text.SetLabel( "frame %d"%(self.show_frame) )
         if evt is not None:
@@ -1956,13 +2059,21 @@ class BgSettingsDialog:
             
         self.expbgfgmodel_llr_thresh.SetValue(str(params.expbgfgmodel_llr_thresh))
             
-    def OnCalculate(self,evt=None):
+    def OnCalculate(self,evt=-1):
+
+        if evt is None:
+            return
+
         wx.BeginBusyCursor()
         wx.Yield()
         self.bg.est_bg(self.frame)
         wx.EndBusyCursor()
 
     def OnTextValidated(self,evt):
+
+        if evt is None:
+            return
+
         tmp = int(self.nframes.GetValue())
         if tmp > 0:
             params.n_bg_frames = tmp
@@ -1971,6 +2082,10 @@ class BgSettingsDialog:
             self.nframes.SetValue(str(params.n_bg_frames))
 
     def OnTextValidatedFirstframe(self,evt):
+
+        if evt is None:
+            return
+
         tmp0 = int(self.bg_firstframe.GetValue())
         tmp = tmp0
         tmp = max(tmp,0)
@@ -1981,6 +2096,10 @@ class BgSettingsDialog:
             self.bg_firstframe.SetValue(str(params.bg_firstframe))
 
     def OnTextValidatedLastframe(self,evt):
+
+        if evt is None:
+            return
+
         tmp0 = int(self.bg_lastframe.GetValue())
         tmp = tmp0
         tmp = max(tmp,params.bg_firstframe)
@@ -1989,6 +2108,10 @@ class BgSettingsDialog:
             self.bg_lastframe.SetValue(str(params.bg_lastframe))
 
     def OnTextValidatedLLRThresh(self,evt):
+
+        if evt is None:
+            return
+
         try:
             tmp = float(self.expbgfgmodel_llr_thresh.GetValue())
         except:
@@ -1997,6 +2120,10 @@ class BgSettingsDialog:
         params.expbgfgmodel_llr_thresh = tmp
 
     def OnAlgorithmChoice(self,evt):
+
+        if evt is None:
+            return
+
         new_alg_type = self.algorithm.GetSelection()
         if new_alg_type is not wx.NOT_FOUND:
             if new_alg_type == params.ALGORITHM_MEDIAN:
@@ -2004,7 +2131,10 @@ class BgSettingsDialog:
             else:
                 params.use_median = False
                 
-    def OnChooseExpBGFGModelFileName(self,evt=None):
+    def OnChooseExpBGFGModelFileName(self,evt=-1):
+
+        if evt is None:
+            return
 
         success = False
         if params.expbgfgmodel_filename is None:
@@ -2028,8 +2158,11 @@ class BgSettingsDialog:
 
         return success
 
-    def OnCheckExpBGFGModel(self,evt=None):
+    def OnCheckExpBGFGModel(self,evt=-1):
         
+        if evt is None:
+            return
+
         params.use_expbgfgmodel = self.expbgfgmodel_checkbox.IsChecked()
         if params.use_expbgfgmodel and params.expbgfgmodel_filename is None:
             success = self.OnChooseExpBGFGModelFileName()
