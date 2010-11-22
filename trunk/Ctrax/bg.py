@@ -433,7 +433,7 @@ class BackgroundCalculator:
                                   'Computing median, median absolute deviation of %d frames to estimate background model'%nframes,
                                   nframes*noffsets,
                                   parent,
-                                  wx.PD_APP_MODAL|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.PD_REMAINING_TIME)
+                                  wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.PD_REMAINING_TIME)
 
 
         # allocate memory for median and mad
@@ -475,8 +475,8 @@ class BackgroundCalculator:
             for i in range(nframes):
 
                 if params.interactive and not params.batch_executing:
-                    (keepgoing,skip) = progressbar.Update(value=offseti*nframes + i,
-                                                          newmsg='Reading in piece of frame %d (%d / %d), offset = %d (%d / %d)'%(frame,i+1,nframes,rowoffset,offseti+1,noffsets))
+                    keepgoing = progressbar.Update(value=offseti*nframes + i,
+                                                   newmsg='Reading in piece of frame %d (%d / %d), offset = %d (%d / %d)'%(frame,i+1,nframes,rowoffset,offseti+1,noffsets))
                     if not keepgoing:
                         progressbar.Destroy()
                         if isbackup:
@@ -1012,6 +1012,7 @@ class BackgroundCalculator:
             if num.any(num.isnan(dfore)):
                 raise ValueError('Difference between image and bg center has nan values')
 
+            #print "dev.range = [%f,%f]"%(num.min(self.dev),num.max(self.dev))
             dfore[self.isarena] /= self.dev[self.isarena]
             
             if num.any(num.isnan(dfore)):

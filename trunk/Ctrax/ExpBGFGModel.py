@@ -40,6 +40,7 @@ import getopt
 import sys
 import os.path
 import pickle
+import scipy.io
 
 if params.interactive:
     import wx
@@ -781,6 +782,36 @@ class ExpBGFGModel:
         self.always_bg_mask_frac = self.always_bg_mask_count / self.n_always_bg_mask_samples
         self.always_bg_mask = self.always_bg_mask_frac >= self.min_always_bg_mask_frac        
     
+    def save_mat(self,matFileName):
+        
+        out = dict()
+        if hasattr(self,'fg_mu'):
+            out['fg_mu'] = self.fg_mu
+        if hasattr(self,'fg_sigma'):
+            out['fg_sigma'] = self.fg_sigma
+        if hasattr(self,'fg_log_Z'):
+            out['fg_log_Z'] = self.fg_log_Z
+        if hasattr(self,'bg_mu'):
+            out['bg_mu'] = self.bg_mu
+        if hasattr(self,'bg_sigma'):
+            out['bg_sigma'] = self.bg_sigma
+        if hasattr(self,'bg_log_Z'):
+            out['bg_log_Z'] = self.bg_log_Z
+        if hasattr(self,'obj_detection_dist_frac_fg'):
+            out['obj_detection_dist_frac_fg'] = self.obj_detection_dist_frac_fg
+        if hasattr(self,'obj_detection_dist_frac_bg'):
+            out['obj_detection_dist_frac_bg'] = self.obj_detection_dist_frac_bg
+        if hasattr(self,'obj_detection_dist_edges'):
+            out['obj_detection_dist_edges'] = self.obj_detection_dist_edges
+        if hasattr(self,'obj_detection_dist_centers'):
+            out['obj_detection_dist_centers'] = self.obj_detection_dist_centers
+        if hasattr(self,'always_bg_mask_frac'):
+            out['always_bg_mask_frac'] = self.always_bg_mask_frac
+        if hasattr(self,'always_bg_mask'):
+            out['always_bg_mask'] = self.always_bg_mask
+
+        scipy.io.savemat( matfilename, out, oned_as='column' )
+
     def save(self,outputFileName):
         
         fid = open(outputFileName,"w")
@@ -1301,7 +1332,7 @@ def test2():
     plt.show()
     
     return self
-    
+
 def main():
     """
     main()
@@ -1310,8 +1341,8 @@ def main():
     at the start of the function, and plot the results. 
     """
 
-    shortopts = "f:p:m:a:o:"
-    longopts = ["filename=","params=","movie=","ann=","output="]
+    shortopts = "f:p:m:a:o:s:"
+    longopts = ["filename=","params=","movie=","ann=","output=","mat="]
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
     except getopt.GetoptError, err:
@@ -1328,6 +1359,8 @@ def main():
         print "      Default: movie.ufmf.ann"
         print "    -o,--output <name of file to output results to>"
         print "      Default: ExpBGFGModelResults.pickle"
+        print "    --mat <name of mat file to output results to>"
+        print "      Default: ExpBGFGModelResults.mat"
         sys.exit(2)
         
     expdirsFileName = 'expdirs.txt'
@@ -1335,6 +1368,7 @@ def main():
     movieFileStr = 'movie.ufmf'
     annFileStr = 'movie.ufmf.ann'
     outputFileName = 'ExpBGFGModelResults.pickle'
+    matFileName = 'ExpBGFGModelResults.mat'
     
     for o,a in opts:
         if o in ("-f","--filename"):
@@ -1352,6 +1386,9 @@ def main():
         elif o in ("-o","--output"):
             outputFileName = a
             print "outputFileName = " + a
+        elif o in ("-s","--mat"):
+            matFileName = a
+            print "matFileName = " + a
         else:
             assert False, "unhandled option"
 
@@ -1479,6 +1516,7 @@ def main():
     
     model.est_marginals()
     model.save(outputFileName)
+    model.save_mat(matFileName)
     model.show()
 
     return model

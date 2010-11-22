@@ -211,6 +211,7 @@ instead, where <basename> is the base name of the movie.\n"
             elif name.lower() == '--settingsfile':
                 self.settingsfilename = value
                 self.settingsdir = os.path.dirname(value)
+                print "settingsfile = " + str(self.settingsfilename)
             elif name.lower() == '--autoestimatebackground':
                 if value.lower() == 'false':
                     params.batch_autodetect_bg_model = False
@@ -279,12 +280,13 @@ instead, where <basename> is the base name of the movie.\n"
 	"""
 
         doreadbgmodel = not( params.interactive or self.IsBGModel())
-        try:
-            annot.LoadSettings(self.settingsfilename,self.bg_imgs,
-                               doreadbgmodel=doreadbgmodel)
-        except:
-            print 'Could not read annotation file ' + self.settingsfilename
-            return
+        print "loading settings from file " + str(self.settingsfilename)
+        #try:
+        annot.LoadSettings(self.settingsfilename,self.bg_imgs,
+                           doreadbgmodel=doreadbgmodel)
+        #except:
+        #    print 'Could not read annotation file ' + self.settingsfilename
+        #    return
 
     def OpenMovie( self ):
         """Attempt to open a movie given the current filename."""
@@ -349,6 +351,9 @@ instead, where <basename> is the base name of the movie.\n"
 
             self.ann_file = annot.AnnotationFile( self.ann_filename,
                                                   self.bg_imgs)
+
+            if hasattr(self,'settingsfilename'):
+                self.LoadSettings()
 
             if DEBUG: print "read annotation file"
 

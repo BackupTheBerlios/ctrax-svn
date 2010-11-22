@@ -675,7 +675,7 @@ class TrackingSettings:
             # draw circles
             for i,obs in enumerate(obs_filtered):
                 plot_new_stuff = imagesk.draw_circle(obs.center.x,
-                                                     obs.center.y,params.params.max_jump,
+                                                     obs.center.y,params.params.max_jump*2.,
                                                      params.params.colors[i%len(params.params.colors)])
                 plot_linesegs.extend(plot_new_stuff)
                 plot_new_stuff = imagesk.draw_circle(obs.center.x,

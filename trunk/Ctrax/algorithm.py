@@ -252,6 +252,6 @@ class CtraxAlgorithm (settings.AppWithSettings):
             savename = self.matfilename
         print "Saving to mat file "+savename+"...\n"
 
-        self.ann_file.WriteMAT( savename )
+        self.ann_file.WriteMAT( savename, dosavestamps=True )
         print "Done\n"
 

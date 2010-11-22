@@ -497,9 +497,11 @@ def trysplit(ellipses,i,isdone,L,dfore):
     if DEBUG: print 'trying to split target i=%d: '%i
     if DEBUG: print str(ellipses[i])
 
-    # get datapoints
+    # get datapoints in this connected component
     (r,c) = num.where(L==i+1)
+    if DEBUG: print "number of pixels in this component = %d"%len(r)
     x = num.hstack((c.reshape(c.size,1),r.reshape(r.size,1))).astype(kcluster.DTYPE)
+    # weights of datapoints
     w = dfore[L==i+1].astype(kcluster.DTYPE)
     ndata = r.size
 
@@ -519,6 +521,7 @@ def trysplit(ellipses,i,isdone,L,dfore):
     isforebox0 = Lbox == i+1
     dforebox[Lbox!=i+1] = 0
 
+    # loop over increasing thresholds -- hard-coded to 20 iterations
     for currthresh in num.linspace(params.n_bg_std_thresh_low,
                                    min(params.n_bg_std_thresh,
                                        num.max(dforebox)),20):
@@ -531,10 +534,11 @@ def trysplit(ellipses,i,isdone,L,dfore):
 
         if DEBUG: print 'for thresh = %.2f, ncomponents = %d'%(currthresh,ncomponents)
 
+        # if no new components, increase threshold
         if ncomponents == 1:
             continue
 
-        # remove components with too small area
+        # check if we just split off a tiny area. if so, just set that area to be background in Lbox
         removed = []
         for j in range(ncomponents):
             areaj = num.sum(Lbox==j+1)
@@ -542,13 +546,16 @@ def trysplit(ellipses,i,isdone,L,dfore):
                 Lbox[Lbox==j+1] = 0
                 removed += j,
         if DEBUG: print 'removed = ' + str(removed)
+
+        # renumber connected components to account for removed components
         for j in range(ncomponents):
             if num.any(num.array(removed)==j):
                 continue
             nsmaller = num.sum(num.array(removed)<j)
             Lbox[Lbox==j+1] = j+1-nsmaller
         ncomponents -= len(removed)
-        if DEBUG: print 'ncomponents = ' + str(ncomponents)
+
+        if DEBUG: print 'after removing small components, ncomponents = ' + str(ncomponents)
 
         # if we've created a new connected component
         if ncomponents > 1:
@@ -558,10 +565,17 @@ def trysplit(ellipses,i,isdone,L,dfore):
 
     if ncomponents > 1:
 
+        if DEBUG:
+            for j in range(ncomponents):
+                print "pixels belonging to component %d:"%j
+                [rtmp,ctmp] = num.where(Lbox==j+1)
+                rtmp = rtmp + r1
+                ctmp = ctmp + c1
+
         # succeeded in splitting into multiple connected components 
         # by raising the threshold, use this as initialization for GMM
 
-        # get clusters for each cc
+        # get ellipses for each connected component created by raising threshold
         mu = num.zeros([ncomponents,2],dtype=kcluster.DTYPE)
         S = num.zeros([2,2,ncomponents],dtype=kcluster.DTYPE)
         priors = num.zeros(ncomponents,dtype=kcluster.DTYPE)
@@ -590,24 +604,34 @@ def trysplit(ellipses,i,isdone,L,dfore):
                 S[:,:,j] = num.dot(V, num.dot(num.diag(D), V.T ))
 
             priors[j] = rj.size
-            if DEBUG: print 'component %d: mu = '%j + str(mu[j,:]) + ', S = ' + str(S[:,:,j]) + ', prior = ' + str(priors[j])
+            if DEBUG: print 'fit ellipse to component %d: mu = '%j + str(mu[j,:]) + ', S = ' + str(S[:,:,j]) + ', unnormalized prior = ' + str(priors[j])
         priors = priors / num.sum(priors)
-        # label all points
+
+        # label all points in the original connected component
         (gamma,e) = kcluster.gmmmemberships(mu,S,priors,x,w)
-        # recompute clusters
+
+        # recompute ellipses based on these labels
         kcluster.gmmupdate(mu,S,priors,gamma,x,w)
 
-        if DEBUG: print 'after updating, '
-        if DEBUG:
-            for j in range(ncomponents):
-                print 'component %d: mu = '%j + str(mu[j,:]) + ', S = ' + str(S[:,:,j]) + ', prior = ' + str(priors[j])
-
+        # compute areas
+        (gamma,e) = kcluster.gmmmemberships(mu,S,priors,x,w)
+        idx = num.argmax(gamma,axis=1)
         area = num.zeros(ncomponents)
         for j in range(ncomponents):
-            (major,minor,angle) = cov2ell(S[:,:,j])
-            area[j] = major*minor*num.pi*4.0
+            area[j] = len(num.flatnonzero(idx==j))
+
+        #for j in range(ncomponents):
+        #    (major,minor,angle) = cov2ell(S[:,:,j])
+        #    area[j] = major*minor*num.pi*4.0
+
+        if DEBUG:
+            print 'after gmm update, '
+            for j in range(ncomponents):
+                print 'ellipse fit to component %d: mu = '%j + str(mu[j,:]) + ', S = ' + str(S[:,:,j]) + ', prior = ' + str(priors[j]) + ', area = ' + str(area[j])
         
-        removed, = num.where(area <= params.minshape.area)
+        # remove ellipses with area < minarea
+        #removed, = num.where(area < params.minshape.area)
+        removed, = num.where(area < max(1.,params.maxareadelete))
         if removed.size > 0:
             if DEBUG: print 'removing components ' + str(removed)
             mu = num.delete(mu,removed,axis=0)
@@ -617,13 +641,14 @@ def trysplit(ellipses,i,isdone,L,dfore):
             if DEBUG: print "now there are " + str(ncomponents) + " components"
 
         if ncomponents > 1:
+
+            if DEBUG: print "recomputing memberships in case we deleted any components"
             # recompute memberships
             (gamma,e) = kcluster.gmmmemberships(mu,S,priors,x,w)
             
-            # store
-            mu0 = num.zeros([ncomponents,2])
-            mu0[:,0] = mu[:,0]
-            mu0[:,1] = mu[:,1]
+            # store 
+            mu0 = mu
+            S0 = S
             gamma0 = gamma
             major0 = num.zeros(ncomponents)
             minor0 = num.zeros(ncomponents)
@@ -693,6 +718,7 @@ def trysplit(ellipses,i,isdone,L,dfore):
                 break
             ncomponents += 1
             mu0 = mu.copy()
+            S0 = S.copy()
             major0 = major.copy()
             minor0 = minor.copy()
             angle0 = angle.copy()
@@ -723,18 +749,39 @@ def trysplit(ellipses,i,isdone,L,dfore):
         ellipses[i].area = area0[0]
         # if small enough, set to done
         isdone[i] = ellipses[i].area <= params.maxshape.area
+        if DEBUG: print "Set isdone for original ellipse[%d] to %d"%(i,isdone[i])
         # add new
         for j in range(1,ncomponents):
             ellipse = Ellipse(mu0[j,0],mu0[j,1],minor0[j],major0[j],angle0[j],area0[j])
             ellipses.append(ellipse)
             isdone = num.append(isdone,ellipse.area <= params.maxshape.area)
             L[r[idx==j],c[idx==j]] = len(ellipses)
+            if DEBUG: print "adding ellipse %d = "%(len(ellipses)-1) + str(ellipse) + " with isdone[%d] = %d"%(len(ellipses)-1,isdone[-1])
+            if DEBUG: print "reset L to %d for %d pixels"%(len(ellipses),len(num.flatnonzero(idx==j)))
+            if len(num.flatnonzero(idx==j)) < 1:
+                if DEBUG: 
+                    print "r = " + str(r)
+                    print "c = " + str(c)
+                    print "mu0 = " + str(mu0)
+                    for jj in range(ncomponents):
+                        print "S0[:,:,%d] = "%jj + str(S0[:,:,jj])
+                    print "major0 = " + str(major0)
+                    print "minor0 = " + str(minor0)
+                    print "angle0 = " + str(angle0)
+                    print "gamma0.shape = " + str(gamma0)
+                    print "gamma0 = " + str(gamma0)
+                    print "idx.shape = " + str(idx.shape)
+                    print "idx = " + str(idx)
+
+                raise Exception('No pixels assigned to split ellipse %d = '%j + str(ellipse) )
+
         if DEBUG: print 'split into %d ellipses: '%ncomponents
         if DEBUG: print 'ellipses[%d] = '%i + str(ellipses[i])
         if DEBUG:
             for j in range(1,ncomponents):
                 print 'ellipses[%d] = '%(len(ellipses)-j) + str(ellipses[-j])
         return isdone
+
 def fixlarge(ellipses,L,dfore):
 
     # whether or not we have tried to fix the ellipse
