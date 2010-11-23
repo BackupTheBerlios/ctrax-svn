@@ -5,6 +5,8 @@ function s = structappend(sbase,snew,dim)
 if nargin < 3,
   if length(sbase) > 1,
     dim = argmax(size(sbase));
+  elseif length(snew) > 1,
+    dim = argmax(size(snew));
   else
     dim = 2;
   end

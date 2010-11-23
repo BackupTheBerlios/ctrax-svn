@@ -1,3 +1,4 @@
+% [y,npadl,npadu] = padgrab(x,padv,l1,u1,l2,u2,...)
 function [y,npadl,npadu] = padgrab(x,padv,varargin)
 
 % parse arguments
@@ -14,9 +15,9 @@ if mod(nd,1) ~= 0 || nd > nd1,
 end
 l = cell2mat(varargin(1:2:end));
 u = cell2mat(varargin(2:2:end));
-if any(u < l),
-  error(usagestring);
-end
+%if any(u < l),
+%  error(usagestring);
+%end
 sz = size(x);
 if nd < nd1,
   x = reshape(x,[sz(1:nd-1),prod(sz(nd:end)),1]);
@@ -26,12 +27,19 @@ end
 l1 = min(max(l,1),sz);
 u1 = min(max(u,1),sz);
 a = cell(1,nd);
+aisempty = false(1,nd);
 for i = 1:nd,
-  a{i} = l1(i):u1(i);
+  if l(i) > u(i) || u(i) < 1 || l(i) > sz(i),
+    a{i} = [];
+    aisempty(i) = true;
+  else
+    a{i} = l1(i):u1(i);
+  end
 end
 y = x(a{:});
-npadl = l1-l;
+npadl = l1-l+aisempty;
 npadu = u-u1;
+npadl = npadl + (npadu < 0).*npadu;
 
 if any(npadl > 0),
   y = padarray(y,npadl,padv,'pre');

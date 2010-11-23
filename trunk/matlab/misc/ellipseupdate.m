@@ -31,7 +31,7 @@ function [hEllipse,X,Y] = ellipseupdate(h,a,b,x0,y0,phi,lineStyle)
 % Copyright (c)2003, Lei Wang <WangLeiBox@hotmail.com>
 %$Revision: 1.1 $  $ 4/1/2003 5:42:24 PM $
 
-if (nargin < 3)|(nargin > 7),
+if (nargin < 3)||(nargin > 7),
     error('Please see help for INPUT DATA.');
     
 elseif nargin == 3
