@@ -30,36 +30,53 @@ function labelmanybehaviors_OpeningFcn(hObject, eventdata, handles, varargin)
 % varargin   command line arguments to labelmanybehaviors (see VARARGIN)
 
 % Choose default command line output for labelmanybehaviors
-if length(varargin) < 4 || length(varargin) == 5 || length(varargin) == 6 || length(varargin) > 9,
-  error('Usage: [starts,ends] = labelmanybehaviors(trx,fly,moviename,behaviors,<starts,ends,labels>,<scattercommand>,<behaviorcolors>)');
+if length(varargin) < 4,
+  error('Usage: [starts,ends] = labelmanybehaviors(trx,fly,moviename,behaviors,...');
 end
 handles.output = hObject;
 handles.trx = varargin{1};
 handles.fly = varargin{2};
 handles.moviename = varargin{3};
 handles.behaviors = varargin{4};
-if length(varargin) >= 7,
-  handles.segstarts = varargin{5}-handles.trx(handles.fly).firstframe+1;
-  handles.segends = varargin{6}-handles.trx(handles.fly).firstframe+1;
-  handles.labels = varargin{7};
-else
-  handles.segstarts = [];
-  handles.segends = [];
-  handles.labels = {};
+[handles.segstarts,handles.segends,handles.labels,...
+  handles.autosavefilename,...
+  handles.scattercommand,...
+  handles.behaviorcolors,...
+  restart] = ...
+  myparse(varargin(5:end),...
+  'segstarts',[],'segends',[],'labels',{},...
+  'autosavefilename','labeledbehaviors_autosave.mat',...
+  'scattercommand','min(trk.velmag,7)',...
+  'behaviorcolors',zeros(0,3),...
+  'restart',false);
+
+if length(handles.segstarts) ~= length(handles.segends) || ...
+    length(handles.segstarts) ~= length(handles.labels),
+  error('segstarts, segends, and labels must all be the same size');
 end
+if restart,
+  if ~isempty(handles.segstarts),
+    error('segstarts, segends, and labels must be empty if restart set to true');
+  end
+  tmp = load(handles.autosavefilename);
+  if ~tmp.firstframe == handles.trx(handles.fly).firstframe,
+    error('Firstframe for autosave data = %d, but for input fly = %d',tmp.firstframe,handles.trx(handles.fly).firstframe);
+  end
+  if ~tmp.fly == handles.fly,
+    error('Fly for autosave data = %d, but for input = %d',tmp.fly,handles.fly);
+  end
+  handles.segstarts = tmp.starts;
+  handles.segends = tmp.ends;
+  handles.labels = tmp.labels;
+end
+if ~isempty(handles.segstarts),
+  handles.segstarts = handles.segstarts - handles.trx(handles.fly).firstframe+1;
+  handles.segends = handles.segends-handles.trx(handles.fly).firstframe+1;
+end
+
 handles.behaviors = [handles.behaviors,setdiff(unique(handles.labels),handles.behaviors)];
 handles.nbehaviors = length(handles.behaviors);
-if length(varargin) >= 8 && ~isempty(varargin{8}),
-  handles.scattercommand = varargin{8};
-else
-  handles.scattercommand = 'min(trk.velmag,7)';
-end
 set(handles.scatteredit,'string',handles.scattercommand);
-if length(varargin) >= 9 && ~isempty(varargin{9}),
-  handles.behaviorcolors = varargin{9};
-else
-  handles.behaviorcolors = zeros(0,3);
-end
 
 n = handles.nbehaviors - size(handles.behaviorcolors,1);
 if n > 0,
@@ -591,8 +608,11 @@ guidata(hObject,handles);
 starts = handles.segstarts + handles.trx(handles.fly).firstframe-1;
 ends = handles.segends + handles.trx(handles.fly).firstframe-1;
 labels = handles.labels;
+fly = handles.fly;
+firstframe = handles.trx(handles.fly).firstframe;
 
-save labeledbehaviors_autosave.mat starts ends labels
+save(handles.autosavefilename,'starts','ends','labels','firstframe','fly');
+fprintf('Autosaving to file %s\n',handles.autosavefilename);
 
 function scatteredit_Callback(hObject, eventdata, handles)
 % hObject    handle to scatteredit (see GCBO)

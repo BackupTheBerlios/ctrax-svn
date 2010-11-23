@@ -17,13 +17,22 @@ nosey = data.y_mm + 2*sin(data.theta).*data.a_mm;
 dx = diff(tailx);
 dy = diff(taily);
 
+if ~isfield(data,'dt'),
+  if isfield(data,'timestamps'),
+    data.dt = diff(data.timestamps);
+  else
+    data.dt = repmat(1/data.fps,[1,data.nframes-1]);
+  end
+  data.units.dt = 's';
+end
+
 % project onto body coords
 if data.nframes < 2,
   data.du_tail = [];
   data.dv_tail = [];
 else
-  data.du_tail = dx.*cos(data.theta(1:end-1)) + dy.*sin(data.theta(1:end-1))*data.fps;
-  data.dv_tail = dx.*cos(data.theta(1:end-1)+pi/2) + dy.*sin(data.theta(1:end-1)+pi/2)*data.fps;
+  data.du_tail = dx.*cos(data.theta(1:end-1)) + dy.*sin(data.theta(1:end-1))./data.dt;
+  data.dv_tail = dx.*cos(data.theta(1:end-1)+pi/2) + dy.*sin(data.theta(1:end-1)+pi/2)./data.dt;
 end
 data.units.du_tail = parseunits('mm/s');
 data.units.dv_tail = parseunits('mm/s');
@@ -41,7 +50,7 @@ else
   meantaily = (taily(1:end-1)+taily(2:end))/2;
   anglenose1 = atan2(nosey(1:end-1)-meantaily,nosex(1:end-1)-meantailx);
   anglenose2 = atan2(nosey(2:end)-meantaily,nosex(2:end)-meantailx);
-  data.dtheta_tail = modrange(anglenose2-anglenose1,-pi,pi)*data.fps;
+  data.dtheta_tail = modrange(anglenose2-anglenose1,-pi,pi)./data.dt;
 end
 data.units.dtheta_tail = parseunits('rad/s');
 data.absdtheta_tail = abs(data.dtheta_tail);

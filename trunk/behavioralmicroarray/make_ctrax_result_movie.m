@@ -429,7 +429,7 @@ for frame = firstframe:endframe,
   end
   
   if frame == firstframe,
-    input('Resize figure 1 to the desired size, hit enter when done.');
+    %input('Resize figure 1 to the desired size, hit enter when done.');
     set(1,'visible','off');
     aviobj = avifile(aviname,'fps',fps,'quality',100,'compression',compression);
   end

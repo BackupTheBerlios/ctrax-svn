@@ -7,13 +7,14 @@ classifiermatname = '';
 areathresh = nan;
 
 % parse inputs
-[matnames,donormalize,normalizematname,classifiermatname] = ...
+[matnames,donormalize,normalizematname,classifiermatname,savematnames] = ...
   myparse(varargin,'matnames',{},'donormalize',nan,'normalizematname','',...
-  'classifiermatname','');
+  'classifiermatname','','savematnames',{});
 ismatnames = ~isempty(matnames);
 isdonormalize = ~isnan(donormalize);
 isnormalizematname = ~isempty(normalizematname);
 isclassifiermatname = ~isempty(classifiermatname);
+issavematnames = ~isempty(savematnames);
 
 % load defaults
 pathtoclassifybyarea = which('classify_by_area');
@@ -435,7 +436,9 @@ else
 end % end doloadclassifier
 
 % classify the flies
-savematnames = cell(size(matnames));
+if ~issavematnames,
+  savematnames = cell(size(matnames));
+end
 [savematpath,savematname] = split_path_and_filename(matnames{1});
 for i = 1:length(matnames),
   fprintf('Classifying area for movie %s\n',matnames{i});
@@ -453,16 +456,18 @@ for i = 1:length(matnames),
   % save the results
 
   % message describing what we are saving
-  helpmsg = sprintf('Choose file to save trajectories from %s augmented with classification results.',matnames{i});
-  [tmp,savematname] = split_path_and_filename(matnames{i});
-  [savematnames{i},savematpath] = uiputfilehelp('*.mat',...
-    sprintf('Save classified trajectories for %s',savematname),...
-    [savematpath,savematname],'helpmsg',helpmsg);
-  if ~ischar(savematnames{i}),
-    savematnames{i} = '';
-    continue;
+  if ~issavematnames,
+    helpmsg = sprintf('Choose file to save trajectories from %s augmented with classification results.',matnames{i});
+    [tmp,savematname] = split_path_and_filename(matnames{i});
+    [savematnames{i},savematpath] = uiputfilehelp('*.mat',...
+      sprintf('Save classified trajectories for %s',savematname),...
+      [savematpath,savematname],'helpmsg',helpmsg);
+    if ~ischar(savematnames{i}),
+      savematnames{i} = '';
+      continue;
+    end
+    savematnames{i} = [savematpath,savematnames{i}];
   end
-  savematnames{i} = [savematpath,savematnames{i}];
   if strcmp(savematnames{i},matnames{i}),
     didsave = save_tracks(trx,savematnames{i},'doappend',true);
     if ~didsave, return; end

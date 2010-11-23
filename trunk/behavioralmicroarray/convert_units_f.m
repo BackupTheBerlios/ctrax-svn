@@ -5,8 +5,12 @@ setuppath;
 fps = 20;
 pxpermm = 4;
 % parse inputs
-[matname,matpath,moviename,ISAUTOMATIC,trx] = ...
-  myparse(varargin,'matname',nan,'matpath',nan,'moviename',nan,'isautomatic',false,'trx',[]);
+[matname,matpath,moviename,ISAUTOMATIC,trx,savename,dosave] = ...
+  myparse(varargin,'matname',nan,'matpath',nan,'moviename',nan,'isautomatic',false,'trx',[],'savename','','dosave',true);
+
+if ~dosave,
+  savename = -1;
+end
 
 succeeded = false;
 ISTRX = ~isempty(trx);
@@ -42,11 +46,15 @@ if ISTRX,
   if ~ISMATNAME,
     if isfield(trx,'matname'),
       [matpath,matname] = split_path_and_filename(trx(1).matname);
-      savename = trx(1).matname;
+      if dosave && isempty(savename),
+        savename = trx(1).matname;
+      end
     else
       matname = '';
       matpath = '';
-      savename = '';
+      if dosave && isempty(savename),
+        savename = '';
+      end
     end
   end
   matname0 = matname;
@@ -71,7 +79,9 @@ else
 
   matname0 = matname;
   matname = [matpath,matname];
-  savename = matname;
+  if dosave && isempty(savename),
+    savename = matname;
+  end
 end
 
 %% read in the movie
@@ -94,8 +104,20 @@ end
 %% convert from frames to seconds
 
 if ~alreadyconverted,
+  
+  if isfield(trx,'timestamps'),
+    
+    [firstframe,firstfly] = min([trx.firstframe]);
+    [lastframe,lastfly] = max([trx.endframe]);
+    fps = (lastframe-firstframe) / (trx(lastfly).timestamps(end)-trx(firstfly).timestamps(1));
+    prompts = {'Frames per second (calculated from timestamps):'};
+    
+  else
 
-  prompts = {'Frames per second:'};
+    prompts = {'Frames per second:'};
+    
+  end
+  
   while true,
     b = {num2str(fps)};
     b = inputdlg(prompts,'Convert frames to seconds',1,b);
@@ -115,6 +137,7 @@ if ~alreadyconverted,
     save('-append',savedsettingsfile,'fps');
   end
 end
+
 %% convert from px to mm
 
 if ~alreadyconverted,
@@ -231,7 +254,7 @@ pxfns = {'xpred','ypred','dx','dy','v'};
 pxcpfns = {'x','y','a','b'};
 okfns = {'x','y','theta','a','b','id','moviename','firstframe','arena',...
   'f2i','nframes','endframe','xpred','ypred','thetapred','dx','dy','v',...
-  'a_mm','b_mm','x_mm','y_mm','matname','sex','type'};
+  'a_mm','b_mm','x_mm','y_mm','matname','sex','type','timestamps'};
 unknownfns = setdiff(getperframepropnames(trx),okfns);
 
 if ~alreadyconverted,
@@ -274,23 +297,25 @@ end
 
 %% save to file
 
-if ~alreadyconverted || didsomething,
+if dosave && (~alreadyconverted || didsomething),
   
-  nmissed = 0;
-  while true,
-    helpmsg = sprintf('Choose the file to which to save the trx from %s augmented with the pixel to mm and frame to second conversions',inputmatname);
-    [savename, savepath] = uiputfilehelp('*.mat', sprintf('Save results for input %s to',matname0), savename,'helpmsg',helpmsg);
-    if ~isnumeric(savename),
-      break;
+  if isempty(savename),
+    nmissed = 0;
+    while true,
+      helpmsg = sprintf('Choose the file to which to save the trx from %s augmented with the pixel to mm and frame to second conversions',inputmatname);
+      [savename, savepath] = uiputfilehelp('*.mat', sprintf('Save results for input %s to',matname0), savename,'helpmsg',helpmsg);
+      if ~isnumeric(savename),
+        break;
+      end
+      fprintf('missed\n');
+      nmissed = nmissed + 1;
+      if nmissed > 1,
+        return;
+      end
+      savename = inputmatname;
     end
-    fprintf('missed\n');
-    nmissed = nmissed + 1;
-    if nmissed > 1,
-      return;
-    end
-    savename = inputmatname;
+    savename = [savepath,savename];
   end
-  savename = [savepath,savename];
   
   for i = 1:length(trx),
     trx(i).matname = savename;

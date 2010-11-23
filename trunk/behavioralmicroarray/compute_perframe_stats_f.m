@@ -3,12 +3,16 @@ function [succeeded,savename,trx] = compute_perframe_stats_f(varargin)
 % parse inputs
 setuppath;
 
-[matname,matpath,docomputearena,docomputeclosest,fov,docomputemain,docomputecrabwalk,trx] = ...
+[matname,matpath,docomputearena,docomputeclosest,fov,docomputemain,docomputecrabwalk,trx,...
+  savename,dosave] = ...
   myparse(varargin,'matname',nan,'matpath',nan,'docomputearena',nan,...
-  'docomputeclosest',nan,'fov',nan,'docomputemain',true,'docomputecrabwalk',true,'trx',[]);
+  'docomputeclosest',nan,'fov',nan,'docomputemain',true,'docomputecrabwalk',true,'trx',[],...
+  'savename','','dosave',true);
 
 succeeded = false;
-savename = '';
+if ~dosave,
+  savename = -1;
+end
 
 ISTRX = ~isempty(trx);
 ISMATNAME = ischar(matname);
@@ -163,6 +167,9 @@ if docomputearena;
       sprintf('Choose the annotation file corresponding to trx file %s',matname)};
     [annname,annpath] = uigetfilehelp('*.ann',sprintf('Annotation file corresponding to %s',matnameonly),annname,'helpmsg',helpmsg);
     annname = [annpath,annname];
+    if ~ischar(annname),
+      return;
+    end
     if ~exist(annname,'file'),
       fprintf('Annotation file %s does not exist, not computing dist2wall\n',annname);
       docomputearena = false;
@@ -225,21 +232,25 @@ save('-append',savedsettingsfile,'docomputeclosest');
 
 %% Get name of file to save to 
 % 
-helpmsg = sprintf('Choose file to save single-fly per-frame statistics for trx loaded from %s',matname);
-savename = [matpath,'perframestats_',matnameonly];
-[savename, savepath] = uiputfilehelp('*.mat', 'Save results mat name', savename,'helpmsg',helpmsg);
+if dosave && isempty(savename),
+  helpmsg = sprintf('Choose file to save single-fly per-frame statistics for trx loaded from %s',matname);
+  savename = [matpath,'perframestats_',matnameonly];
+  [savename, savepath] = uiputfilehelp('*.mat', 'Save results mat name', savename,'helpmsg',helpmsg);
 
-savename = [savepath,savename];
+  savename = [savepath,savename];
+end
 
 %% save results
 
-fprintf('Saving results to file %s\n',savename);
-for i = 1:length(trx),
-  trx(i).matname = savename;
-end
-didsave = save_tracks(trx,savename);
-if ~didsave,
-  return;
+if dosave,
+  fprintf('Saving results to file %s\n',savename);
+  for i = 1:length(trx),
+    trx(i).matname = savename;
+  end
+  didsave = save_tracks(trx,savename);
+  if ~didsave,
+    return;
+  end
 end
 
 succeeded = true;

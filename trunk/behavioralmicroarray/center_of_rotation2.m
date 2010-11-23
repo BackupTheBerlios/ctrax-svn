@@ -31,18 +31,20 @@ cospsi = cos(psi);
 sinpsi = sin(psi);
 idx = find(isoutofbounds);
 nout = length(idx);
-x1 = repmat(trk.x(idx),[N,1]) + repmat(2*trk.a(idx).*cost(idx),[N,1]).*repmat(cospsi,[1,nout]) - ...
-  repmat(2*trk.b(idx).*sint(idx),[N,1]).*repmat(sinpsi,[1,nout]);
-y1 = repmat(trk.y(idx),[N,1]) + repmat(2*trk.a(idx).*sint(idx),[N,1]).*repmat(cospsi,[1,nout]) + ...
-  repmat(2*trk.b(idx).*cost(idx),[N,1]).*repmat(sinpsi,[1,nout]);
-x2 = repmat(trk.x(idx+1),[N,1]) + repmat(2*trk.a(idx+1).*cost(idx+1),[N,1]).*repmat(cospsi,[1,nout]) - ...
-  repmat(2*trk.b(idx+1).*sint(idx+1),[N,1]).*repmat(sinpsi,[1,nout]);
-y2 = repmat(trk.y(idx+1),[N,1]) + repmat(2*trk.a(idx+1).*sint(idx+1),[N,1]).*repmat(cospsi,[1,nout]) + ...
-  repmat(2*trk.b(idx+1).*cost(idx+1),[N,1]).*repmat(sinpsi,[1,nout]);
-d = (x1 - x2).^2 + (y1 - y2).^2;
-[mind,j] = min(d,[],1);
-rfrac(1,idx) = cospsi(j);
-rfrac(2,idx) = sinpsi(j);
+if nout > 0,
+  x1 = repmat(trk.x(idx),[N,1]) + repmat(2*trk.a(idx).*cost(idx),[N,1]).*repmat(cospsi,[1,nout]) - ...
+    repmat(2*trk.b(idx).*sint(idx),[N,1]).*repmat(sinpsi,[1,nout]);
+  y1 = repmat(trk.y(idx),[N,1]) + repmat(2*trk.a(idx).*sint(idx),[N,1]).*repmat(cospsi,[1,nout]) + ...
+    repmat(2*trk.b(idx).*cost(idx),[N,1]).*repmat(sinpsi,[1,nout]);
+  x2 = repmat(trk.x(idx+1),[N,1]) + repmat(2*trk.a(idx+1).*cost(idx+1),[N,1]).*repmat(cospsi,[1,nout]) - ...
+    repmat(2*trk.b(idx+1).*sint(idx+1),[N,1]).*repmat(sinpsi,[1,nout]);
+  y2 = repmat(trk.y(idx+1),[N,1]) + repmat(2*trk.a(idx+1).*sint(idx+1),[N,1]).*repmat(cospsi,[1,nout]) + ...
+    repmat(2*trk.b(idx+1).*cost(idx+1),[N,1]).*repmat(sinpsi,[1,nout]);
+  d = (x1 - x2).^2 + (y1 - y2).^2;
+  [mind,j] = min(d,[],1);
+  rfrac(1,idx) = cospsi(j);
+  rfrac(2,idx) = sinpsi(j);
+end
 isonfly = ~isoutofbounds;
 
 if debug,

@@ -56,6 +56,7 @@ if ~isfield(data,'x_mm'),
 end
 
 % compute velocities in the canonical coordinates of the fly
+istimestamps = isfield(data,'timestamps');
 for fly = 1:nflies,
 
   % already set units
@@ -69,8 +70,16 @@ for fly = 1:nflies,
   data(fly).units.a_mm = parseunits('mm');
   data(fly).units.b_mm = parseunits('mm');
   
+  % compute time between frames
+  if istimestamps,
+    data(fly).dt = diff(data(fly).timestamps);
+  else
+    data(fly).dt = repmat(1/data(fly).fps,[1,data(fly).nframes-1]);
+  end
+  data(fly).units.dt = parseunits('s');
+  
   % change in body orientation
-  data(fly).dtheta = modrange(diff(data(fly).theta),-pi,pi)*data(fly).fps;
+  data(fly).dtheta = modrange(diff(data(fly).theta),-pi,pi)./data(fly).dt;
   data(fly).units.dtheta = parseunits('rad/s');
   
   % change in center position
@@ -81,14 +90,14 @@ for fly = 1:nflies,
   if data(fly).nframes < 2,
     data(fly).du_ctr = [];
   else
-    data(fly).du_ctr = (dx.*cos(data(fly).theta(1:end-1)) + dy.*sin(data(fly).theta(1:end-1)))*data(fly).fps;
+    data(fly).du_ctr = (dx.*cos(data(fly).theta(1:end-1)) + dy.*sin(data(fly).theta(1:end-1)))./data(fly).dt;
   end
   data(fly).units.du_ctr = parseunits('mm/s');
   % sideways motion of body center
   if data(fly).nframes < 2,
     data(fly).dv_ctr = [];
   else
-    data(fly).dv_ctr = (dx.*cos(data(fly).theta(1:end-1)+pi/2) + dy.*sin(data(fly).theta(1:end-1)+pi/2))*data(fly).fps;
+    data(fly).dv_ctr = (dx.*cos(data(fly).theta(1:end-1)+pi/2) + dy.*sin(data(fly).theta(1:end-1)+pi/2))./data(fly).dt;
   end
   data(fly).units.dv_ctr = parseunits('mm/s');
   
@@ -119,9 +128,9 @@ for fly = 1:nflies,
     dy_cor = y_cor_next - y_cor_curr;
     
     % forward motion of center of rotation
-    data(fly).du_cor = (dx_cor.*cos(data(fly).theta(1:end-1)) + dy_cor.*sin(data(fly).theta(1:end-1)))*data(fly).fps;
+    data(fly).du_cor = (dx_cor.*cos(data(fly).theta(1:end-1)) + dy_cor.*sin(data(fly).theta(1:end-1)))./data(fly).dt;
     % sideways motion of body center
-    data(fly).dv_cor = (dx_cor.*cos(data(fly).theta(1:end-1)+pi/2) + dy_cor.*sin(data(fly).theta(1:end-1)+pi/2))*data(fly).fps;
+    data(fly).dv_cor = (dx_cor.*cos(data(fly).theta(1:end-1)+pi/2) + dy_cor.*sin(data(fly).theta(1:end-1)+pi/2))./data(fly).dt;
   end
   data(fly).units.du_cor = parseunits('mm/s');
   data(fly).units.dv_cor = parseunits('mm/s');
@@ -130,13 +139,13 @@ for fly = 1:nflies,
   if data(fly).nframes < 2,
     data(fly).velmag_ctr = [];
   else
-    data(fly).velmag_ctr = sqrt(dx.^2 + dy.^2)*data(fly).fps;
+    data(fly).velmag_ctr = sqrt(dx.^2 + dy.^2)./data(fly).dt;
   end
   data(fly).units.velmag_ctr = parseunits('mm/s');
   if data(fly).nframes < 2,
     data(fly).velmag = [];
   else
-    data(fly).velmag = sqrt(dx_cor.^2 + dy_cor.^2)*data(fly).fps;
+    data(fly).velmag = sqrt(dx_cor.^2 + dy_cor.^2)./data(fly).dt;
     badidx = isnan(dx_cor);
     data(fly).velmag(badidx) = data(fly).velmag_ctr(badidx);
   end
@@ -146,7 +155,8 @@ for fly = 1:nflies,
   if data(fly).nframes < 2,
     data(fly).accmag = [];
   else
-    tmp = sqrt(diff(dx).^2 + diff(dy).^2)*data(fly).fps^2;
+    % speed from frame 1 to 2 minus speed from 2 to 3 / time from 2 to 3
+    tmp = sqrt(diff(dx./data(fly).dt).^2 + diff(dy./data(fly).dt).^2)./data(fly).dt(2:end);
     data(fly).accmag = [0,tmp];
   end
   data(fly).units.accmag = parseunits('mm/s/s');
@@ -164,7 +174,7 @@ for fly = 1:nflies,
   if data(fly).nframes < 2,
     data(fly).d2theta = [];
   else
-    data(fly).d2theta = [0,modrange(diff(data(fly).dtheta),-pi,pi)]*data(fly).fps;
+    data(fly).d2theta = [0,modrange(diff(data(fly).dtheta),-pi,pi)]./data(fly).dt;
   end
   data(fly).units.d2theta = parseunits('rad/s/s');
   data(fly).absd2theta = abs(data(fly).d2theta);
@@ -176,7 +186,7 @@ for fly = 1:nflies,
   if data(fly).nframes < 2,
     data(fly).smoothdtheta = [];
   else
-    data(fly).smoothdtheta = diff(data(fly).smooththeta)*data(fly).fps;
+    data(fly).smoothdtheta = diff(data(fly).smooththeta)./data(fly).dt;
   end
   data(fly).units.smoothdtheta = parseunits('rad/s');
   data(fly).smooththeta = modrange(data(fly).smooththeta,-pi,pi);
@@ -185,7 +195,7 @@ for fly = 1:nflies,
   if data(fly).nframes < 2,
     data(fly).smoothd2theta = [];
   else
-    data(fly).smoothd2theta = [0,modrange(diff(data(fly).smoothdtheta),-pi,pi)]*data(fly).fps;
+    data(fly).smoothd2theta = [0,modrange(diff(data(fly).smoothdtheta),-pi,pi)]./data(fly).dt;
   end
   data(fly).units.smoothd2theta = parseunits('rad/s/s');
   data(fly).abssmoothd2theta = abs(data(fly).smoothd2theta);

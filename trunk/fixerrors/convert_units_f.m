@@ -5,9 +5,10 @@ setuppath;
 fps = 20;
 pxpermm = 4;
 % parse inputs
-[matname,matpath,moviename,ISAUTOMATIC,trx] = ...
-  myparse(varargin,'matname',nan,'matpath',nan,'moviename',nan,'isautomatic',false,'trx',[]);
+[matname,matpath,moviename,ISAUTOMATIC,trx,savename,doforce] = ...
+  myparse(varargin,'matname',nan,'matpath',nan,'moviename',nan,'isautomatic',false,'trx',[],'savename','','doforce',false);
 
+ISSAVENAME = ~isempty(savename);
 succeeded = false;
 ISTRX = ~isempty(trx);
 ISMATNAME = ischar(matname);
@@ -42,11 +43,11 @@ if ISTRX,
   if ~ISMATNAME,
     if isfield(trx,'matname'),
       [matpath,matname] = split_path_and_filename(trx(1).matname);
-      savename = trx(1).matname;
+      %savename = trx(1).matname;
     else
       matname = '';
       matpath = '';
-      savename = '';
+      %savename = '';
     end
   end
   matname0 = matname;
@@ -71,7 +72,7 @@ else
 
   matname0 = matname;
   matname = [matpath,matname];
-  savename = matname;
+  %savename = matname;
 end
 
 %% read in the movie
@@ -84,10 +85,11 @@ if ~ISTRX,
 end
 
 % check to see if it has already been converted
-alreadyconverted = isfield(trx,'pxpermm') && isfield(trx,'fps');
+alreadyconverted = ~doforce && isfield(trx,'pxpermm') && isfield(trx,'fps');
 if alreadyconverted,
   pxpermm = trx(1).pxpermm;
   fps = trx(1).fps;
+  savename = fullfile(matpath,matname);
   fprintf('pxpermm = %f, fps = %f\n',pxpermm,fps);
 end
 
@@ -276,27 +278,29 @@ end
 
 if ~alreadyconverted || didsomething,
   
-  nmissed = 0;
-  while true,
-    helpmsg = sprintf('Choose the file to which to save the trx from %s augmented with the pixel to mm and frame to second conversions',inputmatname);
-    [savename, savepath] = uiputfilehelp('*.mat', sprintf('Save results for input %s to',matname0), savename,'helpmsg',helpmsg);
-    if ~isnumeric(savename),
-      break;
+  if isempty(savename),
+    nmissed = 0;
+    while true,
+      helpmsg = sprintf('Choose the file to which to save the trx from %s augmented with the pixel to mm and frame to second conversions',inputmatname);
+      [savename, savepath] = uiputfilehelp('*.mat', sprintf('Save results for input %s to',matname0), savename,'helpmsg',helpmsg);
+      if ~isnumeric(savename),
+        break;
+      end
+      fprintf('missed\n');
+      nmissed = nmissed + 1;
+      if nmissed > 1,
+        return;
+      end
+      savename = inputmatname;
     end
-    fprintf('missed\n');
-    nmissed = nmissed + 1;
-    if nmissed > 1,
-      return;
-    end
-    savename = inputmatname;
+    savename = [savepath,savename];
   end
-  savename = [savepath,savename];
   
   for i = 1:length(trx),
     trx(i).matname = savename;
   end
   
-  if strcmpi(matname,savename),
+  if ~ISSAVENAME && strcmp(matname,savename),
     tmpname = tempname;
     fprintf('Overwriting %s with converted data...\n',savename);
     movefile(matname,tmpname);
@@ -309,7 +313,6 @@ if ~alreadyconverted || didsomething,
     delete(tmpname);
   else
     fprintf('Saving converted data to file %s.\nUse this mat file instead of %s in the future\n',savename,inputmatname);
-    copyfile(matname,savename);
     didsave = save_tracks(trx,savename,'doappend',true);
     if ~didsave,
       return;
