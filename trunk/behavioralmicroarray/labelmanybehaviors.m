@@ -42,13 +42,17 @@ handles.behaviors = varargin{4};
   handles.autosavefilename,...
   handles.scattercommand,...
   handles.behaviorcolors,...
-  restart] = ...
+  restart,...
+  handles.oldsegstarts,handles.oldsegends,handles.oldlabels,...
+  handles.oldbehaviors,handles.oldbehaviorcolors] = ...
   myparse(varargin(5:end),...
   'segstarts',[],'segends',[],'labels',{},...
   'autosavefilename','labeledbehaviors_autosave.mat',...
   'scattercommand','min(trk.velmag,7)',...
   'behaviorcolors',zeros(0,3),...
-  'restart',false);
+  'restart',false,...
+  'oldsegstarts',[],'oldsegends',[],'oldlabels',{},...
+  'oldbehaviors',{},'oldbehaviorcolors',zeros(0,3));
 
 if length(handles.segstarts) ~= length(handles.segends) || ...
     length(handles.segstarts) ~= length(handles.labels),
@@ -73,9 +77,15 @@ if ~isempty(handles.segstarts),
   handles.segstarts = handles.segstarts - handles.trx(handles.fly).firstframe+1;
   handles.segends = handles.segends-handles.trx(handles.fly).firstframe+1;
 end
+if ~isempty(handles.oldsegstarts),
+  handles.oldsegstarts = handles.oldsegstarts - handles.trx(handles.fly).firstframe+1;
+  handles.oldsegends = handles.oldsegends-handles.trx(handles.fly).firstframe+1;
+end
 
 handles.behaviors = [handles.behaviors,setdiff(unique(handles.labels),handles.behaviors)];
 handles.nbehaviors = length(handles.behaviors);
+handles.oldbehaviors = [handles.oldbehaviors,setdiff(unique(handles.oldlabels),handles.oldbehaviors)];
+handles.noldbehaviors = length(handles.oldbehaviors);
 set(handles.scatteredit,'string',handles.scattercommand);
 
 n = handles.nbehaviors - size(handles.behaviorcolors,1);
@@ -180,6 +190,22 @@ if isempty(handles.behaviorcolors),
     handles.behaviorcolors = jet(handles.nbehaviors)*.7;
   end
 end
+
+if isempty(handles.oldbehaviorcolors),
+  handles.oldbehaviorcolors = zeros(handles.noldbehaviors,3);
+end
+
+for i = 1:length(handles.oldsegstarts),
+  i1 = handles.oldsegstarts(i); i2 = handles.oldsegends(i);
+  %i1 = handles.trx(handles.fly).off+(f1);
+  %i2 = handles.trx(handles.fly).off+(f2);
+  behaviorcurr = handles.oldlabels{i};
+  behaviorvalue = find(strcmp(behaviorcurr,handles.oldbehaviors),1);
+  plot(handles.trx(handles.fly).x(i1:i2+1),...
+    handles.trx(handles.fly).y(i1:i2+1),'-','color',handles.oldbehaviorcolors(behaviorvalue,:),'linewidth',6,'hittest','off');
+end
+
+
 for i = 1:length(handles.segstarts),
   i1 = handles.segstarts(i); i2 = handles.segends(i);
   %i1 = handles.trx(handles.fly).off+(f1);

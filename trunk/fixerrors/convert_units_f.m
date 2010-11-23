@@ -5,10 +5,13 @@ setuppath;
 fps = 20;
 pxpermm = 4;
 % parse inputs
-[matname,matpath,moviename,ISAUTOMATIC,trx,savename,doforce] = ...
-  myparse(varargin,'matname',nan,'matpath',nan,'moviename',nan,'isautomatic',false,'trx',[],'savename','','doforce',false);
+[matname,matpath,moviename,ISAUTOMATIC,trx,savename,dosave] = ...
+  myparse(varargin,'matname',nan,'matpath',nan,'moviename',nan,'isautomatic',false,'trx',[],'savename','','dosave',true);
 
-ISSAVENAME = ~isempty(savename);
+if ~dosave,
+  savename = -1;
+end
+
 succeeded = false;
 ISTRX = ~isempty(trx);
 ISMATNAME = ischar(matname);
@@ -43,11 +46,15 @@ if ISTRX,
   if ~ISMATNAME,
     if isfield(trx,'matname'),
       [matpath,matname] = split_path_and_filename(trx(1).matname);
-      %savename = trx(1).matname;
+      if dosave && isempty(savename),
+        savename = trx(1).matname;
+      end
     else
       matname = '';
       matpath = '';
-      %savename = '';
+      if dosave && isempty(savename),
+        savename = '';
+      end
     end
   end
   matname0 = matname;
@@ -72,7 +79,9 @@ else
 
   matname0 = matname;
   matname = [matpath,matname];
-  %savename = matname;
+  if dosave && isempty(savename),
+    savename = matname;
+  end
 end
 
 %% read in the movie
@@ -85,19 +94,30 @@ if ~ISTRX,
 end
 
 % check to see if it has already been converted
-alreadyconverted = ~doforce && isfield(trx,'pxpermm') && isfield(trx,'fps');
+alreadyconverted = isfield(trx,'pxpermm') && isfield(trx,'fps');
 if alreadyconverted,
   pxpermm = trx(1).pxpermm;
   fps = trx(1).fps;
-  savename = fullfile(matpath,matname);
   fprintf('pxpermm = %f, fps = %f\n',pxpermm,fps);
 end
 
 %% convert from frames to seconds
 
 if ~alreadyconverted,
+  
+  if isfield(trx,'timestamps'),
+    
+    [firstframe,firstfly] = min([trx.firstframe]);
+    [lastframe,lastfly] = max([trx.endframe]);
+    fps = (lastframe-firstframe) / (trx(lastfly).timestamps(end)-trx(firstfly).timestamps(1));
+    prompts = {'Frames per second (calculated from timestamps):'};
+    
+  else
 
-  prompts = {'Frames per second:'};
+    prompts = {'Frames per second:'};
+    
+  end
+  
   while true,
     b = {num2str(fps)};
     b = inputdlg(prompts,'Convert frames to seconds',1,b);
@@ -117,6 +137,7 @@ if ~alreadyconverted,
     save('-append',savedsettingsfile,'fps');
   end
 end
+
 %% convert from px to mm
 
 if ~alreadyconverted,
@@ -231,9 +252,9 @@ end
 pxfns = {'xpred','ypred','dx','dy','v'};
 % these are used for plotting, so we want to keep them in pixels
 pxcpfns = {'x','y','a','b'};
-okfns = {'x','y','theta','a','b','id','moviename','firstframe','off','arena',...
+okfns = {'x','y','theta','a','b','id','moviename','firstframe','arena',...
   'f2i','nframes','endframe','xpred','ypred','thetapred','dx','dy','v',...
-  'a_mm','b_mm','x_mm','y_mm','matname','sex','type'};
+  'a_mm','b_mm','x_mm','y_mm','matname','sex','type','timestamps'};
 unknownfns = setdiff(getperframepropnames(trx),okfns);
 
 if ~alreadyconverted,
@@ -276,7 +297,7 @@ end
 
 %% save to file
 
-if ~alreadyconverted || didsomething,
+if dosave && (~alreadyconverted || didsomething),
   
   if isempty(savename),
     nmissed = 0;
@@ -300,7 +321,7 @@ if ~alreadyconverted || didsomething,
     trx(i).matname = savename;
   end
   
-  if ~ISSAVENAME && strcmp(matname,savename),
+  if strcmpi(matname,savename),
     tmpname = tempname;
     fprintf('Overwriting %s with converted data...\n',savename);
     movefile(matname,tmpname);
@@ -313,6 +334,17 @@ if ~alreadyconverted || didsomething,
     delete(tmpname);
   else
     fprintf('Saving converted data to file %s.\nUse this mat file instead of %s in the future\n',savename,inputmatname);
+    try
+       copyfile(matname,savename);
+    catch le
+       if strcmp( le.identifier, 'MATLAB:COPYFILE:OSError' )
+          % this can happen if there's a symlink somewhere in the path, so don't puke
+          warning( le.message )
+       else
+          disp( le.identifier )
+          rethrow( le )          
+       end
+    end
     didsave = save_tracks(trx,savename,'doappend',true);
     if ~didsave,
       return;
