@@ -1,6 +1,8 @@
 % [trx,matname,succeeded] = load_tracks(matname,[moviename])
 
-function [trx,matname,succeeded] = load_tracks(matname,moviename)
+function [trx,matname,succeeded] = load_tracks(matname,moviename,varargin)
+
+[dosave,savename,annname] = myparse(varargin,'dosave',false,'savename','','annname','');
 
 succeeded = false;
 trx = [];
@@ -28,9 +30,9 @@ if ~isfield(tmp,'trx'),
     if ~exist('moviename','var'),
       moviename = '?';
     end
-    ds = datestr(now,30);
+    %ds = datestr(now,30);
     fprintf('Calling cleanup_ctrax_data\n');
-    [trx,matname] = cleanup_ctrax_data(matname,moviename,tmp,ds);
+    [trx,matname] = cleanup_ctrax_data(matname,moviename,tmp,'','dosave',dosave,'savename',savename,'annname',annname);
   else
     msgbox('Could not load data from %s, exiting',matname);
     return;

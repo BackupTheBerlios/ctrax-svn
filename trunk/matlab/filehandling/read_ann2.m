@@ -133,7 +133,8 @@ value = s(i+1:end);
 
 specialparams = {'background median','background mean',...
                  'background mad','background std',...
-                 'hfnorm'};
+                 'hfnorm','fracframesisback',...
+                 'background center','background dev'};
                
 pickledparams = {'roipolygons'};
 

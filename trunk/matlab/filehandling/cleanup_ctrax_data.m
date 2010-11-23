@@ -1,7 +1,14 @@
-function [trx,savename] = cleanup_ctrax_data(matname,moviename,in,ds)
+function [trx,savename] = cleanup_ctrax_data(matname,moviename,in,ds,varargin)
 
 if ~exist('ds','var')
   ds = '';
+end
+[savename,dosave,annname] = myparse(varargin,...
+  'savename',strrep(matname,'.mat',['trx',ds,'.mat']),...
+  'dosave',false,...
+  'annname','');
+if ~dosave,
+  savename = -1;
 end
 
 in.x_pos = in.x_pos(:)';
@@ -10,6 +17,9 @@ in.maj_ax = in.maj_ax(:)';
 in.min_ax = in.min_ax(:)';
 in.angle = in.angle(:)';
 in.identity = in.identity(:)';
+if isfield(in,'timestamps'),
+  in.timestamps = in.timestamps(:)';
+end
 
 idscurr = unique(in.identity);
 
@@ -27,6 +37,14 @@ for i = 1:length(in.ntargets),
 end;
 
 newidentity = nan(size(in.identity));
+
+arena.x = nan;
+arena.y = nan;
+arena.r = nan;
+if ~isempty(annname) && exist(annname,'file'),
+  [arena.x,arena.y,arena.r] = read_ann(annname,'arena_center_x','arena_center_y','arena_radius');
+end
+
 for id = idscurr,
   idx = in.identity == id;
   datacurr.x = in.x_pos(idx);
@@ -36,14 +54,18 @@ for id = idscurr,
   datacurr.b = in.min_ax(idx);
   datacurr.id = id;
   datacurr.moviename = moviename;
+  if ~isempty(annname),
+    datacurr.annname = annname;
+  end
   datacurr.firstframe = framenumber(find(idx,1));
-  datacurr.arena.x = nan;
-  datacurr.arena.y = nan;
-  datacurr.arena.r = nan;
+  datacurr.arena = arena;
   datacurr.off = -datacurr.firstframe + 1;
   %datacurr.f2i = @(f) f - datacurr.firstframe + 1;
   datacurr.nframes = length(datacurr.x);
   datacurr.endframe = datacurr.nframes + datacurr.firstframe - 1;
+  if isfield(in,'timestamps'),
+    datacurr.timestamps = in.timestamps(datacurr.firstframe:datacurr.endframe);
+  end
   if isconverted,
     datacurr.pxpermm = in.pxpermm;
     datacurr.fps = in.fps;
@@ -60,5 +82,6 @@ for id = idscurr,
   newidentity(idx) = length(trx);
 end
 
-savename = strrep(matname,'.mat',['trx',ds,'.mat']);
-save_tracks(trx,savename);
+if dosave,
+  save_tracks(trx,savename);
+end

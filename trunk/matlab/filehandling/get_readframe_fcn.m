@@ -21,17 +21,12 @@
 % readframe. 
 % headerinfo is a struct with fields depending on the type of movie
 
-function [readframe,nframes,fid,headerinfo] = get_readframe_fcn(filename,forcegrayscale)
-
-if nargin < 2,
-  forcegrayscale = true;
-end
+function [readframe,nframes,fid,headerinfo] = get_readframe_fcn(filename)
 
 % allow videoio library to be used if it is installed and on the path
 CTRAX_ISVIDEOIO = exist('videoReader','file');
-%CTRAX_ISVIDEOIO = false;
 
-[base,ext] = splitext(filename);
+[~,ext] = splitext(filename);
 if strcmpi(ext,'.fmf'),
   [header_size,version,nr,nc,bytes_per_chunk,nframes,data_format] = fmf_read_header(filename);
   fid = fopen(filename);
@@ -44,6 +39,11 @@ elseif strcmpi(ext,'.sbfmf'),
   readframe = @(f) sbfmfreadframe(f,fid,frame2file,bgcenter);
   headerinfo = struct('nr',nr,'nc',nc,'nframes',nframes,'bgcenter',bgcenter,...
     'bgstd',bgstd,'frame2file',frame2file,'type','sbfmf');
+elseif strcmpi(ext,'.ufmf'),
+  headerinfo = ufmf_read_header(filename);
+  readframe = ufmf_get_readframe_fcn(headerinfo);
+  nframes = headerinfo.nframes;
+  fid = headerinfo.fid;
 else
   fid = 0;
   if CTRAX_ISVIDEOIO,
@@ -52,13 +52,7 @@ else
     nframes = info.numFrames;
     seek(readerobj,0);
     seek(readerobj,1);
-    im =  videoioreadframe(readerobj,1);
-    ncolors = size(im,3);
-    if ncolors == 1 || ~forcegrayscale,
-      readframe = @(f) videoioreadframe(readerobj,f);
-    else
-      readframe = rgb2gray(videoioreadframe(readerobj,f));
-    end
+    readframe = @(f) videoioreadframe(readerobj,f);
     headerinfo = info;
     headerinfo.type = 'avi';
   else
@@ -68,13 +62,7 @@ else
       % approximate nframes from duration
       nframes = get(readerobj,'Duration')*get(readerobj,'FrameRate');
     end
-    im = flipdim(read(readerobj,1),1);
-    ncolors = size(im,3);
-    if ncolors == 1 || ~forcegrayscale,
-      readframe = @(f) flipdim(read(readerobj,f),1);
-    else
-      readframe = @(f) rgb2gray(flipdim(read(readerobj,f),1));
-    end
+    readframe = @(f) flipdim(read(readerobj,f),1);
     headerinfo = get(readerobj);
     headerinfo.type = 'avi';
   end

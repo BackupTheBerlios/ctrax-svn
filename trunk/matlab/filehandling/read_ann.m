@@ -14,7 +14,10 @@
 % mergeddetection_length, mergeddetection_distance, do_fix_spurious,
 % spuriousdetection_length, do_fix_lost, lostdetection_length, movie_name,
 % start_frame, data_format, velocity_angle_weight,
-% max_velocity_angle_weight
+% max_velocity_angle_weight, 
+% fracframesisback, expbgfgmodel_filename, use_expbgfgmodel, 
+% expbgfgmodel_llr_thresh, min_frac_frames_isback,
+% background_center, background_dev, movie_height, movie_width
 function varargout = read_ann(filename,varargin)
 
 if nargin == 1,
@@ -62,7 +65,7 @@ end;
 
 function [param,value] = read_line(s,fid)
 
-i = findstr(s,':');
+i = strfind(s,':');
 if isempty(i),
   param = [];
   value = [];
@@ -73,20 +76,25 @@ value = s(i+1:end);
 
 specialparams = {'background median','background mean',...
                  'background mad','background std',...
-                 'hfnorm'};
+                 'hfnorm','fracframesisback',...
+                 'background center','background dev'};
+stringparams = {'bg_algorithm'};
 pickledparams = {'roipolygons'};
 
 isspecial = ismember(param,specialparams);
+isstring = ismember(param,stringparams);
 ispickled = ismember(param,pickledparams);
 
 if isspecial,
-  sz = str2num(value);
+  sz = str2double(value);
   value = fread(fid,sz/8,'double');
 elseif ispickled,
-  sz = str2num(value);
+  sz = str2double(value);
   value = fread(fid,sz,'char');  
+elseif isstring,
+  % leave value as string
 else
-  tmp = str2num(value);
+  tmp = str2double(value);
   if ~isempty(tmp),
     value = tmp;
   end;
