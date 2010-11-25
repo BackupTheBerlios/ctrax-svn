@@ -27,7 +27,7 @@ end
 r0 = max(floor(min(ypred)-boxrad),1); r1 = min(ceil(max(ypred)+boxrad),handles.nr);
 c0 = max(floor(min(xpred)-boxrad),1); c1 = min(ceil(max(xpred)+boxrad),handles.nc);
 im = handles.readframe(f);
-im = im(r0:r1,c0:c1);
+im = double(im(r0:r1,c0:c1));
 
 bg = handles.bgcurr(r0:r1,c0:c1);
 dfore = im - bg;

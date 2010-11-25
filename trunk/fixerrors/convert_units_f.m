@@ -87,7 +87,7 @@ end
 %% read in the movie
 inputmatname = matname;
 if ~ISTRX,
-  [trx,matname,loadsucceeded] = load_tracks(matname);
+  [trx,~,loadsucceeded] = load_tracks(matname);
   if ~loadsucceeded,
     msgbox(sprintf('Could not load trx mat file %s',matname));
   end
@@ -297,7 +297,7 @@ end
 
 %% save to file
 
-if dosave && (~alreadyconverted || didsomething),
+if dosave,
   
   if isempty(savename),
     nmissed = 0;
