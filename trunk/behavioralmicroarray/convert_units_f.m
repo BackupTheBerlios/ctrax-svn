@@ -321,10 +321,10 @@ if dosave && (~alreadyconverted || didsomething),
     trx(i).matname = savename;
   end
   
-  if strcmpi(matname,savename),
+  if strcmpi(inputmatname,savename),
     tmpname = tempname;
     fprintf('Overwriting %s with converted data...\n',savename);
-    movefile(matname,tmpname);
+    movefile(inputmatname,tmpname);
     didsave = save_tracks(trx,savename,'doappend',true);
     if ~didsave,
       fprintf('Aborting overwriting\n');
@@ -335,7 +335,7 @@ if dosave && (~alreadyconverted || didsomething),
   else
     fprintf('Saving converted data to file %s.\nUse this mat file instead of %s in the future\n',savename,inputmatname);
     try
-       copyfile(matname,savename);
+       copyfile(inputmatname,savename);
     catch le
        if strcmp( le.identifier, 'MATLAB:COPYFILE:OSError' )
           % this can happen if there's a symlink somewhere in the path, so don't puke

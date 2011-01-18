@@ -1,37 +1,45 @@
-function f = fmf_frame_count( filename )
-% frames = fmf_frame_count( filename )
+function [f, rate] = fmf_frame_count( filename, force_rate )
+% [nframes, framerate] = fmf_frame_count( filename )
 %
-% counts the number of frames in a FlyMovieFormat file
-% and writes it into the file header if it's not already there
+% Counts the number of frames in a FlyMovieFormat version 1 file.
+% Also returns the mean framerate.
 %
 % JAB 6/30/04
 
-fp = fopen( filename, 'r' );
-
-version = double( fread( fp, 1, 'uint32' ) );
-if version ~= 1,
-    error( 'version not supported -- FMF version 1 only' );
-end
-fseek( fp, 20, 'bof' );
-max_n_frames = double( fread( fp, 1, 'long' ) );
-
-if max_n_frames ~= 0,
+[header_size, version, f_height, f_width, bytes_per_chunk, ...
+   max_n_frames, data_format] = fmf_read_header( filename );
+if max_n_frames ~= 0
 	f = max_n_frames;
-	return
+   rate = nan;
+   if ~exist( 'force_rate', 'var' ) || ~force_rate
+      return
+   else
+      fprintf( 1, 'forced reading frames to calculate framerate\n' )
+   end
 end
 
 % count frames
-fseek( fp, 12, 'bof' );
-frame_size = double( fread( fp, 1, 'long' ) );
-fseek( fp, 8, 'cof' );
+fp = fopen( filename, 'r' );
+fseek( fp, header_size, 'bof' );
 f = 0;
+if nargout > 1 % read timestamps
+   stamps = [];
+end
 while 1,
-	err = fseek( fp, frame_size, 'cof' );
+   if exist( 'stamps', 'var' )
+      stamps = [stamps fread( fp, 1, 'double' )]; % read timestamp
+      fseek( fp, -8, 'cof' ); % go backward to beginning of frame
+   end
+	err = fseek( fp, bytes_per_chunk, 'cof' );
 	if err == -1, break, end
 	f = f + 1;
 end
 
 fclose( fp );
+
+if exist( 'stamps', 'var' )
+   rate = mean( diff( stamps ) );
+end
 
 % update frame count in file
 return % update not working!!

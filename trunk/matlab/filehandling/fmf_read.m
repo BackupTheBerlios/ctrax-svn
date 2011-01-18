@@ -43,7 +43,7 @@ fseek( fp, header_size, 'bof' );
 fseek( fp, bytes_per_chunk*(f_start-1), 'cof' );
 % add wait bar
 if show_progress
- bar_handle = waitbar(0,'Please wait...');
+   bar_handle = waitbar(0,'Please wait...');
 end
 seekfailed = 0;
 for f=1:nframes,

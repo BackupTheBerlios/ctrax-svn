@@ -229,6 +229,7 @@ for flyi = 1:nfliesseq,
   end
 end
 badidx = isnan(x0);
+if length( find( badidx ) ) == length( x0(:) ), error( 'all tracks bad' ); end
 x0(badidx) = []; y0(badidx) = []; x1(badidx) = []; y1(badidx) = [];
 
 xlim = [min(x0(:))-BORDER,max(x1(:))+BORDER];
@@ -259,6 +260,7 @@ end
 function v = isdummytrk(trk)
 
 v = any(isnan(trk.x));
+if v, fprintf( 1, '%d of %d are NaN\n', length(find(isnan(trk.x))), length(trk.x) ); end %%%%%%%%
 
 function SetFlyVisible(handles,fly,v)
 
@@ -681,6 +683,7 @@ end
 function v = isalive(track,f)
 
 v = ~isdummytrk(track) && track.firstframe <= f && track.endframe >= f;
+if isdummytrk(track), fprintf( 1, 'track at frame %d is dummy\n', f ); end %%%%%%%
 
 % --- Executes on slider movement.
 function frameslider_Callback(hObject, eventdata, handles)

@@ -1209,8 +1209,14 @@ class AnnotationFile:
         for j in range( nframes ):
             ells = self.get_frame(off+j)
             for ee in ells.itervalues():
-                x_pos[i] = ee.center.x
-                y_pos[i] = ee.center.y
+                if num.isnan( ee.center.x ):
+                    x_pos[i] = num.inf
+                else:
+                    x_pos[i] = ee.center.x
+                if num.isnan( ee.center.y ):
+                    y_pos[i] = num.inf
+                else:
+                    y_pos[i] = ee.center.y
                 maj_ax[i] = ee.height
                 min_ax[i] = ee.width
                 angle[i] = ee.angle
