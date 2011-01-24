@@ -704,6 +704,10 @@ class AnnotationFile:
             sz = num.prod(self.bg_imgs.fracframesisback.size)*SIZEOFDOUBLE
             self.file.write("fracframesisback:%d\n"%sz)
             self.file.write(self.bg_imgs.fracframesisback)            
+        if hasattr(self.bg_imgs,'isarena'):
+            sz = num.prod(self.bg_imgs.isarena.size)*SIZEOFDOUBLE
+            self.file.write("isarena:%d\n"%sz)
+            self.file.write(self.bg_imgs.isarena.astype(float))            
         if hasattr(self.bg_imgs,'hfnorm'):
             sz = self.bg_imgs.hfnorm.size*SIZEOFDOUBLE
             self.file.write("hfnorm:%d\n"%sz)
@@ -837,7 +841,8 @@ class AnnotationFile:
                    parameter == 'background mad' or parameter == 'background std' or \
                    parameter == 'hfnorm' or parameter == 'roipolygons' or \
                    parameter == 'background center' or parameter == 'background dev' or \
-                   parameter == 'fracframesisback':
+                   parameter == 'fracframesisback' or \
+                   parameter == 'isarena':
                 sz = int(value)
                 self.file.seek(sz,1)
             elif parameter == 'data format':
@@ -972,6 +977,13 @@ class AnnotationFile:
                 if doreadbgmodel:
                     self.bg_imgs.fracframesisback = num.fromstring(self.file.read(sz),'<d')
                     self.bg_imgs.fracframesisback.shape = params.movie_size
+                else:
+                    self.file.seek(sz,1)
+            elif parameter == 'isarena':
+                sz = int(value)
+                if doreadbgmodel:
+                    self.bg_imgs.isarena = num.fromstring(self.file.read(sz),'<d').astype(bool)
+                    self.bg_imgs.isarena.shape = params.movie_size
                 else:
                     self.file.seek(sz,1)
             elif parameter == 'hfnorm':

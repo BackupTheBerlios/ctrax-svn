@@ -2064,7 +2064,7 @@ if ~isalive(handles.trx(handles.selected),handles.f),
   errordlg('Selected fly is not alive in current frame!','Bad Selection');
   return;
 end
-handles.connectfirstfly = handles.selected;
+handles.connectfirstfly(end) = handles.selected;
 handles.nselect = 1;
 handles.selected = [];
 handles.connectfirstframe = handles.f;

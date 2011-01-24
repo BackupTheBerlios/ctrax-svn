@@ -503,19 +503,23 @@ class ExpBGFGModel:
         h0 = plt.subplot(151)
         plt.imshow(self.im)
         plt.axis('tight')
-        plt.axis('image')
+        #plt.axis('image')
         plt.title('image')
         plt.subplot(152,sharex=h0,sharey=h0)
         plt.title('cc')
         plt.imshow(self.cc)
+        plt.axis('tight')
         plt.subplot(153,sharex=h0,sharey=h0)
         plt.imshow(self.isfore)
         plt.title('isfore')
+        plt.axis('tight')
         plt.subplot(154,sharex=h0,sharey=h0)
         plt.imshow(self.isback)
+        plt.axis('tight')
         plt.subplot(155,sharex=h0,sharey=h0)
         plt.imshow(num.logical_and(self.bw,self.isfore==False))
         plt.title('ignored fg pixels')
+        plt.axis('tight')
         plt.show()
             
     def isfore_mask_old(self):
@@ -810,7 +814,7 @@ class ExpBGFGModel:
         if hasattr(self,'always_bg_mask'):
             out['always_bg_mask'] = self.always_bg_mask
 
-        scipy.io.savemat( matfilename, out, oned_as='column' )
+        scipy.io.savemat( matFileName, out, oned_as='column' )
 
     def save(self,outputFileName):
         
@@ -956,7 +960,7 @@ class ExpBGFGModel:
         nr = nframessample
         nc = 5
         
-        plt.figure()
+        plt.figure(figsize=(15,15))
         vmin_noninf = num.zeros(nc)
         vmin_noninf[:] = num.infty
         vmax_noninf = num.zeros(nc)

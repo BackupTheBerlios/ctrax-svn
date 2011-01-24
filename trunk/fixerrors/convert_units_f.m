@@ -69,10 +69,15 @@ else
     end
     fprintf('Matfile: %s%s\n\n',matpath,matname);
     
-    if exist(savedsettingsfile,'file'),
-      save('-append',savedsettingsfile,'matname','matpath');
-    else
-      save(savedsettingsfile,'matname','matpath');
+    try
+      if exist(savedsettingsfile,'file'),
+        save('-append',savedsettingsfile,'matname','matpath');
+      else
+        save(savedsettingsfile,'matname','matpath');
+      end
+    catch ME,
+      fprintf('Could not save to settings file %s, not a big deal\n',savedsettingsfile);
+      getReport(ME)
     end
     
   end
@@ -131,11 +136,17 @@ if ~alreadyconverted,
     break;
   end
   
-  if ~exist(savedsettingsfile,'file'),
-    save(savedsettingsfile,'fps');
-  else
-    save('-append',savedsettingsfile,'fps');
+  try
+    if ~exist(savedsettingsfile,'file'),
+      save(savedsettingsfile,'fps');
+    else
+      save('-append',savedsettingsfile,'fps');
+    end
+  catch ME,
+    fprintf('Could not save to settings file %s, not a big deal\n',savedsettingsfile);
+    getReport(ME)
   end
+
 end
 
 %% convert from px to mm
@@ -244,7 +255,13 @@ if ~alreadyconverted,
     if ishandle(1), delete(1); end
   end
   
-  save('-append',savedsettingsfile,'pxpermm');
+  try
+    save('-append',savedsettingsfile,'pxpermm');
+  catch ME,
+    fprintf('Could not save to settings file %s, not a big deal\n',savedsettingsfile);
+    getReport(ME)
+  end
+
 end
 
 %% actually do the conversion now

@@ -889,6 +889,9 @@ class CompressedAvi:
     def __init__(self,filename):
 
 
+        if not USE_AVBIN:
+            raise Exception, 'Trying to read compressed AVI, but USE_AVBIN flag set to False'
+
         if DEBUG: print 'Trying to read compressed AVI'
         self.issbfmf = False
         self.source = media.load(filename)
@@ -1312,18 +1315,21 @@ def write_results_to_avi(movie,tracks,filename,f0=None,f1=None):
 
 def write_avi_index(movie,tracks,offsets,outstream,f0,f1):
 
+    f0 = int(f0)
+    f1 = int(f1)
+
     nframes = f1-f0+1
     idx1size = 8 + 16*nframes
     BYTESPERPIXEL = 3
-    bytesperframe = movie.get_width()*movie.get_height()*BYTESPERPIXEL
+    bytesperframe = int(movie.get_width()*movie.get_height()*BYTESPERPIXEL)
 
-    write_chunk_header('idx1',idx1size,outstream)
+    write_chunk_header('idx1',int(idx1size),outstream)
 
     for i in range(len(offsets)):
         outstream.write(struct.pack('4s','00db'))
         outstream.write(struct.pack('I',16))
-        outstream.write(struct.pack('I',offsets[i]))
-        outstream.write(struct.pack('I',bytesperframe))
+        outstream.write(struct.pack('I',int(offsets[i])))
+        outstream.write(struct.pack('I',int(bytesperframe)))
 
 def write_avi_frame(movie,tracks,i,outstream):
 
@@ -1352,15 +1358,23 @@ def write_avi_frame(movie,tracks,i,outstream):
     # get tails
     old_pts = []
     early_frame = int(max(0,i-params.tail_length))
-    for dataframe in tracks[early_frame:i+1]:
+    for j in range(early_frame,i+1):
+        #print "j = %d"%j
+        dataframe = tracks[j]
+        #print "dataframe = " + str(dataframe)
         these_pts = []
+        ellplot = []
         for ellipse in dataframe.itervalues():
+            if num.isnan(ellipse.center.x) or \
+                    num.isnan(ellipse.center.y):
+                continue
             these_pts.append( (ellipse.center.x,ellipse.center.y,
                                ellipse.identity) )
+            ellplot.append(ellipse)
         old_pts.append(these_pts)
 
     # draw on image
-    bitmap,resize,img_size = annotate_bmp(frame,ellipses,old_pts,
+    bitmap,resize,img_size = annotate_bmp(frame,ellplot,old_pts,
                                             params.ellipse_thickness,
                                             [height,width])
     img = bitmap.ConvertToImage()

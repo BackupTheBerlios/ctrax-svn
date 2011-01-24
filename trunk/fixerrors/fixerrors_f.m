@@ -1,52 +1,76 @@
-% script that prompts user for mat, annotation, and movie files, parameters
-% for computing suspicious frames, then computes suspicious frames, then
-% brings up the fixerrors gui
+function [savename,success] = fixerrors_f(varargin)
+
+success = false;
+
+[moviename,matname,annname,convertname,savename,suspiciousseqsname] = ...
+  myparse(varargin,'moviename','','matname','','annname','',...
+  'convertname','','savename','','suspiciousseqsname','');
 
 %% set all defaults
 
-moviename = '';
-moviepath = '';
 setuppath;
 
 %% read last settings
 pathtofixerrors = which('fixerrors');
 savedsettingsfile = strrep(pathtofixerrors,'fixerrors.m','.fixerrorsrc.mat');
 if exist(savedsettingsfile,'file')
-  load(savedsettingsfile);
+  rc = load(savedsettingsfile); 
+  fns = fieldnames(rc);
+  for i = 1:length(fns),
+    fn = fns{i};
+    if ~exist(fn,'var') || eval(sprintf('isempty(%s)',fn)),
+      eval(sprintf('%s = rc.%s',fn,fn));
+    end
+  end
 end
 
-%% choose movie
+%% choose movie, etc if not input
 
-fprintf('Choose a movie to fix errors in\n');
-movieexts = {'*.fmf','*.sbfmf','*.avi'}';
-helpmsg = 'Choose movie file for which to fix tracking errors';
-[moviename,moviepath] = uigetfilehelp(movieexts,'Choose movie file',moviename,'helpmsg',helpmsg);
-if isnumeric(moviename) && moviename == 0, 
-  return;
-end
-[movietag,movieext] = splitext(moviename);
-
-helpmsg = sprintf('Choose the mat file containing the trajectories corresponding to movie %s.',[moviepath,moviename]);
-matname = [moviepath,strrep(moviename,movieext,'.mat')];
-[matname,matpath] = uigetfilehelp({'*.mat'},'Choose mat file',matname,'helpmsg',helpmsg);
-if isnumeric(matname) && matname == 0, 
-  return;
+if isempty(moviename),
+  fprintf('Choose a movie to fix errors in\n');
+  movieexts = {'*.fmf','*.sbfmf','*.avi'}';
+  helpmsg = 'Choose movie file for which to fix tracking errors';
+  [moviename,moviepath] = uigetfilehelp(movieexts,'Choose movie file',moviename,'helpmsg',helpmsg);
+  if isnumeric(moviename) && moviename == 0,
+    return;
+  end
+  [movietag,movieext] = splitext(moviename);
+else
+  [moviepath,movietag,movieext] = fileparts(moviename);
+  moviename = [movietag,movieext];
 end
 
-annname = [matpath,moviename,'.ann'];
-helpmsg = {};
-helpmsg{1} = 'Choose the Ctrax annotation file corresponding to:';
-helpmsg{2} = sprintf('Movie: %s',[moviepath,moviename]);
-helpmsg{3} = sprintf('Trajectory mat file: %s',[matpath,matname]);
-[annname,annpath] = uigetfilehelp({'*.ann'},'Choose ann file',annname,'helpmsg',helpmsg);
-if isnumeric(annname) && annname == 0,
-  return;
+if isempty(matname),
+  helpmsg = sprintf('Choose the mat file containing the trajectories corresponding to movie %s.',[moviepath,moviename]);
+  matname = [moviepath,strrep(moviename,movieext,'.mat')];
+  [matname,matpath] = uigetfilehelp({'*.mat'},'Choose mat file',matname,'helpmsg',helpmsg);
+  if isnumeric(matname) && matname == 0,
+    return;
+  end
+else
+  [matpath,mattag,matext] = fileparts(matname);
+  matname = [mattag,matext];
 end
 
-moviename = [moviepath,moviename];
-matname = [matpath,matname];
-annname = [annpath,annname];
-
+if isempty(annname),
+  annname = [matpath,moviename,'.ann'];
+  helpmsg = {};
+  helpmsg{1} = 'Choose the Ctrax annotation file corresponding to:';
+  helpmsg{2} = sprintf('Movie: %s',[moviepath,moviename]);
+  helpmsg{3} = sprintf('Trajectory mat file: %s',[matpath,matname]);
+  [annname,annpath] = uigetfilehelp({'*.ann'},'Choose ann file',annname,'helpmsg',helpmsg);
+  if isnumeric(annname) && annname == 0,
+    return;
+  end
+else
+  [annpath,anntag,annext] = fileparts(annname);
+  annname = [anntag,annext];
+end
+  
+moviename = fullfile(moviepath,moviename);
+matname = fullfile(matpath,matname);
+annname = fullfile(annpath,annname);
+  
 [readframe,nframes,fid] = get_readframe_fcn(moviename);
 
 try
@@ -55,20 +79,32 @@ try
   else
     save(savedsettingsfile,'moviename','moviepath');
   end
-catch ME,
-  fprintf('Could not save to rc file %s -- not a big deal\n',savedsettingsfile);
+catch ME
+  fprintf('Could not save to settings file %s -- not a big deal\n',savedsettingsfile);
   getReport(ME)
 end
 
 %% convert to px, seconds
 
-[matpathtmp,matnametmp] = split_path_and_filename(matname);
-[convertsucceeded,convertmatname,trx] = convert_units_f('matname',matnametmp,'matpath',matpathtmp,'moviename',moviename);
+if isempty(convertname),
+  [convertsucceeded,convertmatname,trx] = ...
+    convert_units_f('matname',matname,'moviename',moviename,'dosave',true);
+else
+  if exist(convertname,'file'),
+    fprintf('Loading converted data from existing file %s\n',convertname);
+    convertsucceeded = true;
+    convertmatname = convertname;
+  else
+    [convertsucceeded,convertmatname,trx] = ...
+      convert_units_f('matname',matname,'moviename',moviename,...
+      'savename',convertname,'dosave',true);
+  end
+end
 if ~convertsucceeded,
   return;
 end
-convertmatname = matname;
-%[trx,matname,succeeded] = load_tracks(convertmatname,moviename);
+%matname = convertmatname;
+[trx,matname,succeeded] = load_tracks(convertmatname,moviename);
 
 %% see if we should restart
 
@@ -202,8 +238,8 @@ matcherrclose = str2double(tmp{6});
 
 try
   save('-append',savedsettingsfile,...
-  'minerrjump','minorientchange','largemajor','minanglediff',...
-  'minwalkvel','matcherrclose');
+    'minerrjump','minorientchange','largemajor','minanglediff',...
+    'minwalkvel','matcherrclose');
 catch ME
   fprintf('Could not save to settings file %s -- not a big deal\n',savedsettingsfile);
   getReport(ME)
@@ -215,16 +251,44 @@ end
 
 if ~DORESTART,
 
+if isempty(suspiciousseqsname),
+  suspiciousseqsname = fullfile(matpath,sprintf('suspiciousseqs_%s.mat',mattag));
+end
+
 minerrjumpfrac = minerrjump / max_jump;
 minorientchange = minorientchange*pi/180;
 maxmajorfrac = (largemajor - meanmajor)/(maxmajor - meanmajor);
 minwalkvel = minwalkvel*px2mm;
 matcherrclose = matcherrclose*px2mm^2;
 minanglediff = minanglediff*pi/180;
-[seqs,trx0,params] = suspicious_sequences(matname,annname,...
-  'minerrjumpfrac',minerrjumpfrac,'minorientchange',minorientchange,...
-  'maxmajorfrac',maxmajorfrac,'minwalkvel',minwalkvel,...
-  'matcherrclose',matcherrclose,'minanglediff',minanglediff);
+
+ismatch = false;
+fns = {'minerrjumpfrac','minorientchange',...
+  'maxmajorfrac','minwalkvel',...
+  'matcherrclose','minanglediff',...
+  'matname','annname','moviename'};
+if exist(suspiciousseqsname,'file'),
+  tmp = load(suspiciousseqsname);
+  ismatch = true;
+  for i = 1:length(fns),
+    fn = fns{i};
+    if ~isfield(tmp,fn) || ...
+        (ischar(tmp.(fn)) && ~eval(sprintf('strcmp(%s,tmp.%s)',fn,fn))) || ...
+        (~ischar(tmp.(fn)) && eval(sprintf('%s ~= tmp.%s',fn,fn))),
+      ismatch = false;
+      break;
+    end
+  end
+end
+if ismatch,
+  load(suspiciousseqsname,'seqs','trx0','params');
+else
+  [seqs,trx0,params] = suspicious_sequences(matname,annname,...
+    'minerrjumpfrac',minerrjumpfrac,'minorientchange',minorientchange,...
+    'maxmajorfrac',maxmajorfrac,'minwalkvel',minwalkvel,...
+    'matcherrclose',matcherrclose,'minanglediff',minanglediff);
+  save(suspiciousseqsname,'seqs','trx0','params',fns{:});
+end
 
 end
 
@@ -256,29 +320,31 @@ end
 
 %% save
 
-while true,
+if isempty(savename),
   helpmsg = {};
   helpmsg{1} = 'Choose the mat file to which to save the fixed trajectories corresponding to:';
   helpmsg{2} = sprintf('Movie: %s',moviename);
   helpmsg{3} = sprintf('Trajectory mat file: %s',matname);
   helpmsg{4} = sprintf('Ctrax annotation file: %s',annname);
-
+  
   [tmpmatpath,tmpmatname] = split_path_and_filename(matname);
   savename = [tmpmatpath,'fixed_',tmpmatname];
   [savename, savepath] = uiputfilehelp('*.mat', 'Save results?', savename,'helpmsg',helpmsg);
-  if isnumeric(savename) && savename == 0,
-    fprintf('missed\n');
-  else
-    break;
+  if ischar(savename),
+    savename = [savepath,savename];
   end
 end
-savename = [savepath,savename];
 rmfns = intersect({'xpred','ypred','thetapred','dx','dy','v','f2i'},fieldnames(trx));
 trx = rmfield(trx,rmfns);
-if ~isempty(savename),
+isdeleted = isnan([trx.firstframe]);
+trx(isdeleted) = [];
+if ischar(savename),
   save(savename,'trx');
 else
   tmpsavename = sprintf('backupfixed_movie%s.mat',tag);
   save(tmpsavename,'trx');
   msgbox(sprintf('saving trx to file %s\n',tmpsavename));
 end
+
+fclose(fid);
+success = true;
