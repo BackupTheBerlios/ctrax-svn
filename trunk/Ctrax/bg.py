@@ -374,6 +374,9 @@ class BackgroundCalculator:
 
     def flexmedmad( self, parent=None ):
         
+        if params.use_expbgfgmodel:
+            print 'Computing median with ExpBGFGModel'
+
         # estimate standard deviation assuming a Gaussian distribution
         # from the fact that half the data falls within mad
         # MADTOSTDFACTOR = 1./norminv(.75)
@@ -418,6 +421,10 @@ class BackgroundCalculator:
             idx = num.tile(num.resize(num.arange(nrsmall*nc),(nrsmall*nc,1)),(1,nframes))
             grid = num.indices((nrsmall,nc))
 
+        noffsets = num.ceil(float(nr) / float(nrsmall))
+
+
+
         # prepare for cancel
         if params.interactive and not params.batch_executing:
             isbackup = False
@@ -425,8 +432,6 @@ class BackgroundCalculator:
                 med0 = self.med.copy()
                 mad0 = self.mad.copy()
                 isbackup = True
-
-            noffsets = num.ceil(float(nr) / float(nrsmall))
 
             progressbar = \
                 wx.ProgressDialog('Computing Background Model',
@@ -486,6 +491,8 @@ class BackgroundCalculator:
                             delattr(self,'med')
                             delattr(self,'mad')
                         return False
+                else:
+                    print 'Reading in piece of frame %d (%d / %d), offset = %d (%d / %d)'%(frame,i+1,nframes,rowoffset,offseti+1,noffsets)
 
                 # read in the entire frame
                 data,stamp = params.movie.get_frame(frame)

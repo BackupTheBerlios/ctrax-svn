@@ -34,6 +34,9 @@
           <label>Export as AVI-file</label>
           <enabled>0</enabled>
         </object>
+        <object class="wxMenuItem" name="menu_file_save_diagnostics">
+          <label>Save Diagnostics</label>
+        </object>
         <object class="separator"/>
         <object class="wxMenuItem" name="menu_file_quit">
           <label>Quit</label>
@@ -127,7 +130,6 @@
           <checked>0</checked>
         </object>
       </object>
-      
       <object class="wxMenu" name="menu_help">
         <label>Help</label>
         <object class="wxMenuItem" name="menu_help_help">

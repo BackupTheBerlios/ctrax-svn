@@ -11,7 +11,7 @@ import shutil
 from version import __version__
 from version import DEBUG_ANN as DEBUG
 from version import DEBUG_IDASSIGNMENT
-from params import params
+from params import params, diagnostics
 import ellipsesk as ell
 import pickle
 
@@ -666,6 +666,13 @@ class AnnotationFile:
             self.file.write("arena_center_x:%.2f\n"%params.arena_center_x)
             self.file.write("arena_center_y:%.2f\n"%params.arena_center_y)
             self.file.write("arena_radius:%.2f\n"%params.arena_radius)
+        self.file.write("min_arena_center_x:%.3f\n"%params.min_arena_center_x)
+        self.file.write("max_arena_center_x:%.3f\n"%params.max_arena_center_x)
+        self.file.write("min_arena_center_y:%.3f\n"%params.min_arena_center_y)
+        self.file.write("max_arena_center_y:%.3f\n"%params.max_arena_center_y)
+        self.file.write("min_arena_radius:%.3f\n"%params.min_arena_radius)
+        self.file.write("max_arena_radius:%.3f\n"%params.max_arena_radius)
+
         self.file.write("do_set_circular_arena:%d\n"%params.do_set_circular_arena)
         self.file.write("do_use_morphology:%d\n" %params.do_use_morphology)
         self.file.write("opening_radius:%d\n" %params.opening_radius)
@@ -778,6 +785,7 @@ class AnnotationFile:
             expbgfgmodel_filename = ''
         else:
             expbgfgmodel_filename = params.expbgfgmodel_filename
+
         self.file.write('expbgfgmodel_filename:%s\n'%expbgfgmodel_filename)
         self.file.write('use_expbgfgmodel:%d\n'%params.use_expbgfgmodel)
         self.file.write('expbgfgmodel_llr_thresh:%f\n'%params.expbgfgmodel_llr_thresh)
@@ -911,8 +919,21 @@ class AnnotationFile:
                 params.arena_center_y = float(value)
             elif parameter == 'arena_radius':
                 params.arena_radius = float(value)
+            elif parameter == 'min_arena_center_x':
+                params.min_arena_center_x = float(value)
+            elif parameter == 'min_arena_center_y':
+                params.min_arena_center_y = float(value)
+            elif parameter == 'min_arena_radius':
+                params.min_arena_radius = float(value)
+            elif parameter == 'max_arena_center_x':
+                params.max_arena_center_x = float(value)
+            elif parameter == 'max_arena_center_y':
+                params.max_arena_center_y = float(value)
+            elif parameter == 'max_arena_radius':
+                params.max_arena_radius = float(value)
             elif parameter == 'do_set_circular_arena':
                 params.do_set_circular_arena = bool(int(value))
+                print "read do_set_circular_arena = " + str(params.do_set_circular_arena)
             elif parameter == 'do_use_morphology':
                 params.do_use_morphology = bool(int(value))
             elif parameter == 'opening_radius':
@@ -1084,7 +1105,7 @@ class AnnotationFile:
                     params.expbgfgmodel_filename = None
                 else:
                     params.expbgfgmodel_filename = value
-                    if doreadbgmodel and (self.bg_imgs is not None):
+                    if self.bg_imgs is not None:
                         self.bg_imgs.setExpBGFGModel(params.expbgfgmodel_filename)
             elif parameter == 'use_expbgfgmodel':
                 params.use_expbgfgmodel = bool(int(value))
@@ -1303,3 +1324,11 @@ def LoadSettings(filename, bg_imgs, doreadbgmodel=False):
                                 bg_imgs,
                                 justreadheader=True,
                                 doreadbgmodel=doreadbgmodel)
+
+def WriteDiagnostics(filename):
+
+    file = open(filename,'w')
+    for (name,value) in diagnostics.iteritems():
+        file.write("%s,%s\n"%(name,value))
+
+    file.close()

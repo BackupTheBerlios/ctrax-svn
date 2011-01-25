@@ -1,6 +1,6 @@
 import numpy as num
 
-from params import params
+from params import params, diagnostics
 import ellipsesk as ell
 import estconncomps as est
 import kcluster2d as kcluster
@@ -8,6 +8,7 @@ import matchidentities
 #import pylab as mpl
 from version import DEBUG_HINDSIGHT as DEBUG
 import sys
+
 
 class MyDictionary(dict):
     def __init__(self,emptyval=None):
@@ -142,6 +143,8 @@ class Hindsight:
 
     def fixerrors(self,T=None):
 
+        diagnostics['nframes_analyzed'] += 1
+
         if T is None:
             T = len(self.tracks)
 
@@ -175,6 +178,10 @@ class Hindsight:
         # for each death in frame T-2
         didfix = False
         deathscurr = list(self.milestones.getdeaths(T-2))
+        diagnostics['ndeaths_nohindsight'] += len(deathscurr)
+
+        ndeaths0 = len(deathscurr)
+
         if params.do_fix_split:
             for id1 in deathscurr:
                 didfix |= self.fix_splitdetection(id1,T-2)
@@ -182,6 +189,10 @@ class Hindsight:
         if params.do_fix_spurious:
             for id1 in deathscurr:
                 didfix |= self.fix_spuriousdetection(id1,T-2)
+
+        diagnostics['ndeaths_notfixed'] += \
+            len(list(self.milestones.getdeaths(T-2)))
+        
 
         # for each birth in frame T-2
         birthscurr = list(self.milestones.getbirths(T-2))
@@ -192,6 +203,13 @@ class Hindsight:
         if params.do_fix_lost:
             for id2 in birthscurr:
                 didfix |= self.fix_lostdetection(id2,T-2)
+
+        diagnostics['nbirths_notfixed'] += \
+            len(list(self.milestones.getbirths(T-2)))
+
+
+        if didfix:
+            diagnostics['nhindsight_fixed'] += 1
 
         if DEBUG: 
             if didfix:
@@ -244,6 +262,9 @@ class Hindsight:
         self.tracks.RecycleId(id)
         self.milestones.deleteid(id)
         if DEBUG: print '*** deleted track for id=%d with life span=%d'%(id,lifespan)
+
+        # update diagnostics
+        diagnostics['nspurious_fixed'] += 1
 
         return True
 
@@ -335,6 +356,9 @@ class Hindsight:
         self.milestones.setdeath(id1,d2)
 
         if DEBUG: print '*** fixing lost detection: id1=%d lost in frame t1=%d, found again in frame t2=%d with id2=%d'%(id1,t1,t2,id2)
+
+        # update diagnostics
+        diagnostics['nlost_fixed'] += 1
 
         return True
 
@@ -571,6 +595,9 @@ class Hindsight:
             if DEBUG: print "Setting death of id1 = %d to %f"%(id1,d3)
             self.milestones.setdeath(id1,d3)
 
+        # update diagnostics
+        diagnostics['nmerged_fixed'] += 1
+
         return True
 
     def fix_splitdetection(self,id1,t2):
@@ -689,6 +716,9 @@ class Hindsight:
         self.milestones.deleteid(lastborn)
         # recycle this id
         self.tracks.RecycleId(lastborn)
+
+        # update diagnostics
+        diagnostics['nsplits_fixed'] += 1
 
         return True
 

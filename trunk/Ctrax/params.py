@@ -261,6 +261,16 @@ class Parameters:
         self.arena_radius = None
         self.arena_edgethresh = None
         self.do_set_circular_arena = True
+
+        # search space for arena circle
+        self.min_arena_center_x = .4
+        self.max_arena_center_x = .6
+        self.min_arena_center_y = .4
+        self.max_arena_center_y = .6
+        self.min_arena_radius = .25
+        self.max_arena_radius = .5
+
+
         # batch processing & auto-detecting arena
         self.batch_autodetect_arena = True
         self.batch_autodetect_shape = True
@@ -429,6 +439,27 @@ class Parameters:
         return True
         
 params = Parameters()
+
+diagnostics = dict()
+diagnostics['nbirths_nohindsight'] = 0
+diagnostics['ndeaths_nohindsight'] = 0
+diagnostics['ndeaths_notfixed'] = 0
+diagnostics['nbirths_notfixed'] = 0
+diagnostics['nsplits_fixed'] = 0
+diagnostics['nspurious_fixed'] = 0
+diagnostics['nmerged_fixed'] = 0
+diagnostics['nlost_fixed'] = 0
+diagnostics['nhindsight_fixed'] = 0
+diagnostics['nlarge_notfixed'] = 0
+diagnostics['nsmall_notfixed'] = 0
+diagnostics['nlarge_split'] = 0
+diagnostics['nsmall_merged'] = 0
+diagnostics['nsmall_lowerthresh'] = 0
+diagnostics['nsmall_deleted'] = 0
+diagnostics['max_nsplit'] = 0
+diagnostics['sum_nsplit'] = 0
+diagnostics['nlarge_ignored'] = 0
+diagnostics['nframes_analyzed'] = 0
 
 class GUIConstants:
     def __init__( self ):

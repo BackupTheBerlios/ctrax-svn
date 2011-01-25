@@ -4,7 +4,7 @@ from ellipsesk import *
 import scipy.ndimage as meas
 import kcluster2d as kcluster
 #from kcluster import gmm
-from params import params
+from params import params, diagnostics
 # this uses its own debug
 from version import DEBUG_ESTCONNCOMPS as DEBUG
 from version import DEBUG_TRACKINGSETTINGS
@@ -256,6 +256,11 @@ def trylowerthresh(ellipses,i,L,dfore):
     ellipsenew.y += r1
     # see if it is now big enough
     issmall = ellipsenew.area < params.minshape.area
+
+    # update diagnostics
+    if not issmall:
+        diagnostics['nsmall_lowerthresh'] += 1
+
     return (issmall,ellipsenew)
 
 def findclosecenters(ellipses,i):
@@ -412,6 +417,10 @@ def trymerge(ellipses,issmall,i,L,dfore):
     canmergewith = closeinds[bestjmerge]
     #print 'merging with ellipse[%d] = '%closeinds[bestjmerge] + str(ellipses[closeinds[bestjmerge]])
     mergeellipses(ellipses,i,canmergewith,ellipsesmerge[bestjmerge],issmall,L)
+
+    # update diagnostics
+    diagnostics['nsmall_merged'] += 1
+
     #print 'after mergeellipses, ellipses = '
     #for jtmp in range(len(ellipses)):
     #    print str(ellipses[jtmp])
@@ -421,7 +430,10 @@ def trydelete(ellipses,i,issmall):
     #print 'trying to delete. area of ellipse is %.2f, maxareadelete is %.2f'%(ellipses[i].area,params.maxareadelete)
     if ellipses[i].area < params.maxareadelete:
         ellipses[i].area = 0
+        diagnostics['nsmall_deleted'] += 1
         issmall[i] = False
+        return True
+    return False
 
 def deleteellipses(ellipses,L,doerase=True):
     i = 0
@@ -452,6 +464,7 @@ def fixsmall(ellipses,L,dfore):
         #print "trying to fix ellipse %d: " % i
         #printellipse(ellipses[i])
         (issmall[i],ellipselowerthresh) = trylowerthresh(ellipses,i,L,dfore)
+
         if issmall[i] == False:
             ellipses[i] = ellipselowerthresh
             #print "Succeeded by lowering threshold:"
@@ -478,7 +491,9 @@ def fixsmall(ellipses,L,dfore):
             # set ellipses[i] to be ellipselowerthresh
             ellipses[i] = ellipselowerthresh.copy()
             #copyellipse(ellipses,i,ellipselowerthresh)
-            trydelete(ellipses,i,issmall)
+            diddelete = trydelete(ellipses,i,issmall)
+            if not diddelete:
+                diagnostics['nsmall_notfixed'] += 1
             #print "After deleting, ellipse is:"
             #printellipse(ellipses[i])
             issmall[i] = False
@@ -662,6 +677,11 @@ def trysplit(ellipses,i,isdone,L,dfore):
                 area0[j] = major0[j]*minor0[j]*num.pi*4.0
                 if DEBUG: print 'component %d: mu = '%j + str(mu0[j,:]) + ', major = ' + str(major0[j]) + ', minor = ' + str(minor0[j]) + ', angle = ' + str(angle0[j]) + ', area = ' + str(area0[j])
 
+            # update diagnostics
+            diagnostics['nlarge_split'] += 1
+            diagnostics['max_nsplit'] = max(diagnostics['max_nsplit'],ncomponents)
+            diagnostics['sum_nsplit'] += ncomponents
+
             ## are any of the components too small?
             #if num.any(area0 < params.minshape.area):
             #    print 'split by raising threshold, but one of the components was too small, minarea = ' + str(params.minshape.area)
@@ -736,6 +756,7 @@ def trysplit(ellipses,i,isdone,L,dfore):
     if ncomponents == 1:
         isdone[i] = True
         if DEBUG: print 'decided not to split'
+        diagnostics['nlarge_notfixed'] += 1
         return isdone
     else:
         # get id
@@ -750,6 +771,12 @@ def trysplit(ellipses,i,isdone,L,dfore):
         # if small enough, set to done
         isdone[i] = ellipses[i].area <= params.maxshape.area
         if DEBUG: print "Set isdone for original ellipse[%d] to %d"%(i,isdone[i])
+        # update diagnostics
+        diagnostics['nlarge_split'] += 1
+        diagnostics['max_nsplit'] = max(diagnostics['max_nsplit'],ncomponents)
+        diagnostics['sum_nsplit'] += ncomponents
+
+
         # add new
         for j in range(1,ncomponents):
             ellipse = Ellipse(mu0[j,0],mu0[j,1],minor0[j],major0[j],angle0[j],area0[j])
@@ -803,6 +830,7 @@ def fixlarge(ellipses,L,dfore):
             print "Large detection with area %f, ignoring"%ellipses[i].area
             ellipses[i].area = 0
             isdone[i] = True
+            diagnostics['nlarge_ignored'] += 1
         else:
             if DEBUG: print 'trying to split ellipse: ' + str(ellipses[i])
             isdone = trysplit(ellipses,i,isdone,L,dfore)

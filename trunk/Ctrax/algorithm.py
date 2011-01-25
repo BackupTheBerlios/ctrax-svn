@@ -154,6 +154,11 @@ class CtraxAlgorithm (settings.AppWithSettings):
             if self.break_flag:
                 break
 
+            if (self.start_frame % 100) == 0:
+                # save tracking diagnostics
+                if not(hasattr(self,'diagnosticsfilename')) or self.diagnosticsfilename is None:
+                    self.diagnosticsfilename = basename + '_ctraxdiagnostics.txt'
+                annot.WriteDiagnostics(self.diagnosticsfilename)
 
         self.Finish()
 
@@ -253,5 +258,6 @@ class CtraxAlgorithm (settings.AppWithSettings):
         print "Saving to mat file "+savename+"...\n"
 
         self.ann_file.WriteMAT( savename, dosavestamps=True )
+
         print "Done\n"
 

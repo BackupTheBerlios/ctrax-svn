@@ -32,6 +32,7 @@ class SetArena:
 
         self.parent = parent
         self.im = bg.copy()
+
         rsrc = xrc.XmlResource(RSRC_FILE )
         self.frame = rsrc.LoadFrame(parent,"detect_arena_frame")
 
@@ -65,6 +66,12 @@ class SetArena:
         self.radius_spin = self.control('radius_spin')
         self.x_spin = self.control('x_spin')
         self.y_spin = self.control('y_spin')
+        self.minradius_text = self.control('minradius_text')
+        self.maxradius_text = self.control('maxradius_text')
+        self.minx_text = self.control('minx_text')
+        self.maxx_text = self.control('maxx_text')
+        self.miny_text = self.control('miny_text')
+        self.maxy_text = self.control('maxy_text')
 
     def InitializeValues(self):
 
@@ -126,14 +133,22 @@ class SetArena:
         self.x_text.SetValue("%.1f"%self.arena_center_x)
         self.y_text.SetValue("%.1f"%self.arena_center_y)
 
+        # set min, max text
+        self.minradius_text.SetValue("%.3f"%params.min_arena_radius)
+        self.maxradius_text.SetValue("%.3f"%params.max_arena_radius)
+        self.minx_text.SetValue("%.3f"%params.min_arena_center_x)
+        self.maxx_text.SetValue("%.3f"%params.max_arena_center_x)
+        self.miny_text.SetValue("%.3f"%params.min_arena_center_y)
+        self.maxy_text.SetValue("%.3f"%params.max_arena_center_y)
+
         # set-up spinners
-        self.max_radius = max(params.movie.get_width()*self.nc_resize_ratio,
+        self.maxradius = max(params.movie.get_width()*self.nc_resize_ratio,
                               params.movie.get_height()*self.nr_resize_ratio)/2.
-        self.max_x = (params.movie.get_width()-1.)*self.nc_resize_ratio
-        self.max_y = (params.movie.get_height()-1.)*self.nr_resize_ratio
-        self.radius_spinner_scale = float(NRADIUSSTEPS)/self.max_radius
-        self.x_spinner_scale = float(NXSTEPS)/self.max_x
-        self.y_spinner_scale = float(NYSTEPS)/self.max_y
+        self.maxx = (params.movie.get_width()-1.)*self.nc_resize_ratio
+        self.maxy = (params.movie.get_height()-1.)*self.nr_resize_ratio
+        self.radius_spinner_scale = float(NRADIUSSTEPS)/self.maxradius
+        self.x_spinner_scale = float(NXSTEPS)/self.maxx
+        self.y_spinner_scale = float(NYSTEPS)/self.maxy
         self.radius_spin.SetRange(0,NRADIUSSTEPS-1)
         self.x_spin.SetRange(0,NXSTEPS-1)
         self.y_spin.SetRange(0,NYSTEPS-1)
@@ -189,6 +204,33 @@ class SetArena:
                                              self.OnYValidated,
                                              pending_color=params.wxvt_bg )
 
+        # min, max text input
+        wxvt.setup_validated_float_callback( self.minradius_text,
+                                             xrc.XRCID("minradius_text"),
+                                             self.OnRadiusBoundsValidated,
+                                             pending_color=params.wxvt_bg )
+        wxvt.setup_validated_float_callback( self.maxradius_text,
+                                             xrc.XRCID("maxradius_text"),
+                                             self.OnRadiusBoundsValidated,
+                                             pending_color=params.wxvt_bg )
+        wxvt.setup_validated_float_callback( self.minx_text,
+                                             xrc.XRCID("minx_text"),
+                                             self.OnXBoundsValidated,
+                                             pending_color=params.wxvt_bg )
+        wxvt.setup_validated_float_callback( self.maxx_text,
+                                             xrc.XRCID("maxx_text"),
+                                             self.OnXBoundsValidated,
+                                             pending_color=params.wxvt_bg )
+        wxvt.setup_validated_float_callback( self.miny_text,
+                                             xrc.XRCID("miny_text"),
+                                             self.OnYBoundsValidated,
+                                             pending_color=params.wxvt_bg )
+        wxvt.setup_validated_float_callback( self.maxy_text,
+                                             xrc.XRCID("maxy_text"),
+                                             self.OnYBoundsValidated,
+                                             pending_color=params.wxvt_bg )
+
+
         # mouse click
         self.img_wind_child.Bind(wx.EVT_LEFT_DOWN,self.MouseDown)
         self.img_wind_child.Bind(wx.EVT_LEFT_UP,self.MouseUp)
@@ -213,6 +255,36 @@ class SetArena:
         wx.Yield()
         self.display_parameters(self.radius_text)
         self.ShowImage()
+
+    def OnRadiusBoundsValidated(self,evt):
+        minv = float(self.minradius_text.GetValue())
+        maxv = float(self.maxradius_text.GetValue())
+        if minv < 0:
+            minv = 0
+        if maxv < minv:
+            maxv = minv
+        params.min_arena_radius = minv
+        params.max_arena_radius = maxv
+
+    def OnXBoundsValidated(self,evt):
+        minv = float(self.minx_text.GetValue())
+        maxv = float(self.maxx_text.GetValue())
+        if minv < 0:
+            minv = 0
+        if maxv < minv:
+            maxv = minv
+        params.min_arena_center_x = minv
+        params.max_arena_center_x = maxv
+
+    def OnYBoundsValidated(self,evt):
+        minv = float(self.miny_text.GetValue())
+        maxv = float(self.maxy_text.GetValue())
+        if minv < 0:
+            minv = 0
+        if maxv < minv:
+            maxv = minv
+        params.min_arena_center_y = minv
+        params.max_arena_center_y = maxv
 
     def OnXValidated(self,evt):
         self.arena_center_x = float(self.x_text.GetValue())
@@ -330,12 +402,12 @@ class SetArena:
                 theta = num.arctan2(self.edgepoint[1] - self.arena_center_y,self.edgepoint[0] - self.arena_center_x)        
         if (self.edgepoint[0] < 0):
             self.arena_radius = -self.arena_center_x / num.cos(theta)
-        elif (self.edgepoint[0] > self.max_x):
-            self.arena_radius = (self.max_x - self.arena_center_x) / num.cos(theta)
+        elif (self.edgepoint[0] > self.maxx):
+            self.arena_radius = (self.maxx - self.arena_center_x) / num.cos(theta)
         elif (self.edgepoint[1] < 0):
             self.arena_radius = -self.arena_center_y / num.sin(theta)
-        elif (self.edgepoint[1] > self.max_y):
-            self.arena_radius = (self.max_y - self.arena_center_y) / num.sin(theta)            
+        elif (self.edgepoint[1] > self.maxy):
+            self.arena_radius = (self.maxy - self.arena_center_y) / num.sin(theta)            
         self.edgepoint[0] = self.arena_center_x + self.arena_radius*num.cos(theta)
         self.edgepoint[1] = self.arena_center_y + self.arena_radius*num.sin(theta)            
 
@@ -500,33 +572,38 @@ def detectarena(edgemag,approxa=None,approxb=None,approxr=None):
     isguessedb = True
     isguessedr = True
     if approxa is None:
-        approxa = nc/2.
+        approxa = (params.min_arena_center_x + \
+                       params.max_arena_center_x) / 2. * float(nc)
         isguesseda = False
     if approxb is None:
-        approxb = nr/2.
+        approxb = (params.min_arena_center_y + \
+                       params.max_arena_center_y) / 2. * float(nr)
         isguessedb = False
     if approxr is None:
-        approxr = .375*min(nr,nc)
+        approxr = (params.min_arena_radius + \
+                       params.max_arena_radius) / 2. * float(min(nr,nc))
         isguessedr = False
 
     if isguesseda:
         mina = approxa - .025*nc
         maxa = approxa + .025*nc
     else:
-        mina = approxa - .1*nc
-        maxa = approxa + .1*nc
+        mina = params.min_arena_center_x * float(nc)
+        maxa = params.max_arena_center_x * float(nc)
+
     if isguessedb:
-        minb = approxb - .025*nr
-        maxb = approxb + .025*nr
+        minb = approxb - .025*nc
+        maxb = approxb + .025*nc
     else:
-        minb = approxb - .1*nr
-        maxb = approxb + .1*nr
+        minb = params.min_arena_center_y * float(nr)
+        maxb = params.max_arena_center_y * float(nr)
+
     if isguessedr:
-        minr = approxr - .025*min(nc,nr)
+        minr = max(0.,approxr - .025*min(nc,nr))
         maxr = approxr + .025*min(nc,nr)
     else:
-        minr = approxr - .125*min(nc,nr)
-        maxr = approxr + .125*min(nc,nr)
+        minr = params.min_arena_radius * float(min(nc,nr))
+        maxr = params.max_arena_radius * float(min(nc,nr))
     
     nbinsa = 20
     nbinsb = 20

@@ -159,10 +159,13 @@ Optional Command Line Arguments:\n\
 --AutoDetectCircularArena={True,False}\n\
 --CompressMovie=<movie.sbfmf>\n\
 --Matfile=<movie.mat>\n\
+--DiagnosticsFile=<movie_ctraxdiagnostics.txt>\n\
 Example:\n\
 Ctrax --Interactive=True --Input=movie1.fmf \n\
 --Output=movie1.ann \n\
 --SettingsFile=exp1.ann\n\
+--Matfile=movie1.mat\n\
+--DiagnosticsFile=movie1_ctraxdiagnostics.txt\n\
 If not in interactive mode, then input must be defined.\n\
 If input is movie1.fmf then output is set to movie1.ann and\n\
 settings file is set to movie1.ann\n\
@@ -171,7 +174,9 @@ AutoEstimateShape=True, AutoDetectCircularArena=True\n\
 If CompressMovie not set, then a compressed SBFMF will not\n\
 be created by default.\n\
 If Matfile is not set, then <basename>.mat will be used\n\
-instead, where <basename> is the base name of the movie.\n"
+instead, where <basename> is the base name of the movie.\n\
+If DiagnosticsFile is not set, then <basename>_ctraxdiagnostics.txt will be used\n\
+"
 
     def ParseCommandLine(self):
 	"""
@@ -226,6 +231,8 @@ instead, where <basename> is the base name of the movie.\n"
                 self.dowritesbfmf = True
             elif name.lower() == '--matfile':
                 self.matfilename = value
+            elif name.lower() == '--diagnosticsfile':
+                self.diagnosticsfilename = value
             else:
                 print 'Error parsing command line arguments. Unknown parameter name. Usage: '
                 self.PrintUsage()
@@ -549,6 +556,35 @@ instead, where <basename> is the base name of the movie.\n"
             wx.Yield()
 
             movies.write_results_to_avi(self.movie,self.ann_file,filename,framestart,frameend)
+
+            self.status.SetBackgroundColour( start_color )
+            self.status.SetStatusText( "", params.status_box )
+            wx.EndBusyCursor()
+            wx.Yield()
+
+        dlg.Destroy()
+
+    def OnSaveDiagnostics( self, evt ):
+        """Choose filename to save diagnostics to."""
+
+        defaultDir = self.save_dir
+        (basename,ext) = os.path.splitext(self.file)
+        defaultFile = basename + '_ctraxdiagnostics.txt'
+        dlg = wx.FileDialog( self.frame, "Save diagnostics to text file", defaultDir, defaultFile, "*.txt", wx.SAVE )
+
+        if dlg.ShowModal() == wx.ID_OK:
+            this_file = dlg.GetFilename()
+            self.save_dir = dlg.GetDirectory()
+            filename = os.path.join( self.save_dir, this_file )
+
+            start_color = self.status.GetBackgroundColour()
+            self.status.SetBackgroundColour( params.status_blue )
+            self.status.SetStatusText( "writing diagnostics to file",
+                                       params.status_box )
+            wx.BeginBusyCursor()
+            wx.Yield()
+
+            annot.WriteDiagnostics( filename )
 
             self.status.SetBackgroundColour( start_color )
             self.status.SetStatusText( "", params.status_box )
