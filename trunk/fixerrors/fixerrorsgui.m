@@ -169,14 +169,15 @@ for fly = 1:length(handles.trx),
 end
 handles.trx(deletetrx) = [];
 % store correct timestamps
-varargout{1} = SetTimestamps(handles);
+varargout{1} = FixIgnoredFields(handles);
 %varargout{1} = handles.trx;
 delete(handles.figure1);
 
-function trx = SetTimestamps(handles)
+function trx = FixIgnoredFields(handles)
 
 trx = handles.trx;
 
+% fix timestamps
 if isfield(handles,'timestamps'),
   for i = 1:numel(handles.trx),
     t0 = handles.trx(i).firstframe;
@@ -184,6 +185,9 @@ if isfield(handles,'timestamps'),
     trx(i).timestamps = handles.timestamps(t0:t1);
   end
 end
+
+% all the converted fields may be wrong; reconvert from 
+trx = apply_convert_units(trx);
 
 function handles = PlotFirstFrame(handles)
 
@@ -1032,7 +1036,7 @@ end
 
 %trx = rmfield(handles.trx,'f2i');
 %trx = handles.trx;
-trx = SetTimestamps(handles);
+trx = FixIgnoredFields(handles);
 
 seqs = handles.seqs;
 doneseqs = handles.doneseqs;
