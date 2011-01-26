@@ -55,6 +55,20 @@ end
 % set up to read movie
 [handles.readframe,handles.nframes,handles.fid] = get_readframe_fcn(handles.moviename);
 
+% get timestamps
+if isfield(handles.trx,'timestamps'),
+  handles.timestamps = nan(1,handles.nframes);
+  for i = 1:numel(handles.trx),
+    t0 = handles.trx(i).firstframe;
+    t1 = handles.trx(i).endframe;
+    if any(~isnan(handles.timestamps) & ...
+           (handles.trx(i).timestamps ~= handles.timestamps(t0:t1))),
+      error('Timestamps don''t match for fly %d',i);
+    end
+    handles.timestamps(t0:t1) = handles.trx(i).timestamps;
+  end
+end
+
 % initialize parameters
 handles = InitializeMainAxes(handles);
 
@@ -154,8 +168,22 @@ for fly = 1:length(handles.trx),
   end
 end
 handles.trx(deletetrx) = [];
-varargout{1} = handles.trx;
+% store correct timestamps
+varargout{1} = SetTimestamps(handles);
+%varargout{1} = handles.trx;
 delete(handles.figure1);
+
+function trx = SetTimestamps(handles)
+
+trx = handles.trx;
+
+if isfield(handles,'timestamps'),
+  for i = 1:numel(handles.trx),
+    t0 = handles.trx(i).firstframe;
+    t1 = handles.trx(i).endframe;
+    trx(i).timestamps = handles.timestamps(t0:t1);
+  end
+end
 
 function handles = PlotFirstFrame(handles)
 
@@ -1003,7 +1031,9 @@ if ~isfield(handles,'savename') || isempty(handles.savename),
 end
 
 %trx = rmfield(handles.trx,'f2i');
-trx = handles.trx;
+%trx = handles.trx;
+trx = SetTimestamps(handles);
+
 seqs = handles.seqs;
 doneseqs = handles.doneseqs;
 moviename = handles.moviename;
