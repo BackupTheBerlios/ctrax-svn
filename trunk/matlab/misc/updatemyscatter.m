@@ -44,111 +44,11 @@
 %     Example
 %       load seamount
 %       scatter(x,y,5,z)
-function varargout = myscatter(varargin)
-
-[x,y,s,c,ncolors,cm,cmisfun,isfilled,marker,rest] = parseargs(varargin{:});
-
-[centers,tmp,idx] = unique(c);
-if length(centers) > ncolors,
-  [counts,centers,idx] = myhist(c,ncolors);
-end
+function updatemyscatter(h,centers,x,y,s,c)
 
 ncenters = length(centers);
-if ~cmisfun,
-  if ncenters < ncolors,
-    idx = round(linspace(1,ncolors,ncenters));
-    colors = cm(idx,:);
-  else
-    colors = cm;
-  end
-else
-  colors = cm(ncenters);
-end
-
-h = nan(1,ncenters);
-holdstate = ishold;
-hold on;
+[~,~,idx] = myhist(c,centers);
 for i = 1:ncenters,
-  idxcurr = idx == i;
-  if ~any(idxcurr), 
-    h(i) = plot(nan,nan,marker,'color',colors(i,:),rest{:});
-    continue; 
-  end;
-  h(i) = plot(x(idx==i),y(idx==i),marker,'color',colors(i,:),rest{:});
-  if isfilled,
-    set(h(i),'markerfacecolor',colors(i,:));
-  end
+  set(h(i),'xdata',x(idx==i),'ydata',y(idx==i));
 end
 
-if ~holdstate,
-  hold off;
-end
-
-if cmisfun
-  colormap(cm());
-else
-  colormap(cm);
-end
-clim = zeros(1,2);
-clim(1) = min(c);
-clim(2) = max(c);
-if clim(2) <= clim(1),
-  clim(2) = clim(1) + .001;
-end
-caxis(clim);
-
-if nargout > 0,
-  varargout{1} = h;
-end
-
-if nargout > 1,
-  varargout{2} = centers;
-end
-
-function [x,y,s,c,ncolors,cm,cmisfun,isfilled,marker,rest] = parseargs(x,y,s,c,ncolors,cm,varargin)
-
-n = length(x);
-if ~exist('s','var') || isempty(s),
-  s = 12;
-end
-if ~exist('c','var') || isempty(c),
-  c = ones(1,n);
-end
-if exist('ncolors','var') && ischar(ncolors),
-  varargin{end+1} = ncolors;
-  ncolors = [];
-end
-if exist('cm','var') && ischar(cm),
-  varargin{end+1} = cm;
-  cm = [];
-end
-if ~exist('ncolors','var') || isempty(ncolors),
-  ncolors = 64;
-end
-if ~exist('cm','var') || isempty(cm),
-  cm = @jet;
-end
-cmisfun = strcmpi(class(cm),'function_handle');
-
-marker = 'o';
-markers = {'.','o','x','+','*','s','d','v','^','<','>','p','h'};
-rest = {};
-isfilled = false;
-i = 1;
-while true,
-  if i > length(varargin), break; end
-  if ischar(varargin{i}) && ismember(varargin{i},markers),
-    marker = varargin{i};
-    i = i + 1;
-  elseif ischar(varargin{i}) && strcmpi(varargin{i},'filled'),
-    isfilled = true;
-    i = i + 1;
-  else
-    if length(varargin) == i,
-      warning('Error parsing arguments, generic plot args should come in pairs. Ignoring last argument.');
-      return;
-    end
-    rest(end+1:end+2) = varargin(i:i+1);
-    i = i + 2;
-  end
-end

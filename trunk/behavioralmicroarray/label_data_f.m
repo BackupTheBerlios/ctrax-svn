@@ -12,7 +12,7 @@ lastmoviepath = '';
 lastmatname = '';
 lastmatpath = '';
 labelmatpath = '';
-movieexts = {'*.fmf','*.sbfmf','*.avi'}';
+movieexts = {'*.fmf','*.sbfmf','*.avi','*.ufmf'}';
 
 pathtolearnparams = which('learn_params');
 savedsettingsfile = strrep(pathtolearnparams,'learn_params.m','.learnparamsrc.mat');

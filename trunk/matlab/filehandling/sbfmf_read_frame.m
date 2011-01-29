@@ -6,5 +6,6 @@ stamp = fread(fp,1,'double');
 idx = double(fread(fp,npixels,'uint32'))+1;
 val = double(fread(fp,npixels,'uint8'));
 im = bgcenter;
-im(idx) = val;
+goodidx = idx > 0 & idx < numel(im);
+im(idx(goodidx)) = val(goodidx);
 im = im';

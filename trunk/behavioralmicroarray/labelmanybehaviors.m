@@ -218,8 +218,10 @@ for i = 1:length(handles.segstarts),
   handles.hstarts(i) = plot(handles.trx(handles.fly).x(i1),handles.trx(handles.fly).y(i1),'o','color',handles.behaviorcolors(behaviorvalue,:));
   handles.hends(i) = plot(handles.trx(handles.fly).x(i2),handles.trx(handles.fly).y(i2),'s','color',handles.behaviorcolors(behaviorvalue,:));
 end
-plot(handles.trx(handles.fly).x,handles.trx(handles.fly).y,'w-','hittest','off');
-handles.hpath = myscatter(handles.trx(handles.fly).x,handles.trx(handles.fly).y,[],handles.c,[],@jet,'.');
+i0 = max(1,handles.f-500+handles.trx(handles.fly).off);
+i1 = min(handles.trx(handles.fly).nframes,handles.f+500+handles.trx(handles.fly).off);
+handles.htrx = plot(handles.trx(handles.fly).x(i0:i1),handles.trx(handles.fly).y(i0:i1),'w-','hittest','off');
+[handles.hpath,handles.hpathcenters] = myscatter(handles.trx(handles.fly).x,handles.trx(handles.fly).y,[],handles.c,[],@jet,'.');
 caxis([min(handles.c),max(handles.c)]);
 colormap jet;
 %colorbar;
@@ -248,6 +250,16 @@ set(handles.him_zoomloc,'cdata',uint8(repmat(im,[1,1,3])));
 fly = handles.fly;
 i = handles.trx(fly).off+(handles.f);
 handles = UpdateBehaviorLabels(handles);
+
+i0 = max(1,handles.f-500+handles.trx(handles.fly).off);
+i1 = min(handles.trx(handles.fly).nframes,handles.f+500+handles.trx(handles.fly).off);
+set(handles.htrx,'xdata',handles.trx(handles.fly).x(i0:i1),...
+  'ydata',handles.trx(handles.fly).y(i0:i1));
+updatemyscatter(handles.hpath,...
+  handles.hpathcenters,...
+  handles.trx(handles.fly).x(i0:i1),...
+  handles.trx(handles.fly).y(i0:i1),[],...
+  handles.c(i0:i1));
 
 updatefly(handles.hmarker,handles.trx(fly).x(i),handles.trx(fly).y(i),...
   handles.trx(fly).theta(i),handles.trx(fly).a(i),handles.trx(fly).b(i));
