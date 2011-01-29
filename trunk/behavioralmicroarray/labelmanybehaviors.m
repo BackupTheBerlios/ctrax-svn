@@ -33,6 +33,7 @@ function labelmanybehaviors_OpeningFcn(hObject, eventdata, handles, varargin)
 if length(varargin) < 4,
   error('Usage: [starts,ends] = labelmanybehaviors(trx,fly,moviename,behaviors,...');
 end
+handles.PATHLENGTH = 500;
 handles.output = hObject;
 handles.trx = varargin{1};
 handles.fly = varargin{2};
@@ -87,6 +88,7 @@ handles.nbehaviors = length(handles.behaviors);
 handles.oldbehaviors = [handles.oldbehaviors,setdiff(unique(handles.oldlabels),handles.oldbehaviors)];
 handles.noldbehaviors = length(handles.oldbehaviors);
 set(handles.scatteredit,'string',handles.scattercommand);
+set(handles.edit_pathlength,'String',num2str(handles.PATHLENGTH));
 
 n = handles.nbehaviors - size(handles.behaviorcolors,1);
 if n > 0,
@@ -218,8 +220,8 @@ for i = 1:length(handles.segstarts),
   handles.hstarts(i) = plot(handles.trx(handles.fly).x(i1),handles.trx(handles.fly).y(i1),'o','color',handles.behaviorcolors(behaviorvalue,:));
   handles.hends(i) = plot(handles.trx(handles.fly).x(i2),handles.trx(handles.fly).y(i2),'s','color',handles.behaviorcolors(behaviorvalue,:));
 end
-i0 = max(1,handles.f-500+handles.trx(handles.fly).off);
-i1 = min(handles.trx(handles.fly).nframes,handles.f+500+handles.trx(handles.fly).off);
+i0 = max(1,handles.f-handles.PATHLENGTH+handles.trx(handles.fly).off);
+i1 = min(handles.trx(handles.fly).nframes,handles.f+handles.PATHLENGTH+handles.trx(handles.fly).off);
 handles.htrx = plot(handles.trx(handles.fly).x(i0:i1),handles.trx(handles.fly).y(i0:i1),'w-','hittest','off');
 [handles.hpath,handles.hpathcenters] = myscatter(handles.trx(handles.fly).x,handles.trx(handles.fly).y,[],handles.c,[],@jet,'.');
 caxis([min(handles.c),max(handles.c)]);
@@ -251,15 +253,40 @@ fly = handles.fly;
 i = handles.trx(fly).off+(handles.f);
 handles = UpdateBehaviorLabels(handles);
 
-i0 = max(1,handles.f-500+handles.trx(handles.fly).off);
-i1 = min(handles.trx(handles.fly).nframes,handles.f+500+handles.trx(handles.fly).off);
+i0 = max(1,handles.f-handles.PATHLENGTH+handles.trx(handles.fly).off);
+i1 = min(handles.trx(handles.fly).nframes,handles.f+handles.PATHLENGTH+handles.trx(handles.fly).off);
 set(handles.htrx,'xdata',handles.trx(handles.fly).x(i0:i1),...
   'ydata',handles.trx(handles.fly).y(i0:i1));
+if i1 > numel(handles.c),
+  c = [handles.c(i0:end),repmat(handles.c(end),[1,i1-numel(handles.c)])];
+else
+  c = handles.c(i0:i1);
+end
 updatemyscatter(handles.hpath,...
   handles.hpathcenters,...
   handles.trx(handles.fly).x(i0:i1),...
   handles.trx(handles.fly).y(i0:i1),[],...
-  handles.c(i0:i1));
+  c);
+for segi = 1:length(handles.segstarts),
+  j0 = handles.segstarts(segi); j1 = handles.segends(segi);
+  if j1 < i0 || j0 > i1,
+    set(handles.isseg(j0),'XData',[],'YData',[]);
+  else
+    set(handles.isseg(j0),'XData',handles.trx(handles.fly).x(max(i0,j0):min(i1,j1)),...
+      'YData',handles.trx(handles.fly).y(max(i0,j0):min(i1,j1)));
+  end
+  if i0 <= j0 && j0 <= i1,
+    set(handles.hstarts(segi),'Visible','on');
+  else
+    set(handles.hstarts(segi),'Visible','off');
+  end
+  if i0 <= j1 && j1 <= i1,
+    set(handles.hends(segi),'Visible','on');
+  else
+    set(handles.hends(segi),'Visible','off');
+  end
+
+end
 
 updatefly(handles.hmarker,handles.trx(fly).x(i),handles.trx(fly).y(i),...
   handles.trx(fly).theta(i),handles.trx(fly).a(i),handles.trx(fly).b(i));
@@ -488,9 +515,12 @@ function mainaxes_ButtonDownFcn(hObject, eventdata, handles)
 if strcmpi(get(handles.hzoom,'enable'),'on'), return; end
 pt = get(handles.mainaxes,'currentpoint');
 x = pt(1,1); y = pt(1,2);
-d = sqrt((handles.trx(handles.fly).x-x).^2 + ...
-  (handles.trx(handles.fly).y-y).^2);
+i0 = max(1,handles.f-handles.PATHLENGTH+handles.trx(handles.fly).off);
+i1 = min(handles.trx(handles.fly).nframes,handles.f+handles.PATHLENGTH+handles.trx(handles.fly).off);
+d = sqrt((handles.trx(handles.fly).x(i0:i1)-x).^2 + ...
+  (handles.trx(handles.fly).y(i0:i1)-y).^2);
 [mind,t] = min(d);
+t = t + i0 - 1;
 ax = axis;
 maxd = max(ax(2)-ax(1),ax(4)-ax(3))/20;
 if mind < maxd,
@@ -594,7 +624,7 @@ handles.labels = [handles.labels(1:j-1),{handles.behaviorcurr},handles.labels(j:
 handles.hstarts = [handles.hstarts(1:j-1),hstart,handles.hstarts(j:end)];
 handles.hends = [handles.hends(1:j-1),hend,handles.hends(j:end)];
 
-handles = UpdateBehaviorLabels(handles);
+handles = UpdatePlot(handles);
 
 guidata(hObject,handles);
 
@@ -820,3 +850,33 @@ panelpos(1) = figpos(3) - handles.paneloffright;
 set(handles.uipanel_right,'Position',panelpos);
 
 %keyboard;
+
+
+
+function edit_pathlength_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_pathlength (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_pathlength as text
+%        str2double(get(hObject,'String')) returns contents of edit_pathlength as a double
+pathlength = str2double(get(hObject,'String'));
+if isnan(pathlength),
+  set(hObject,'String',num2str(handles.PATHLENGTH));
+else
+  handles.PATHLENGTH = pathlength;
+  handles = UpdatePlot(handles);
+  guidata(hObject,handles);
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit_pathlength_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_pathlength (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
