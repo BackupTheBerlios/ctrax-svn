@@ -1,4 +1,4 @@
-function [trx,savename] = cleanup_ctrax_data(matname,moviename,in,ds,varargin)
+function [trx,savename,timestamps] = cleanup_ctrax_data(matname,moviename,in,ds,varargin)
 
 if ~exist('ds','var')
   ds = '';
@@ -19,6 +19,9 @@ in.angle = in.angle(:)';
 in.identity = in.identity(:)';
 if isfield(in,'timestamps'),
   in.timestamps = in.timestamps(:)';
+  timestamps = in.timestamps;
+else
+  timestamps = [];
 end
 
 idscurr = unique(in.identity);
@@ -83,5 +86,5 @@ for id = idscurr,
 end
 
 if dosave,
-  save_tracks(trx,savename);
+  save_tracks(trx,savename,'timestamps',timestamps);
 end

@@ -32,7 +32,7 @@ if ~isfield(tmp,'trx'),
     end
     %ds = datestr(now,30);
     fprintf('Calling cleanup_ctrax_data\n');
-    [trx,matname] = cleanup_ctrax_data(matname,moviename,tmp,'','dosave',dosave,'savename',savename,'annname',annname);
+    [trx,matname,timestamps] = cleanup_ctrax_data(matname,moviename,tmp,'','dosave',dosave,'savename',savename,'annname',annname);
   else
     msgbox('Could not load data from %s, exiting',matname);
     return;
@@ -45,6 +45,13 @@ else
       trx(i).moviename = moviename;
     end
   end
+  if dosave && ~isempty(savename),
+      [didcopy,msg,~] = copyfile(matname,savename);
+      if ~didcopy,
+          error('Could not copy %s to %s:\n%s',matname,savename,msg);
+      end
+  end
+      
 end
 
 % member functions can be weird

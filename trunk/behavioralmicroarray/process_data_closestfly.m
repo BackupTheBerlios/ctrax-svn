@@ -18,6 +18,7 @@ for fly1 = 1:nflies,
   veltoward = nan(nflies,trx(fly1).nframes-1);
   absthetadiff = nan(nflies,trx(fly1).nframes);
   absphidiff = nan(nflies,trx(fly1).nframes-1);
+  anglefrom1to2 = nan(nflies,trx(fly1).nframes);
   absanglefrom1to2 = nan(nflies,trx(fly1).nframes);
   anglesub = nan(nflies,trx(fly1).nframes);
   
@@ -112,7 +113,8 @@ for fly1 = 1:nflies,
     end
   
     % direction to fly2 from fly1
-    absanglefrom1to2(fly2,i0:i1) = abs(modrange(atan2(dy,dx)-trx(fly1).theta(i0:i1),-pi,pi));
+    anglefrom1to2(fly2,i0:i1) = modrange(atan2(dy,dx)-trx(fly1).theta(i0:i1),-pi,pi);
+    absanglefrom1to2(fly2,i0:i1) = abs(anglefrom1to2(fly2,i0:i1));
 
   end % end loop over fly2
 
@@ -183,13 +185,21 @@ for fly1 = 1:nflies,
   % anglefrom1to2 for each of these measured closest flies
   idx = 1:trx(fly1).nframes;
   trx(fly1).absanglefrom1to2_center = absanglefrom1to2(sub2ind(size(absanglefrom1to2),trx(fly1).closestfly_center(idx),idx));
+  trx(fly1).anglefrom1to2_center = anglefrom1to2(sub2ind(size(anglefrom1to2),trx(fly1).closestfly_center(idx),idx));
   trx(fly1).units.absanglefrom1to2_center = parseunits('rad');
+  trx(fly1).units.anglefrom1to2_center = parseunits('rad');
   trx(fly1).absanglefrom1to2_nose2ell = absanglefrom1to2(sub2ind(size(absanglefrom1to2),trx(fly1).closestfly_nose2ell(idx),idx));
+  trx(fly1).anglefrom1to2_nose2ell = anglefrom1to2(sub2ind(size(anglefrom1to2),trx(fly1).closestfly_nose2ell(idx),idx));
   trx(fly1).units.absanglefrom1to2_nose2ell = parseunits('rad');
+  trx(fly1).units.anglefrom1to2_nose2ell = parseunits('rad');
   trx(fly1).absanglefrom1to2_ell2nose = absanglefrom1to2(sub2ind(size(absanglefrom1to2),trx(fly1).closestfly_ell2nose(idx),idx));
+  trx(fly1).anglefrom1to2_ell2nose = anglefrom1to2(sub2ind(size(anglefrom1to2),trx(fly1).closestfly_ell2nose(idx),idx));
   trx(fly1).units.absanglefrom1to2_ell2nose = parseunits('rad');
+  trx(fly1).units.anglefrom1to2_ell2nose = parseunits('rad');
   trx(fly1).absanglefrom1to2_anglesub = absanglefrom1to2(sub2ind(size(absanglefrom1to2),trx(fly1).closestfly_anglesub(idx),idx));
+  trx(fly1).anglefrom1to2_anglesub = anglefrom1to2(sub2ind(size(anglefrom1to2),trx(fly1).closestfly_anglesub(idx),idx));
   trx(fly1).units.absanglefrom1to2_anglesub = parseunits('rad');
+  trx(fly1).units.anglefrom1to2_anglesub = parseunits('rad');
 
   % change in various parameters
   trx(fly1).units.ddcenter = parseunits('mm/s');

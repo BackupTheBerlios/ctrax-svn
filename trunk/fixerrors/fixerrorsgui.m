@@ -61,7 +61,7 @@ if isfield(handles.trx,'timestamps'),
   for i = 1:numel(handles.trx),
     t0 = handles.trx(i).firstframe;
     t1 = handles.trx(i).endframe;
-    if any(~isnan(handles.timestamps) & ...
+    if any(~isnan(handles.timestamps(t0:t1)) & ...
            (handles.trx(i).timestamps ~= handles.timestamps(t0:t1))),
       error('Timestamps don''t match for fly %d',i);
     end
@@ -180,6 +180,9 @@ trx = handles.trx;
 % fix timestamps
 if isfield(handles,'timestamps'),
   for i = 1:numel(handles.trx),
+    if isdummytrk(handles.trx(i)),
+      continue;
+    end
     t0 = handles.trx(i).firstframe;
     t1 = handles.trx(i).endframe;
     trx(i).timestamps = handles.timestamps(t0:t1);
