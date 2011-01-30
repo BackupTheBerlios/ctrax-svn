@@ -28,7 +28,7 @@ end
 
 if isempty(moviename),
   fprintf('Choose a movie to fix errors in\n');
-  movieexts = {'*.fmf','*.sbfmf','*.avi'}';
+  movieexts = {'*.fmf','*.sbfmf','*.ufmf','*.avi'}';
   helpmsg = 'Choose movie file for which to fix tracking errors';
   [moviename,moviepath] = uigetfilehelp(movieexts,'Choose movie file',moviename,'helpmsg',helpmsg);
   if isnumeric(moviename) && moviename == 0,
