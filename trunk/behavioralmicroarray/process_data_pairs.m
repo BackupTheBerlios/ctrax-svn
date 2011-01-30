@@ -51,6 +51,7 @@ ynose = trx(fly1).y_mm(i0:i1) + 2*trx(fly1).a_mm(i0:i1).*sin(trx(fly1).theta(i0:
 % units
 units = trx(1).units;
 units.distnose2ell = struct('num',{{'mm'}},'den',{{}});
+units.distnose2tail = struct('num',{{'mm'}},'den',{{}});
 units.dcenter = struct('num',{{'mm'}},'den',{{}});
 units.magveldiff = struct('num',{{'mm'}},'den',{{'s'}});
 units.veltoward = struct('num',{{'mm'}},'den',{{'s'}});
@@ -66,6 +67,9 @@ units.anglesub = struct('num',{{'rad'}},'den',{{}});
 units.minabsanglefrom1to2 = struct('num',{{'rad'}},'den',{{}});
 units.danglefrom1to2 = struct('num',{{'rad'}},'den',{{'s'}});
 units.danglesub = struct('num',{{'rad'}},'den',{{'s'}});
+units.anglefrom2to1 = struct('num',{{'rad'}},'den',{{}});
+units.absanglefrom2to1 = struct('num',{{'rad'}},'den',{{}});
+units.danglefrom2to1 = struct('num',{{'rad'}},'den',{{'s'}});
 
 for fly2 = 1:nflies,
   
@@ -91,6 +95,11 @@ for fly2 = 1:nflies,
       ellipsedist_hack(trx(fly2).x_mm(i_fly2),trx(fly2).y_mm(i_fly2),trx(fly2).a_mm(i_fly2),...
       trx(fly2).b_mm(i_fly2),trx(fly2).theta(i_fly2),xnose(i_nose1),ynose(i_nose1));
   end
+  
+  % distance from fly1's nose to fly2's tail
+  xtail2 = trx(fly2).x_mm(j0:j1) - 2*trx(fly2).a_mm(j0:j1).*cos(trx(fly2).theta(j0:j1));
+  ytail2 = trx(fly2).y_mm(j0:j1) + 2*trx(fly2).a_mm(j0:j1).*sin(trx(fly2).theta(j0:j1));
+  pairtrx(fly2).distnose2tail(i0:i1) = sqrt((xnose(i0:i1)-xtail2).^2 + (ynose(i0:i1)-ytail2).^2);
   
   % magnitude of difference in velocity vectors
   pairtrx(fly2).magveldiff = sqrt( (diff(trx(fly1).x_mm(i0:i1))-diff(trx(fly2).x_mm(j0:j1))).^2 + ...
@@ -128,6 +137,10 @@ for fly2 = 1:nflies,
   % direction to fly2 from fly1
   pairtrx(fly2).anglefrom1to2 = modrange(atan2(dy,dx)-trx(fly1).theta(i0:i1),-pi,pi);
   pairtrx(fly2).absanglefrom1to2 = abs(pairtrx(fly2).anglefrom1to2);
+
+  % direction to fly1 from fly2
+  pairtrx(fly2).anglefrom2to1 = modrange(atan2(-dy,-dx)-trx(fly2).theta(i0:i1),-pi,pi);
+  pairtrx(fly2).absanglefrom2to1 = abs(pairtrx(fly2).anglefrom2to1);
   
   % angle subtended and minimum angle from fly1 to some point on fly2
   pairtrx(fly2).minabsanglefrom1to2 = zeros(1,pairtrx(fly2).nframes);
@@ -150,5 +163,7 @@ for fly2 = 1:nflies,
   
   pairtrx(fly2).danglesub = diff(pairtrx(fly2).anglesub) * trx(fly1).fps;
   pairtrx(fly2).danglefrom1to2 = modrange(diff(pairtrx(fly2).anglefrom1to2),-pi,pi) * trx(fly1).fps;
+  
+  pairtrx(fly2).danglefrom2to1 = modrange(diff(pairtrx(fly2).anglefrom2to1),-pi,pi) * trx(fly2).fps;
   
 end

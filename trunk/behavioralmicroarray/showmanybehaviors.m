@@ -31,7 +31,7 @@ function showmanybehaviors_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for showmanybehaviors
 if length(varargin) < 7 || length(varargin) > 9,
-  error('Usage: [starts,ends] = showmanybehaviors(trx,fly,moviename,behaviors,starts,ends,labels,<scattercommand>,<behaviorcolors>)');
+  error('Usage: showmanybehaviors(trx,fly,moviename,behaviors,starts,ends,labels,<scattercommand>,<behaviorcolors>)');
 end
 handles.output = hObject;
 handles.trx = varargin{1};

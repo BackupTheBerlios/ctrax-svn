@@ -15,7 +15,7 @@ end
 for j = 1:ndata,
   if isseg(j) && doinvert(j),
     for i = 1:length(trx),
-      trx(i).seg{j} = invertseg(trx(i).seg{j});
+      trx(i).seg{j} = invertseg(trx(i).seg{j},trx(i).nframes);
       trx(i).duration{j} = (trx(i).seg{j}.t2 - trx(i).seg{j}.t1)/trx(i).fps;
     end
   end
