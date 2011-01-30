@@ -31,7 +31,7 @@ if isstruct(start),
   nreplicates = length(start);
 end
 
-options = options = zeros(1,14);
+options = zeros(1,14);
 options(1) = display;
 options(3) = precision;
 options(5) = resetcovar;
