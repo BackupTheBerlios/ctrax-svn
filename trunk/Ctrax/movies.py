@@ -547,7 +547,7 @@ class Avi:
 
         # read one frame's header to check
         this_frame_id, frame_size = struct.unpack( '4sI', self.file.read( 8 ) )
-        if DEBUG: print "frame_size = " + str(frame_size)
+        if DEBUG: print "at %x: frame_size = "%self.data_start + str(frame_size)
         depth = self.bits_per_pixel/8
 
         # figure out padding

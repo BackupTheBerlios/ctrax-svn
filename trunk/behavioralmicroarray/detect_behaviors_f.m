@@ -1,8 +1,7 @@
 function [succeeded,savenames] = detect_behaviors_f(varargin)
 
 succeeded = false;
-savenames = {};
-[trxnames,behmatname] = myparse(varargin,'trxnames',{},'behmatname','');
+[trxnames,behmatname,savenames] = myparse(varargin,'trxnames',{},'behmatname','','savenames',{});
 ds = datestr(now,30);
 
 % trajectory files
@@ -189,23 +188,27 @@ for i = 1:nmovies,
   
   % save results to file
   savenamecurr = strrep(trxnames{i},'.mat',sprintf('_seg_%s.mat',ds));
-  fprintf('Choose mat file to export segmentation results for trx file %s\n',trxnames{i});
-  while true,
-    helpmsg = sprintf('Choose file to save segmentations for trx file %s and behavior classifier %s',trxnames{i},behmatname);
-    [savename,savepath] = uiputfilehelp('*.mat',sprintf('Save segmentations for %s',trxnames{i}),savenamecurr,'helpmsg',helpmsg);
-    if ~ischar(savename),
-      b = questdlg('Are you sure you don''t want to save the results? Computation will be lost.','Really cancel?','Yes','No','No');
-      if strcmpi(b,'yes'),
-        return;
+  if numel(savenames) < i,
+    fprintf('Choose mat file to export segmentation results for trx file %s\n',trxnames{i});
+    while true,
+      helpmsg = sprintf('Choose file to save segmentations for trx file %s and behavior classifier %s',trxnames{i},behmatname);
+      [savename,savepath] = uiputfilehelp('*.mat',sprintf('Save segmentations for %s',trxnames{i}),savenamecurr,'helpmsg',helpmsg);
+      if ~ischar(savename),
+        b = questdlg('Are you sure you don''t want to save the results? Computation will be lost.','Really cancel?','Yes','No','No');
+        if strcmpi(b,'yes'),
+          return;
+        end
+      else
+        break;
       end
-    else
-      break;
     end
+    savename = [savepath,savename];
+    savenames{i} = savename;
+  else
+    savename = savenames{i};
   end
-  savename = [savepath,savename];
   trxname = trxnames{i};
   save(savename,'seg','behmatname','trxname');
-  savenames{end+1} = savename;
 
   [plotsucceeded,plot_figs] = plot_detectbehaviors(trx,seg,behaviorparams.issocial);
   fprintf('Figures for segmentations for file %s: ',trxnames{i});
