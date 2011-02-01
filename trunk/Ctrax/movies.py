@@ -385,6 +385,7 @@ class Avi:
         
         self.fmfmode = fmfmode
         self.issbfmf = False
+        #self.hasindex = False
  
         # need to open in binary mode to support Windows:
         self.file = open( filename, 'rb' )
@@ -450,7 +451,7 @@ class Avi:
         self.file.seek(3*4,1)
         self.n_frames, = struct.unpack('I',self.file.read(4))
 
-        # skip to width
+        # skip to width, height
         self.file.seek(3*4,1)
         self.width,self.height = struct.unpack('2I',self.file.read(8))
 
@@ -509,6 +510,9 @@ class Avi:
         else:
             self.isindexed = False
 
+        if self.bits_per_pixel == 24:
+            self.isindexed = False
+
         # skip the rest of the strf
         self.file.seek(hdrlstart+hdrl_size,0)
 
@@ -522,6 +526,7 @@ class Avi:
                 # find movi
                 movistart = self.file.tell()
                 movi, = struct.unpack('4s',self.file.read(4))
+                if DEBUG: print 'looking for movi, found ' + movi
                 if movi == 'movi':
                     break
                 else:
@@ -543,43 +548,61 @@ class Avi:
         if not movi == 'movi':
             raise TypeError("Invalid AVI file. Did not find movi, found %s."%movi)
 
-        self.data_start = self.file.tell()
+        self.movistart = movistart
+        self.moviend = self.movistart + movilist_size + 8
 
-        # read one frame's header to check
-        this_frame_id, frame_size = struct.unpack( '4sI', self.file.read( 8 ) )
-        if DEBUG: print "at %x: frame_size = "%self.data_start + str(frame_size)
         depth = self.bits_per_pixel/8
+
+        # read extra stuff
+        while True:
+            fourcc,chunksize, = struct.unpack('4sI',self.file.read(8))
+            if DEBUG: print 'read fourcc = %s, chunksize = %d'%(fourcc,chunksize)
+            if fourcc == '00db' or fourcc == '00dc':
+                self.file.seek(-8,1)
+                break
+            self.file.seek(chunksize,1)
+
+        self.data_start = self.file.tell()
 
         # figure out padding
         unpaddedframesize = self.width*self.height*depth
-        if unpaddedframesize == frame_size:
+
+        self.buf_size = chunksize
+
+        if unpaddedframesize == self.buf_size:
             # no padding
             self.padwidth = 0
             self.padheight = 0
-        elif unpaddedframesize + self.width*depth == frame_size:
+        elif unpaddedframesize + self.width*depth == self.buf_size:
             self.padwidth = 0
             self.padheight = 1
-        elif unpaddedframesize + self.height*depth == frame_size:
+        elif unpaddedframesize + self.height*depth == self.buf_size:
             self.padwidth = 1
             self.padheight = 0
         else:
-            raise TypeError("Invalid AVI file. Frame size (%d) does not match width * height * bytesperpixel (%d*%d*%d)."%(frame_size,self.width,self.height,depth))
+            raise TypeError("Invalid AVI file. Frame size (%d) does not match width * height * bytesperpixel (%d*%d*%d)."%(self.buf_size,self.width,self.height,depth))
 
-        if self.isindexed:
+        if self.bits_per_pixel == 24:
+            self.format = 'RGB'
+        elif self.isindexed:
             self.format = 'INDEXED'
         elif self.bits_per_pixel == 8:
             self.format = 'MONO8'
-        elif self.bits_per_pixel == 24:
-            self.format = 'RGB'
         else:
             raise TypeError("Unsupported AVI type. bitsperpixel must be 8 or 24, not %d."%self.bits_per_pixel)
 
         if DEBUG: print "format = " + str(self.format)
 
-        # set buf size
-        self.buf_size = frame_size
-        #self.buf_size = self.width*self.height*self.bits_per_pixel/8
+        if self.n_frames == 0:
+            loccurr = self.file.tell()
+            self.file.seek(0,2)
+            locend = self.file.tell()
+            self.n_frames = num.floor( (locend - self.data_start) / (self.buf_size+8) )
+            print "n frames = 0. setting to %d"%self.n_frames
 
+    def read_index( self ):
+
+        self.file.seek(self.moviend)
 
     def old_read_header( self ):
 
@@ -767,20 +790,50 @@ class Avi:
         if framenumber < 0: raise IndexError
         if framenumber >= self.n_frames: raise NoMoreFramesException
         
+        self.framenumber = framenumber
+
         # read frame from file
+        #if self.hasindex:
+        #    self.file.seek( self.frame_index[framenumber] )
+        #else:
         self.file.seek( self.data_start + (self.buf_size+8)*framenumber )
        
         # rest of this function has been moved into get_next_frame(), which
         #   pretty much just reads without the seek
         
         return self.get_next_frame()
-    
+
     def get_next_frame(self):
         """returns next frame"""
        
         currentseekloc = self.file.tell()
          
         this_frame_id, frame_size = struct.unpack( '4sI', self.file.read( 8 ) )
+
+        if DEBUG: print 'frame id = ' + str(this_frame_id) + ', sz = ' + str(frame_size)
+
+
+        #if not self.hasindex and this_frame_id != '00db':
+        #    
+        #    print 'There is stuff besides frames in your movie. Attempting to reconstruct index'
+        #    
+        #    self.frame_index = []
+        #    self.file.seek(self.data_start)
+        #    while True:
+        #        loc = self.file.tell()
+        #        s = self.file.read( 8 )
+        #        if s == "":
+        #            break
+        #        this_frame_id, frame_size = struct.unpack( '4sI', s )
+        #        if this_frame_id == '00db':
+        #            self.frame_index.append(loc)
+        #        else:
+        #            print 'skipping chunk of type %s, size %d'%(this_frame_id,frame_size)
+        #        self.file.seek(frame_size,1)
+        #    self.n_frames = len(self.frame_index)
+        #    self.has_index = True
+        #    return self.get_frame(self.framenumber)
+
 
         if frame_size != self.buf_size:
             raise ValueError( "Frame size does not equal buffer size; movie must be uncompressed" )

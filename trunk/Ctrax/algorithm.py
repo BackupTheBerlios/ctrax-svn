@@ -157,6 +157,7 @@ class CtraxAlgorithm (settings.AppWithSettings):
             if (self.start_frame % 100) == 0:
                 # save tracking diagnostics
                 if not(hasattr(self,'diagnosticsfilename')) or self.diagnosticsfilename is None:
+                    (basename,ext) = os.path.splitext(self.ann_filename)
                     self.diagnosticsfilename = basename + '_ctraxdiagnostics.txt'
                 annot.WriteDiagnostics(self.diagnosticsfilename)
 
