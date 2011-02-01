@@ -9,12 +9,16 @@ for fly1 = 1:nflies,
   % position of nose
   xnose = trx(fly1).x_mm + 2*trx(fly1).a_mm.*cos(trx(fly1).theta);
   ynose = trx(fly1).y_mm + 2*trx(fly1).a_mm.*sin(trx(fly1).theta);
+  xtail1 = trx(fly1).x_mm - 2*trx(fly1).a_mm.*cos(trx(fly1).theta);
+  ytail1 = trx(fly1).y_mm - 2*trx(fly1).a_mm.*sin(trx(fly1).theta);
+  
  
   % initialize
   dcenter = nan(nflies,trx(fly1).nframes);
   dnose2ell = nan(nflies,trx(fly1).nframes);
   dell2nose = nan(nflies,trx(fly1).nframes);
   dnose2tail = nan(nflies,trx(fly1).nframes);
+  dtail2nose = nan(nflies,trx(fly1).nframes);
   magveldiff = nan(nflies,trx(fly1).nframes-1);
   veltoward = nan(nflies,trx(fly1).nframes-1);
   absthetadiff = nan(nflies,trx(fly1).nframes);
@@ -65,20 +69,24 @@ for fly1 = 1:nflies,
     end
     
     % distance from fly2's nose to fly1
+    xnose2 = trx(fly2).x_mm(j0:j1) + 2*trx(fly2).a_mm(j0:j1).*cos(trx(fly2).theta(j0:j1));
+    ynose2 = trx(fly2).y_mm(j0:j1) + 2*trx(fly2).a_mm(j0:j1).*sin(trx(fly2).theta(j0:j1));
+
     for t = t0:t1,
       i = t - offi;
-      j = t - offj;    
-      xnose2 = trx(fly2).x_mm(j) + 2*trx(fly2).a_mm(j).*cos(trx(fly2).theta(j));
-      ynose2 = trx(fly2).y_mm(j) + 2*trx(fly2).a_mm(j).*sin(trx(fly2).theta(j));
+      j = t - t0 + 1;
       dell2nose(fly2,i) = ellipsedist_hack(trx(fly1).x_mm(i),trx(fly1).y_mm(i),...
         trx(fly1).a_mm(i),trx(fly1).b_mm(i),trx(fly1).theta(i),...
-        xnose2,ynose2);
+        xnose2(j),ynose2(j));
     end
     
     % distance from fly1's nose to fly2's tail
     xtail2 = trx(fly2).x_mm(j0:j1) - 2*trx(fly2).a_mm(j0:j1).*cos(trx(fly2).theta(j0:j1));
-    ytail2 = trx(fly2).y_mm(j0:j1) + 2*trx(fly2).a_mm(j0:j1).*sin(trx(fly2).theta(j0:j1));
+    ytail2 = trx(fly2).y_mm(j0:j1) - 2*trx(fly2).a_mm(j0:j1).*sin(trx(fly2).theta(j0:j1));
     dnose2tail(fly2,i0:i1) = sqrt((xnose(i0:i1)-xtail2).^2 + (ynose(i0:i1)-ytail2).^2);
+
+    % distance from fly1's tail to fly2's nose
+    dtail2nose(fly2,i0:i1) = sqrt((xnose2-xtail1(i0:i1)).^2 + (ynose2-ytail1(i0:i1)).^2);
     
     % angle of fly1's vision subtended by fly2
     for t = t0:t1,
@@ -151,6 +159,10 @@ for fly1 = 1:nflies,
   trx(fly1).units.dnose2tail = parseunits('mm');
   trx(fly1).units.closestfly_nose2tail = parseunits('unit');
 
+  % closest fly according to dtail2nose
+  [trx(fly1).dtail2nose,trx(fly1).closestfly_tail2nose] = min(dtail2nose,[],1);
+  trx(fly1).units.dtail2nose = parseunits('mm');
+  trx(fly1).units.closestfly_tail2nose = parseunits('unit');
   
   % closest fly according to angle subtended
   [trx(fly1).anglesub,trx(fly1).closestfly_anglesub] = max(anglesub,[],1);
@@ -167,6 +179,8 @@ for fly1 = 1:nflies,
   trx(fly1).units.magveldiff_ell2nose = parseunits('mm/s');
   trx(fly1).magveldiff_nose2tail = magveldiff(sub2ind(size(magveldiff),trx(fly1).closestfly_nose2tail(idx),idx));
   trx(fly1).units.magveldiff_nose2tail = parseunits('mm/s');
+  trx(fly1).magveldiff_tail2nose = magveldiff(sub2ind(size(magveldiff),trx(fly1).closestfly_tail2nose(idx),idx));
+  trx(fly1).units.magveldiff_tail2nose = parseunits('mm/s');
   trx(fly1).magveldiff_anglesub = magveldiff(sub2ind(size(magveldiff),trx(fly1).closestfly_anglesub(idx),idx));
   trx(fly1).units.magveldiff_anglesub = parseunits('mm/s');
   
@@ -180,6 +194,8 @@ for fly1 = 1:nflies,
   trx(fly1).units.veltoward_ell2nose = parseunits('mm/s');
   trx(fly1).veltoward_nose2tail = veltoward(sub2ind(size(veltoward),trx(fly1).closestfly_nose2tail(idx),idx));
   trx(fly1).units.veltoward_nose2tail = parseunits('mm/s');
+  trx(fly1).veltoward_tail2nose = veltoward(sub2ind(size(veltoward),trx(fly1).closestfly_tail2nose(idx),idx));
+  trx(fly1).units.veltoward_tail2nose = parseunits('mm/s');
   trx(fly1).veltoward_anglesub = veltoward(sub2ind(size(veltoward),trx(fly1).closestfly_anglesub(idx),idx));
   trx(fly1).units.veltoward_anglesub = parseunits('mm/s');
 
@@ -193,6 +209,8 @@ for fly1 = 1:nflies,
   trx(fly1).units.absthetadiff_ell2nose = parseunits('rad');
   trx(fly1).absthetadiff_nose2tail = absthetadiff(sub2ind(size(absthetadiff),trx(fly1).closestfly_nose2tail(idx),idx));
   trx(fly1).units.absthetadiff_nose2tail = parseunits('rad');
+  trx(fly1).absthetadiff_tail2nose = absthetadiff(sub2ind(size(absthetadiff),trx(fly1).closestfly_tail2nose(idx),idx));
+  trx(fly1).units.absthetadiff_tail2nose = parseunits('rad');
   trx(fly1).absthetadiff_anglesub = absthetadiff(sub2ind(size(absthetadiff),trx(fly1).closestfly_anglesub(idx),idx));
   trx(fly1).units.absthetadiff_anglesub = parseunits('rad');
 
@@ -206,6 +224,8 @@ for fly1 = 1:nflies,
   trx(fly1).units.absphidiff_ell2nose = parseunits('rad');
   trx(fly1).absphidiff_nose2tail = absphidiff(sub2ind(size(absphidiff),trx(fly1).closestfly_nose2tail(idx),idx));
   trx(fly1).units.absphidiff_nose2tail = parseunits('rad');
+  trx(fly1).absphidiff_tail2nose = absphidiff(sub2ind(size(absphidiff),trx(fly1).closestfly_tail2nose(idx),idx));
+  trx(fly1).units.absphidiff_tail2nose = parseunits('rad');
   trx(fly1).absphidiff_anglesub = absphidiff(sub2ind(size(absphidiff),trx(fly1).closestfly_anglesub(idx),idx));
   trx(fly1).units.absphidiff_anglesub = parseunits('rad');
 
@@ -227,6 +247,10 @@ for fly1 = 1:nflies,
   trx(fly1).anglefrom1to2_nose2tail = anglefrom1to2(sub2ind(size(anglefrom1to2),trx(fly1).closestfly_nose2tail(idx),idx));
   trx(fly1).units.absanglefrom1to2_nose2tail = parseunits('rad');
   trx(fly1).units.anglefrom1to2_nose2tail = parseunits('rad');
+  trx(fly1).absanglefrom1to2_tail2nose = absanglefrom1to2(sub2ind(size(absanglefrom1to2),trx(fly1).closestfly_tail2nose(idx),idx));
+  trx(fly1).anglefrom1to2_tail2nose = anglefrom1to2(sub2ind(size(anglefrom1to2),trx(fly1).closestfly_tail2nose(idx),idx));
+  trx(fly1).units.absanglefrom1to2_tail2nose = parseunits('rad');
+  trx(fly1).units.anglefrom1to2_tail2nose = parseunits('rad');
   trx(fly1).absanglefrom1to2_anglesub = absanglefrom1to2(sub2ind(size(absanglefrom1to2),trx(fly1).closestfly_anglesub(idx),idx));
   trx(fly1).anglefrom1to2_anglesub = anglefrom1to2(sub2ind(size(anglefrom1to2),trx(fly1).closestfly_anglesub(idx),idx));
   trx(fly1).units.absanglefrom1to2_anglesub = parseunits('rad');
@@ -250,6 +274,10 @@ for fly1 = 1:nflies,
   trx(fly1).anglefrom2to1_nose2tail = anglefrom2to1(sub2ind(size(anglefrom2to1),trx(fly1).closestfly_nose2tail(idx),idx));
   trx(fly1).units.absanglefrom2to1_nose2tail = parseunits('rad');
   trx(fly1).units.anglefrom2to1_nose2tail = parseunits('rad');
+  trx(fly1).absanglefrom2to1_tail2nose = absanglefrom2to1(sub2ind(size(absanglefrom2to1),trx(fly1).closestfly_tail2nose(idx),idx));
+  trx(fly1).anglefrom2to1_tail2nose = anglefrom2to1(sub2ind(size(anglefrom2to1),trx(fly1).closestfly_tail2nose(idx),idx));
+  trx(fly1).units.absanglefrom2to1_tail2nose = parseunits('rad');
+  trx(fly1).units.anglefrom2to1_tail2nose = parseunits('rad');
   trx(fly1).absanglefrom2to1_anglesub = absanglefrom2to1(sub2ind(size(absanglefrom2to1),trx(fly1).closestfly_anglesub(idx),idx));
   trx(fly1).anglefrom2to1_anglesub = anglefrom2to1(sub2ind(size(anglefrom2to1),trx(fly1).closestfly_anglesub(idx),idx));
   trx(fly1).units.absanglefrom2to1_anglesub = parseunits('rad');
@@ -263,6 +291,8 @@ for fly1 = 1:nflies,
   trx(fly1).units.ddell2nose = parseunits('mm/s');
   trx(fly1).ddnose2tail = diff(trx(fly1).dnose2tail).*trx(fly1).fps;
   trx(fly1).units.ddnose2tail = parseunits('mm/s');
+  trx(fly1).ddtail2nose = diff(trx(fly1).dtail2nose).*trx(fly1).fps;
+  trx(fly1).units.ddtail2nose = parseunits('mm/s');
   trx(fly1).danglesub = diff(trx(fly1).anglesub).*trx(fly1).fps;
   trx(fly1).units.danglesub = parseunits('rad/s');
   
