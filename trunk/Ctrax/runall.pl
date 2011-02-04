@@ -2,8 +2,6 @@
 
 use strict;
 
-my $outdir = "/localhome/bransonk/tracking_data/olympiad/FlyBowl/CtraxTest20101118";
-
 my $filename = $ARGV[0];
 
 open(FILE,"<$filename");
@@ -21,7 +19,7 @@ while(my $line = <FILE>){
     $line =~ /(^.+\/)?([^\/]+$)/;
     my $rootdir = $1;
     my $expdir = $2;
-    my $cmd = "./ctraxcmd20110111.sh $expdir";
+    my $cmd = "./ctraxcmd.sh $expdir";
     my $pid = fork();
     if($pid){
 	push(@childs, $pid);

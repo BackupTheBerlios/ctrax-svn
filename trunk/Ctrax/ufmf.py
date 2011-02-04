@@ -16,7 +16,7 @@ import time
 
 import math
 
-import motmot.FlyMovieFormat.FlyMovieFormat as FMF
+import FlyMovieFormat as FMF
 
 class UfmfError(Exception):
     pass

@@ -35,20 +35,25 @@ def getExpDirs(protocol = '',
                rig = '',
                plate = '',
                bowl = '',
-               notstarted = False):
+               notstarted = False,
+               subreadfiles = [],
+               subwritefiles = []):
 
     if protocol == 'scratched_polycarbonate_CtraxTest20101118':
         rootreaddir = '/groups/branson/bransonlab/tracking_data/olympiad/FlyBowl/polycarbonate_scratched'
         rootwritedir = '/groups/branson/home/bransonk/tracking/data/olympiad/FlyBowl/CtraxTest20101118'
 
-    elif protocol == 'CtraxTest20101118':
+    elif protocol == '20101118':
         rootreaddir = '/groups/sciserv/flyolympiad/Olympiad_Screen/fly_bowl/bowl_data/'
         rootwritedir = '/groups/branson/home/bransonk/tracking/data/olympiad/FlyBowl/CtraxTest20101118'
 
-    elif protocol == 'CtraxTest20110111':
+    elif protocol == '20110111':
         rootreaddir = '/groups/branson/bransonlab/tracking_data/olympiad/FlyBowl/CtraxTest20110111'
         rootwritedir = '/groups/branson/bransonlab/tracking_data/olympiad/FlyBowl/CtraxTest20110111'
 
+    elif protocol == '20110202':
+        rootreaddir = '/groups/branson/bransonlab/tracking_data/olympiad/FlyBowl/CtraxTest20110202'
+        rootwritedir = '/groups/branson/bransonlab/tracking_data/olympiad/FlyBowl/CtraxTest20110202'
     else:
         rootreaddir = '/groups/sciserv/flyolympiad/Olympiad_Screen/fly_bowl/bowl_data/'
         rootwritedir = rootreaddir
@@ -96,6 +101,21 @@ def getExpDirs(protocol = '',
 
         # check notstarted
         if notstarted is not None and notstarted != parsedcurr['notstarted']:
+            continue
+
+        # check subfiles
+        doexist = True
+        for f in subreadfiles:
+            if not os.path.exists(os.path.join(rootreaddir,expdir,f)):
+                doexist = False
+                break
+        if not doexist:
+            continue
+        for f in subwritefiles:
+            if not os.path.exists(os.path.join(rootwritedir,expdir,f)):
+                doexist = False
+                break
+        if not doexist:
             continue
 
         expdir_reads.append(os.path.join(rootreaddir,expdir))

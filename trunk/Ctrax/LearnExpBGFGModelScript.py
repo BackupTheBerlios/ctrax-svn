@@ -1,40 +1,53 @@
+from params import params
+params.interactive = False
 import ExpBGFGModel
 import re
 import os
 import os.path
 import ParseExpDirs
+import sys
 import matplotlib.pyplot as plt
 
 ## parameters
 
-mode = 'show'
+mode = 'learn'
 
 # which experiments
-protocol = 'CtraxTest20110111'
+if len(sys.argv) < 2:
+    protocol = 'current'
+else:
+    protocol = sys.argv[1]
+
+print "*** PROTOCOL %s ***\n"%protocol
+
 mindatestr = ''
 maxdatestr = ''
-linename = 'pB*'
+linename = '.*'
 rig = ''
 plate = ''
 bowl = ''
 notstarted = False
 
 # directory for learning data
-resdir = '/groups/branson/bransonlab/tracking_data/olympiad/FlyBowl/CtraxTest20110111/LearnCtraxParams'
+resdir = '/groups/branson/bransonlab/projects/olympiad/FlyBowlCtrax/%s/LearnCtraxParams'%protocol
+
+# directory containing parameters
+paramsdir = '/groups/branson/bransonlab/projects/olympiad/FlyBowlCtrax/%s'%protocol
 
 # files within the learning data directory
 paramsFileStr = 'ExpBGFGModelParams.txt'
 movieFileStr = 'movie.ufmf'
 annFileStr = 'movie.ufmf.ann'
-expdirsFileStr = 'expdirs_%s.txt'%protocol
+expdirsFileStr = 'expdirs.txt'
 outputFileStr = 'ExpBGFGModelResults.pickle'
 matFileStr = 'ExpBGFGModelResults.mat'
+
 
 # file to write experiment directory names to
 expdirsFileName = os.path.join(resdir,expdirsFileStr)
 
 # file containing parameters
-paramsFileName = os.path.join(resdir,paramsFileStr)
+paramsFileName = os.path.join(paramsdir,paramsFileStr)
 
 # file to write results to
 outputFileName = os.path.join(resdir,outputFileStr)
@@ -51,7 +64,8 @@ matFileName = os.path.join(resdir,matFileStr)
                             rig=rig,
                             plate=plate,
                             bowl=bowl,
-                            notstarted=notstarted)
+                            notstarted=notstarted,
+                            subreadfiles=[movieFileStr,annFileStr])
 
 if mode == 'learn':
 
