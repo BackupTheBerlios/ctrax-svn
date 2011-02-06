@@ -779,7 +779,7 @@ class AnnotationFile:
 
         self.file.write('do_fix_lost:%d\n'%params.do_fix_lost)
         self.file.write('lostdetection_length:%d\n'%params.lostdetection_length)
-        
+        self.file.write('lostdetection_distance:%d\n'%params.lostdetection_distance)        
         # expbgfgmodel params
         if params.expbgfgmodel_filename is None:
             expbgfgmodel_filename = ''
@@ -1100,6 +1100,8 @@ class AnnotationFile:
                 params.do_fix_lost = bool(int(value))
             elif parameter == 'lostdetection_length':
                 params.lostdetection_length = int(value)
+            elif parameter == 'lostdetection_distance':
+                params.lostdetection_distance = int(value)
             elif parameter == 'expbgfgmodel_filename':
                 if value == '':
                     params.expbgfgmodel_filename = None

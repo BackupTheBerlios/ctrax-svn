@@ -316,7 +316,9 @@ class Hindsight:
         id1 = ids[i]
     
         # if this is too far, then we can't fix
-        if mind > params.lostdetection_distance:
+        # 2011/02/06: Changed from lostdetection_distance to max jump,
+        # as lostdetection_distance was not getting set
+        if mind > params.max_jump*2.:
             if DEBUG: print 'id1=%d dies in frame %d, but distance between predicted positions = %.2f > %.2f'%(id1,self.milestones.getdeathframe(id1),mind,params.lostdetection_length)
             return False
 
