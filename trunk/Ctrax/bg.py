@@ -955,13 +955,17 @@ class BackgroundCalculator:
 
         if num.any(num.isnan(self.center)):
             raise ValueError('Computed bg center has nan values.')
-                          
+
         self.dev[self.dev < params.bg_std_min] = params.bg_std_min
         self.dev[self.dev > params.bg_std_max] = params.bg_std_max
 
         if params.use_expbgfgmodel:
             self.ExpBGFGModel_FillMissingData()
-        
+            # need to rethreshold in case filling in missing data caused
+            # things to go out of bounds
+            self.dev[self.dev < params.bg_std_min] = params.bg_std_min
+            self.dev[self.dev > params.bg_std_max] = params.bg_std_max
+
         self.thresh = self.dev*params.n_bg_std_thresh
         self.thresh_low = self.dev*params.n_bg_std_thresh_low
 
