@@ -790,7 +790,8 @@ class AnnotationFile:
         self.file.write('use_expbgfgmodel:%d\n'%params.use_expbgfgmodel)
         self.file.write('expbgfgmodel_llr_thresh:%f\n'%params.expbgfgmodel_llr_thresh)
         self.file.write('min_frac_frames_isback:%f\n'%params.min_frac_frames_isback)
-                
+        if hasattr(params,'expbgfgmodel_fill'):
+            self.file.write('expbgfgmodel_fill:%s\n'%params.expbgfgmodel_fill)                
         self.file.write('movie_name:' + params.movie_name + '\n')
 
         self.max_jump = params.max_jump
@@ -933,7 +934,6 @@ class AnnotationFile:
                 params.max_arena_radius = float(value)
             elif parameter == 'do_set_circular_arena':
                 params.do_set_circular_arena = bool(int(value))
-                print "read do_set_circular_arena = " + str(params.do_set_circular_arena)
             elif parameter == 'do_use_morphology':
                 params.do_use_morphology = bool(int(value))
             elif parameter == 'opening_radius':
@@ -1113,6 +1113,8 @@ class AnnotationFile:
                 params.use_expbgfgmodel = bool(int(value))
             elif parameter == 'expbgfgmodel_llr_thresh':
                 params.expbgfgmodel_llr_thresh = float(value)
+            elif parameter == 'expbgfgmodel_fill':
+                params.expbgfgmodel_fill = value
             elif parameter == 'min_frac_frames_isback':
                 params.min_frac_frames_isback = float(value)                
             elif parameter == 'movie_name':

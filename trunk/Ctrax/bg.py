@@ -216,6 +216,8 @@ class BackgroundCalculator:
 
     def updateParameters(self):
 
+        print "updating bg parameters"
+
         if params.use_median:
             self.center = self.med.copy()
         else:
@@ -241,6 +243,8 @@ class BackgroundCalculator:
 
         if params.use_expbgfgmodel:
             self.ExpBGFGModel_FillMissingData()
+            self.dev[self.dev < params.bg_std_min] = params.bg_std_min
+            self.dev[self.dev > params.bg_std_max] = params.bg_std_max
 
         self.UpdateIsArena()
 
