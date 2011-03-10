@@ -136,6 +136,9 @@ handles = PlotFirstFrame(handles);
 InitializeDisplayPanel(handles);
 SetErrorTypes(handles);
 handles.bgmed = reshape(handles.bgmed,[handles.nc,handles.nr])';
+
+handles = StorePanelPositions(handles);
+
 % Update handles structure
 guidata(hObject, handles);
 
@@ -2983,4 +2986,82 @@ function manytrackshowtrackingbutton_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of manytrackshowtrackingbutton
 
+function handles = StorePanelPositions(handles)
 
+% store positions of right side panels
+handles.rightpanel_tags = {'seqinfopanel','frameinfopanel','navigationpanel',...
+  'seekpanel','editpanel',...
+  'deletepanel','interpolatepanel','connectpanel','swappanel','extendpanel',...
+  'autotrackpanel','flippanel','manytrackpanel'};
+figpos = get(handles.figure1,'Position');
+
+ntags = numel(handles.rightpanel_tags);
+handles.rightpanel_dright = nan(1,ntags);
+for fni = 1:ntags,
+  fn = handles.rightpanel_tags{fni};
+  h = handles.(fn);
+  pos = get(h,'Position');
+  handles.rightpanel_dright(fni) = figpos(3)-pos(1);
+end
+  
+% store positions of stuff below the axes
+handles.bottom_tags = {'printbutton','debugbutton','playstopbutton',...
+  'displaypanel','frameslider'};
+ntags = numel(handles.bottom_tags);
+handles.bottom_width_norm = nan(1,ntags);
+handles.bottom_dleft_norm = nan(1,ntags);
+for fni = 1:ntags,
+  fn = handles.bottom_tags{fni};
+  h = handles.(fn);
+  pos = get(h,'Position');
+  handles.bottom_width_norm(fni) = pos(3)/figpos(3);
+  handles.bottom_dleft_norm(fni) = pos(1)/figpos(3);
+end
+
+% store axes position stuff
+pos = get(handles.mainaxes,'Position');
+sliderpos = get(handles.frameslider,'Position');
+rightpanelpos = get(handles.seqinfopanel,'Position');
+handles.axes_dtop = figpos(4) - (pos(2)+pos(4));
+handles.axes_dslider = pos(2) - (sliderpos(2)+sliderpos(4));
+handles.axes_drightpanels = rightpanelpos(1)-(pos(1)+pos(3));
+
+% --- Executes when figure1 is resized.
+function figure1_ResizeFcn(hObject, eventdata, handles)
+% hObject    handle to figure1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+figpos = get(handles.figure1,'Position');
+
+% right panels: keep width, bottom dist, height, right dist the same
+ntags = numel(handles.rightpanel_tags);
+for fni = 1:ntags,
+  fn = handles.rightpanel_tags{fni};
+  h = handles.(fn);
+  pos = get(h,'Position');
+  pos(1) = figpos(3) - handles.rightpanel_dright(fni);
+  set(h,'Position',pos);
+end
+
+% stuff below axes: keep dist bottom, height same, scale dleft, width
+ntags = numel(handles.bottom_tags);
+for fni = 1:ntags,
+  fn = handles.bottom_tags{fni};
+  h = handles.(fn);
+  pos = get(h,'Position');
+  pos(1) = figpos(3)*handles.bottom_dleft_norm(fni);
+  pos(3) = figpos(3)*handles.bottom_width_norm(fni);
+  set(h,'Position',pos); 
+end
+
+% axes should fill everything else
+sliderpos = get(handles.frameslider,'Position');
+rightpanelpos = get(handles.seqinfopanel,'Position');
+pos = get(handles.mainaxes,'Position');
+pos(2) = sliderpos(2)+sliderpos(4)+handles.axes_dslider;
+pos(4) = figpos(4)-pos(2)-handles.axes_dtop;
+pos(3) = rightpanelpos(1)-pos(1)-handles.axes_drightpanels;
+set(handles.mainaxes,'Position',pos);
+sliderpos([1,3]) = pos([1,3]);
+set(handles.frameslider,'Position',sliderpos);
