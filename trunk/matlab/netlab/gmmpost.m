@@ -23,8 +23,11 @@ end
 ndata = size(x, 1);
 
 a = gmmactiv(mix, x);
+% set missing centers to activ = 0
+a(isnan(a)) = 0;
 
 post = (ones(ndata, 1)*mix.priors).*a;
+post(isnan(post)) = 0;
 s = sum(post, 2);
 % Set any zeros to one before dividing
 s = s + (s==0);

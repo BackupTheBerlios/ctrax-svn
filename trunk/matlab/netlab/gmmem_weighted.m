@@ -83,6 +83,7 @@ for n = 1:niters
   % Calculate error value if needed
   if (display | store | test)
     prob = act*(mix.priors)';
+    prob(prob<=eps) = eps;
     % Error value is negative log likelihood of data
     e = - sum(log(prob));
     if store
@@ -105,16 +106,26 @@ for n = 1:niters
   
   % Adjust the new estimates for the parameters
   new_pr = sum(post, 1);
+  
+  % allow centers to be dropped
+  idxdrop = new_pr <= 1e-6;
+  if any(idxdrop),
+    post(:,idxdrop) = 0;
+    new_pr = sum(post,1);
+  end
+  
   new_c = post' * x;
   
   % Now move new estimates to old parameter vectors
   mix.priors = new_pr;% ./ ndata;
   
   mix.centres = new_c ./ (new_pr' * ones(1, mix.nin));
+  mix.centres(idxdrop,:) = nan;
   
   switch mix.covar_type
   case 'spherical'
     n2 = netlab_dist2(x, mix.centres);
+    v = nan(1,mix.ncentres);
     for j = 1:mix.ncentres
       v(j) = (post(:,j)'*n2(:,j));
     end
@@ -129,9 +140,13 @@ for n = 1:niters
     end
   case 'diag'
     for j = 1:mix.ncentres
-      diffs = x - (ones(ndata, 1) * mix.centres(j,:));
-      mix.covars(j,:) = sum((diffs.*diffs).*(post(:,j)*ones(1, ...
-        mix.nin)), 1)./new_pr(j);
+      if idxdrop(j),
+        mix.covars(j,:) = init_covars(j,:);
+      else
+        diffs = x - (ones(ndata, 1) * mix.centres(j,:));
+        mix.covars(j,:) = sum((diffs.*diffs).*(post(:,j)*ones(1, ...
+          mix.nin)), 1)./new_pr(j);
+      end
     end
     if check_covars
       % Ensure that no covariance is too small
@@ -143,9 +158,13 @@ for n = 1:niters
     end
   case 'full'
     for j = 1:mix.ncentres
-      diffs = x - (ones(ndata, 1) * mix.centres(j,:));
-      diffs = diffs.*(sqrt(post(:,j))*ones(1, mix.nin));
-      mix.covars(:,:,j) = (diffs'*diffs)/new_pr(j);
+      if idxdrop(j),
+        mix.covars(:,:,j) = init_covars(:,:,j);
+      else
+        diffs = x - (ones(ndata, 1) * mix.centres(j,:));
+        diffs = diffs.*(sqrt(post(:,j))*ones(1, mix.nin));
+        mix.covars(:,:,j) = (diffs'*diffs)/new_pr(j);
+      end
     end
     if check_covars
       % Ensure that no covariance is too small
@@ -157,16 +176,20 @@ for n = 1:niters
     end
   case 'ppca'
     for j = 1:mix.ncentres
-      diffs = x - (ones(ndata, 1) * mix.centres(j,:));
-      diffs = diffs.*(sqrt(post(:,j))*ones(1, mix.nin));
-      [tempcovars, tempU, templambda] = ...
-	ppca((diffs'*diffs)/new_pr(j), mix.ppca_dim);
-      if length(templambda) ~= mix.ppca_dim
-	error('Unable to extract enough components');
-      else 
-        mix.covars(j) = tempcovars;
-        mix.U(:, :, j) = tempU;
-        mix.lambda(j, :) = templambda;
+      if idxdrop(j),
+        mix.covars(j) = init_covars(j);
+      else
+        diffs = x - (ones(ndata, 1) * mix.centres(j,:));
+        diffs = diffs.*(sqrt(post(:,j))*ones(1, mix.nin));
+        [tempcovars, tempU, templambda] = ...
+          ppca((diffs'*diffs)/new_pr(j), mix.ppca_dim);
+        if length(templambda) ~= mix.ppca_dim
+          error('Unable to extract enough components');
+        else
+          mix.covars(j) = tempcovars;
+          mix.U(:, :, j) = tempU;
+          mix.lambda(j, :) = templambda;
+        end
       end
     end
     if check_covars
