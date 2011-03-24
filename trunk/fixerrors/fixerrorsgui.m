@@ -136,6 +136,7 @@ handles = PlotFirstFrame(handles);
 InitializeDisplayPanel(handles);
 SetErrorTypes(handles);
 handles.bgmed = reshape(handles.bgmed,[handles.nc,handles.nr])';
+InitializeKeyPressFcns(handles);
 
 handles = StorePanelPositions(handles);
 
@@ -146,6 +147,11 @@ Play(handles,handles.figure1);
 
 % UIWAIT makes fixerrorsgui wait for user response (see UIRESUME)
 uiwait(handles.figure1);
+
+function InitializeKeyPressFcns(handles)
+
+h = findobj(handles.figure1,'KeyPressFcn','');
+set(h,'KeyPressFcn',get(handles.figure1,'KeyPressFcn'));
 
 function handles = InitializeMainAxes(handles)
 
@@ -3065,3 +3071,35 @@ pos(3) = rightpanelpos(1)-pos(1)-handles.axes_drightpanels;
 set(handles.mainaxes,'Position',pos);
 sliderpos([1,3]) = pos([1,3]);
 set(handles.frameslider,'Position',sliderpos);
+
+
+% --- Executes on key press with focus on figure1 and none of its controls.
+function figure1_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to figure1 (see GCBO)
+% eventdata  structure with the following fields (see FIGURE)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+
+switch eventdata.Key,
+  
+  case 'rightarrow',
+
+    if handles.f < handles.nframes,
+      handles.f = handles.f+1;
+      SetFrameNumber(handles,handles.f);
+      PlotFrame(handles);
+      guidata(hObject,handles);
+    end
+    
+  case 'leftarrow',
+
+    if handles.f > 1,
+      handles.f = handles.f-1;
+      SetFrameNumber(handles,handles.f);
+      PlotFrame(handles);
+      guidata(hObject,handles);
+    end
+    
+end
