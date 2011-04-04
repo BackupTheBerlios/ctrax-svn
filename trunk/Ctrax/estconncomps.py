@@ -811,6 +811,8 @@ def trysplit(ellipses,i,isdone,L,dfore):
 
 def fixlarge(ellipses,L,dfore):
 
+    if DEBUG: print "fixlarge"
+
     # whether or not we have tried to fix the ellipse
     isdone = num.zeros(len(ellipses),dtype=bool)
     # set to True if the ellipse is not large

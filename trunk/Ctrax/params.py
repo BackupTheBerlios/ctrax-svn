@@ -164,7 +164,7 @@ class Parameters:
         self.BG_NORM_HOMOMORPHIC = 2
         self.ALGORITHM_MEDIAN = 0
         self.ALGORITHM_MEAN = 1
-        self.print_crap = False # print debugging info
+        self.print_crap = True # print debugging info
         self.watch_threads = True # print processing info
         self.watch_locks = False # print lock acquisition/releasing
         self.count_time = True # determine how long each thread works

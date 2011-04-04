@@ -216,7 +216,7 @@ class ChooseOrientations:
                 # if jumping, it can jump in an arbitrary direction
                 w = 0
             else:
-                w = num.minimum(float(params.max_velocity_angle_weight),params.velocity_angle_weight*num.sqrt(vx**2+vy**2))
+                w = num.minimum(float(params.max_velocity_angle_weight),params.velocity_angle_weight*dcenter)
             # compute for both possible states
             for scurr in [0,1]:
                 
