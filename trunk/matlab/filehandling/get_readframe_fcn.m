@@ -24,7 +24,8 @@
 function [readframe,nframes,fid,headerinfo] = get_readframe_fcn(filename)
 
 % allow videoio library to be used if it is installed and on the path
-CTRAX_ISVIDEOIO = exist('videoReader','file');
+%CTRAX_ISVIDEOIO = exist('videoReader','file');
+CTRAX_ISVIDEOIO = false;
 
 [~,ext] = splitext(filename);
 if strcmpi(ext,'.fmf'),

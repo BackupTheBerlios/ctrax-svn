@@ -8,7 +8,7 @@
 % moviename: name of movie tracked
 % outmatname: [optional] mat file to save trx trajectories to. user will be
 % prompted for file name if none given
-function [succeeded,outmatname,trx] = cadabra2ctrax(featname,roiname,moviename,outmatname)
+function [succeeded,outmatname,trx] = cadabra2ctrax(featname,roiname,moviename,outmatname,doflipud,dofliplr,rot)
 
 % initialize outputs
 succeeded = false;
@@ -17,7 +17,7 @@ if ~exist('outmatname','var'),
 end
 trx = [];
 
-if ~exist('featname','var'),
+if ~exist('featname','var') || isempty(featname),
   helpmsg = 'Choose CADABRA feat mat file';
   [featname,featpath] = uigetfilehelp('*.mat','Choose feat file','','helpmsg',helpmsg);
   if ~ischar(featname),
@@ -26,7 +26,7 @@ if ~exist('featname','var'),
   featname = fullfile(featpath,featname);
 end
 
-if ~exist('roiname','var'),
+if ~exist('roiname','var') || isempty(roiname),
   helpmsg = sprintf('Choose CADABRA roi mat file corresponding to feat file %s',featname);
   roiname = strrep(featname,'feat','roi');
   [roiname,roipath] = uigetfilehelp('*.mat','Choose feat file',roiname,'helpmsg',helpmsg);
@@ -35,12 +35,40 @@ if ~exist('roiname','var'),
   end
   roiname = fullfile(roipath,roiname);
 end
-  
+
+if ~exist('moviename','var') || isempty(moviename),
+  helpmsg = sprintf('Choose movie file corresponding to feat file %s',featname);
+  moviename = strrep(featname,'_feat.mat','.avi');
+  [moviename,moviepath] = uigetfilehelp('*.avi','Choose movie file',moviename,'helpmsg',helpmsg);
+  if ~ischar(moviename),
+    return;
+  end
+  moviename = fullfile(moviepath,moviename);
+end
+
+if ~exist('doflipud','var'),
+  doflipud = false;
+end
+
+if ~exist('dofliplr','var'),
+  dofliplr = false;
+end
+
+if ~exist('rot','var'),
+  rot = 0;
+end
+
+if rot ~= 0,
+  phi = rot*pi/180;
+  R = [cos(rot),sin(rot);-sin(rot),cos(rot)];
+end
+
+
 % load in data
 feat = load(featname);
 roi = load(roiname);
 
-% read fps, moviename is either the name of the movie or an mmreader object
+% read fps, frame size, moviename is either the name of the movie or an mmreader object
 if ~ischar(moviename),
   readerobj = moviename;
   moviename = fullfile(get(readerobj,'Path'),get(readerobj,'Name'));
@@ -48,6 +76,10 @@ else
   readerobj = mmreader(moviename);
 end
 fps = get(readerobj,'FrameRate')+0;
+movieheight = get(readerobj,'Height')+0;
+moviewidth = get(readerobj,'Width')+0;
+movieheight_mm = movieheight * roi.scale.y;
+moviewidth_mm = moviewidth * roi.scale.x;
 
 % scale, pxpermm
 pxpermm = 1/mean([roi.scale.x,roi.scale.y]);
@@ -110,13 +142,36 @@ for fly = 1:2,
   trx(fly).x(idx) = obj(fly).pos_x*pxpermm + roi.ROI.cols(1) - 1 - 1;
   trx(fly).y(idx) = obj(fly).pos_y*pxpermm + roi.ROI.rows(1) - 1 - 1;
   trx(fly).x_mm = trx(fly).x / pxpermm;
-  trx(fly).x_mm = trx(fly).y / pxpermm;
+  trx(fly).y_mm = trx(fly).y / pxpermm;
   trx(fly).a = trx(fly).a_mm*pxpermm;
   trx(fly).b = trx(fly).b_mm*pxpermm;
   
+  % flipud if necessary
+  if doflipud,
+    trx(fly).y_mm = movieheight_mm - trx(fly).y_mm;
+    trx(fly).y = movieheight - trx(fly).y;
+    trx(fly).theta = -trx(fly).theta;
+  end
+
+  % fliplr if necessary
+  if dofliplr,
+    trx(fly).x_mm = moviewidth_mm - trx(fly).x_mm;
+    trx(fly).x = moviewidth - trx(fly).x;
+    trx(fly).theta = modrange(pi-trx(fly).theta,-pi,pi);
+  end
+  
+  % rotate if necessary
+  if rot ~= 0,
+    trx(fly).x_mm = (trx(fly).x_mm - moviewidth_mm/2)*R + moviewidth_mm/2;
+    trx(fly).y_mm = (trx(fly).y_mm - movieheight_mm/2)*R + movieheight_mm/2;
+    trx(fly).x = (trx(fly).x - moviewidth/2)*R + moviewidth/2;
+    trx(fly).y = (trx(fly).y - movieheight/2)*R + movieheight/2;
+    trx(fly).theta = modrange(trx(fly).theta + phi,-pi,pi);
+  end
+  
 end
 
-if isempty(outmatname),
+if ~exist(outmatname,'var') || isempty(outmatname),
   [pathstr,name] = fileparts(featname);
   outname = strrep(name,'_feat','');
   outmatname = fullfile(pathstr,[outname,'_trx.mat']);
