@@ -148,7 +148,7 @@ for fly = 1:2,
   trx(fly).theta(idx) = obj(fly).headdir*pi/180;
   
   % convert mm to px, incorporate offset
-  trx(fly).x(idx) = obj(fly).pos_x*pxpermm + roi.ROI.cols(1) - 1 - 1;
+  trx(fly).x(idx) = obj(fly).pos_x*pxpermm + roi.ROI.cols(1) - 1;
   trx(fly).y(idx) = obj(fly).pos_y*pxpermm + roi.ROI.rows(1) - 1 - 1;
   trx(fly).x_mm = trx(fly).x / pxpermm;
   trx(fly).y_mm = trx(fly).y / pxpermm;
@@ -180,7 +180,7 @@ for fly = 1:2,
   
 end
 
-if ~exist(outmatname,'var') || isempty(outmatname),
+if ~exist('outmatname','var') || isempty(outmatname),
   [pathstr,name] = fileparts(featname);
   outname = strrep(name,'_feat','');
   outmatname = fullfile(pathstr,[outname,'_trx.mat']);
