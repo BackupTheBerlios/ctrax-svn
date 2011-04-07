@@ -1,13 +1,22 @@
-% [succeeded,outmatname,trx] = cadabra2ctrax(featname,roiname,moviename,[outmatname])
+% [succeeded,outmatname,trx] = cadabra2ctrax(featname,roiname,moviename,[outmatname],[doflipup],[dofliplr],[rot])
 % inputs cadabra mat file output names, loads in the trajectories, and
 % converts to ctrax trx format. these trx will be saved to the file
 % outmatname (user will be prompted for this name if none given). 
 % inputs:
-% featname: "feat" output by cadabra
-% roiname: "roi" output by cadabra
+% featname: [optional] "feat" output by cadabra. if not input, user will be
+% prompted for file. 
+% roiname: [optional] "roi" output by cadabra. if not input, user will be
+% prompted for file.
 % moviename: name of movie tracked
 % outmatname: [optional] mat file to save trx trajectories to. user will be
 % prompted for file name if none given
+% doflipud: [optional] whether to flip the trajectories vertically across
+% the middle of the video. Default: false.
+% dofliplr: [optional] whether to flip the trajectories horizontally across
+% the center of the video. Default: false.
+% rot: [optional] degrees to rotate the trajectories by around the center
+% of the video. Default: 0. 
+
 function [succeeded,outmatname,trx] = cadabra2ctrax(featname,roiname,moviename,outmatname,doflipud,dofliplr,rot)
 
 % initialize outputs
