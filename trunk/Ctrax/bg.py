@@ -204,6 +204,11 @@ class BackgroundCalculator:
         # set experiment-wide background & foreground model
         try:
             self.expbgfgmodel = ExpBGFGModel.ExpBGFGModel(picklefile=expbgfgmodel_filename)
+
+            if params.expbgfgmodel_llr_thresh_low > \
+                    params.expbgfgmodel_llr_thresh:
+                params.expbgfgmodel_llr_thresh_low = \
+                    params.expbgfgmodel_llr_thresh
         except Exception, err:
             s = 'Error loading experiment-wide model from %s:\n%s\n'%(expbgfgmodel_filename,str(err))
             if params.interactive:
@@ -351,7 +356,19 @@ class BackgroundCalculator:
     def thresh_expbgfgmodel_llr(self,im,r0=0,r1=num.inf):
 
         log_lik_ratio = self.expbgfgmodel_llr(im,r0=r0,r1=r1)
-        isback = log_lik_ratio < params.expbgfgmodel_llr_thresh
+
+        if params.expbgfgmodel_llr_thresh > params.expbgfgmodel_llr_thresh_low:
+            bwhigh = log_lik_ratio >= params.expbgfgmodel_llr_thresh
+            bwlow = log_lik_ratio >= params.expbgfgmodel_llr_thresh_low
+
+            # do hysteresis
+            bw = morph.binary_propagation(bwhigh,mask=bwlow)
+            isback = bw == False
+
+        else:
+
+            isback = log_lik_ratio < params.expbgfgmodel_llr_thresh
+
 #        h0 = plt.subplot(131)
 #        plt.imshow(im)
 #        plt.axis('image')
@@ -2025,6 +2042,7 @@ class BgSettingsDialog:
         self.expbgfgmodel_text = xrc.XRCCTRL( self.frame, "expbgfgmodel_text")
         self.expbgfgmodel_button = xrc.XRCCTRL( self.frame, "expbgfgmodel_button")
         self.expbgfgmodel_llr_thresh = xrc.XRCCTRL(self.frame, "llr_thresh")
+        self.expbgfgmodel_llr_thresh_low = xrc.XRCCTRL(self.frame, "llr_thresh_low")
         self.calculate = xrc.XRCCTRL( self.frame, "calculate_button" )
         if params.use_median:
             self.algorithm.SetSelection(params.ALGORITHM_MEDIAN)
@@ -2056,6 +2074,10 @@ class BgSettingsDialog:
                                                xrc.XRCID("llr_thresh"),
                                                self.OnTextValidatedLLRThresh,
                                                pending_color=params.wxvt_bg )
+        wxvt.setup_validated_integer_callback( self.expbgfgmodel_llr_thresh_low,
+                                               xrc.XRCID("llr_thresh_low"),
+                                               self.OnTextValidatedLLRThresh,
+                                               pending_color=params.wxvt_bg )
         
         self.UpdateExpBGFGModelControls()
         self.frame.Show()
@@ -2074,6 +2096,7 @@ class BgSettingsDialog:
             self.expbgfgmodel_button.Enable(True)
             
         self.expbgfgmodel_llr_thresh.SetValue(str(params.expbgfgmodel_llr_thresh))
+        self.expbgfgmodel_llr_thresh_low.SetValue(str(params.expbgfgmodel_llr_thresh_low))
             
     def OnCalculate(self,evt=-1):
 
@@ -2130,10 +2153,16 @@ class BgSettingsDialog:
 
         try:
             tmp = float(self.expbgfgmodel_llr_thresh.GetValue())
+            tmp_low = float(self.expbgfgmodel_llr_thresh_low.GetValue())
         except:
             self.expbgfgmodel_llr_thresh.SetValue(str(params.expbgfgmodel_llr_thresh))
+            self.expbgfgmodel_llr_thresh_low.SetValue(str(params.expbgfgmodel_llr_thresh_low))
             return
+        if tmp_low > tmp:
+            tmp_low = tmp
+
         params.expbgfgmodel_llr_thresh = tmp
+        params.expbgfgmodel_llr_thresh_low = tmp_low
 
     def OnAlgorithmChoice(self,evt):
 

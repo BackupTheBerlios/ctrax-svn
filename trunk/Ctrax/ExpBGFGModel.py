@@ -306,7 +306,7 @@ class ExpBGFGModel:
 
         # open annotation
         self.trx = annot.AnnotationFile( self.annnames[i], bg_imgs=self.bg_imgs, 
-                                        doreadtrx=True )
+                                        doreadtrx=True, readonly=True )
 
 
         self.setup_backsub()

@@ -381,8 +381,10 @@ class Parameters:
         self.use_expbgfgmodel = False
         
         # threshold for log-likelihood ratio of foreground over background
-        # if llr is < thresh, then include in the background model
+        # if llr is >= thresh_low and near a pixel > thresh then don't 
+        # include in the background model
         self.expbgfgmodel_llr_thresh = 0
+        self.expbgfgmodel_llr_thresh_low = 0
         
         # fraction of sampled frames that we require to be classified as background according
         # to the prior expbgfgmodel to trust our estimates. otherwise, we will fill missing sections

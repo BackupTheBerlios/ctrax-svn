@@ -10,16 +10,11 @@ import matplotlib.pyplot as plt
 
 ## parameters
 
-mode = 'learn'
+mode = 'show'
 
 # which experiments
-if len(sys.argv) < 2:
-    protocol = 'current'
-else:
-    protocol = sys.argv[1]
-
-print "*** PROTOCOL %s ***\n"%protocol
-
+protocol = '20110407'
+expdirs_in = '/groups/branson/bransonlab/projects/olympiad/FlyBowlCtrax/20110407/LearnCtraxParams/expdirs.txt'
 mindatestr = ''
 maxdatestr = ''
 linename = '.*'
@@ -27,6 +22,8 @@ rig = ''
 plate = ''
 bowl = ''
 notstarted = False
+
+print "*** PROTOCOL %s ***\n"%protocol
 
 # directory for learning data
 resdir = '/groups/branson/bransonlab/projects/olympiad/FlyBowlCtrax/%s/LearnCtraxParams'%protocol
@@ -56,16 +53,31 @@ outputFileName = os.path.join(resdir,outputFileStr)
 matFileName = os.path.join(resdir,matFileStr)
 
 # experiment directories corresponding to parameters
-(expdirs,expdir_reads,expdir_writes,experiments) = \
-    ParseExpDirs.getExpDirs(protocol=protocol,
-                            mindatestr=mindatestr,
-                            maxdatestr=maxdatestr,
-                            linename=linename,
-                            rig=rig,
-                            plate=plate,
-                            bowl=bowl,
-                            notstarted=notstarted,
-                            subreadfiles=[movieFileStr,annFileStr])
+if expdirs_in == "":
+    (expdirs,expdir_reads,expdir_writes,experiments) = \
+        ParseExpDirs.getExpDirs(protocol=protocol,
+                                mindatestr=mindatestr,
+                                maxdatestr=maxdatestr,
+                                linename=linename,
+                                rig=rig,
+                                plate=plate,
+                                bowl=bowl,
+                                notstarted=notstarted,
+                                subreadfiles=[movieFileStr,annFileStr])
+else:
+    fid = open(expdirs_in,"r")
+    expdirs = []
+    experiments = []
+    for expdir in fid:
+        expdir = expdir.strip()
+        if expdir == "":
+            continue
+        expdirs.append(expdir)
+        [exp,success] = ParseExpDirs.parseExpDir(expdir)
+        experiments.append(exp)
+    expdir_reads = expdirs
+    expdir_writes = expdirs
+    fid.close()
 
 if mode == 'learn':
 
@@ -93,6 +105,10 @@ elif mode == 'show':
     model.show()
     for i in range(len(expdirs)):
         moviename = os.path.join(expdir_reads[i],movieFileStr)
+        print moviename
         model.showtest(moviename=moviename)
-        savename = os.path.join(resdir,'ExpBGFGModel_SampleFrames_%s.png'%expdirs[i])
+        savename = os.path.join(resdir,'ExpBGFGModel_SampleFrames_%s.png'%os.path.basename(expdirs[i]))
         plt.savefig(savename,format='png')
+
+elif mode == 'change':
+    model = ExpBGFGModel.ExpBGFGModel(picklefile=outputFileName)

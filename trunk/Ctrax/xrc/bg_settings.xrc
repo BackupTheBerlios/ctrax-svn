@@ -24,7 +24,7 @@
           </object>
           <object class="sizeritem">
             <object class="wxChoice" name="algorithm">
-              <size>280,20</size>
+              <size>280,25</size>
               <content>
                 <item>Median/Median Absolute Difference</item>
                 <item>Mean/Standard Deviation</item>
@@ -46,7 +46,6 @@
             <face>Sans</face>
           </font>
         </object>
-        <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
       </object>
       <object class="sizeritem">
         <object class="wxStaticLine" name="">
@@ -109,7 +108,7 @@
                 <underlined>0</underlined>
                 <family>swiss</family>
                 <face>MS Shell Dlg 2</face>
-                <encoding></encoding>
+                <encoding/>
               </font>
             </object>
             <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
@@ -224,25 +223,60 @@
         </object>
       </object>
       <object class="sizeritem">
+        <object class="wxStaticText">
+          <size>360,20</size>
+          <label>Prior Log-Likelihood Ratio Thresholds:  </label>
+          <font>
+            <size>10</size>
+            <style>normal</style>
+            <weight>bold</weight>
+            <underlined>0</underlined>
+            <family>swiss</family>
+            <face>Sans</face>
+          </font>
+          <style>wxALIGN_LEFT</style>
+        </object>
+      </object>
+      <object class="sizeritem">
         <object class="wxBoxSizer">
           <orient>wxHORIZONTAL</orient>
           <object class="sizeritem">
             <object class="wxStaticText">
-              <size>250,16</size>
-              <label>Prior Log-Likelihood Ratio Threshold:  </label>
+              <size>40,25</size>
+              <label>High: </label>
               <font>
                 <size>10</size>
                 <style>normal</style>
-                <weight>bold</weight>
+                <weight>normal</weight>
                 <underlined>0</underlined>
                 <family>swiss</family>
                 <face>Sans</face>
+                <encoding>UTF-8</encoding>
               </font>
             </object>
-            <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
           </object>
           <object class="sizeritem">
             <object class="wxTextCtrl" name="llr_thresh">
+              <value>0</value>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <size>40,25</size>
+              <label>Low: </label>
+              <font>
+                <size>10</size>
+                <style>normal</style>
+                <weight>normal</weight>
+                <underlined>0</underlined>
+                <family>swiss</family>
+                <face>Sans</face>
+                <encoding>UTF-8</encoding>
+              </font>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="llr_thresh_low">
               <value>0</value>
             </object>
           </object>
@@ -251,7 +285,7 @@
       <object class="sizeritem">
         <object class="wxStaticText">
           <size>360,45</size>
-          <label>Threshold for log-likelihood ratio of foreground over background. Only pixels that are below the threhsold will be used in the bg model computation. </label>
+          <label>Hysteresis thresholds for log-likelihood ratio of foreground over background. Pixels above the low threshold and touching pixels above the high threshold will not be used in the background modeling.</label>
           <font>
             <size>8</size>
             <style>normal</style>

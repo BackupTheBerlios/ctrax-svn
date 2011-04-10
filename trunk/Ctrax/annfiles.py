@@ -23,7 +23,8 @@ class InvalidFileFormatException(Exception):
 class AnnotationFile:
 
     def __init__( self, filename=None, bg_imgs=None, doreadheader=True,
-                  justreadheader=False, doreadbgmodel=True, doreadtrx=False ):
+                  justreadheader=False, doreadbgmodel=True, doreadtrx=False,
+                  readonly=False):
         """This function should be called inside an exception handler
         in case the annotation header versions are different from expected
         or the file doesn't exist."""
@@ -99,11 +100,14 @@ class AnnotationFile:
 
         # open the file for reading
         newfile = False
-        try:
-            self.file = open(filename,'rb+')
-        except IOError:
-            self.file = open(filename,'wb+')
-            newfile = True
+        if readonly:
+            self.file = open(filename,'rb')
+        else:
+            try:
+                self.file = open(filename,'rb+')
+            except IOError:
+                self.file = open(filename,'wb+')
+                newfile = True
 
         # check the annotation header
         if not newfile:
@@ -789,6 +793,7 @@ class AnnotationFile:
         self.file.write('expbgfgmodel_filename:%s\n'%expbgfgmodel_filename)
         self.file.write('use_expbgfgmodel:%d\n'%params.use_expbgfgmodel)
         self.file.write('expbgfgmodel_llr_thresh:%f\n'%params.expbgfgmodel_llr_thresh)
+        self.file.write('expbgfgmodel_llr_thresh_low:%f\n'%params.expbgfgmodel_llr_thresh_low)
         self.file.write('min_frac_frames_isback:%f\n'%params.min_frac_frames_isback)
         if hasattr(params,'expbgfgmodel_fill'):
             self.file.write('expbgfgmodel_fill:%s\n'%params.expbgfgmodel_fill)                
@@ -1113,6 +1118,8 @@ class AnnotationFile:
                 params.use_expbgfgmodel = bool(int(value))
             elif parameter == 'expbgfgmodel_llr_thresh':
                 params.expbgfgmodel_llr_thresh = float(value)
+            elif parameter == 'expbgfgmodel_llr_thresh_low':
+                params.expbgfgmodel_llr_thresh_low = float(value)
             elif parameter == 'expbgfgmodel_fill':
                 params.expbgfgmodel_fill = value
             elif parameter == 'min_frac_frames_isback':
