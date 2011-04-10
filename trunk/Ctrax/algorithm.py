@@ -167,6 +167,7 @@ class CtraxAlgorithm (settings.AppWithSettings):
 
         # write the rest of the frames to file
         self.ann_file.finish_writing()
+        annot.WriteDiagnostics(self.diagnosticsfilename)
 
     # enddef: Track()
 
