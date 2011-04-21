@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resource>
+  <object class="wxFrame" name="frame_Ctrax_settings">
+    <title>Statistics Plot Settings</title>
+    <object class="wxBoxSizer">
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="text_vel_bins">
+              <size>50,-1</size>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="stext_vel_bins">
+              <label># velocity bins</label>
+            </object>
+            <flag>wxALIGN_CENTER_VERTICAL</flag>
+          </object>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="text_vel_axes">
+              <size>200,-1</size>
+            </object>
+            <flag>wxALIGN_CENTRE</flag>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="stext_vel_axes">
+              <label>axes (x_min,x_max,y_min,y_max)\nreplace any with 'a' for auto</label>
+            </object>
+          </object>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticLine" name="line_space0"/>
+        <flag>wxEXPAND</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="text_orn_bins">
+              <size>50,-1</size>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="stext_orn_bins">
+              <label># orientation bins</label>
+            </object>
+            <flag>wxALIGN_CENTER_VERTICAL</flag>
+          </object>
+        </object>
+        <flag>wxEXPAND</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="text_orn_axes">
+              <size>200,-1</size>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="stext_orn_axes">
+              <label>orientation axes</label>
+            </object>
+            <flag>wxALIGN_CENTRE</flag>
+          </object>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticLine" name="line_space1"/>
+        <flag>wxEXPAND</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="text_space_bins">
+              <size>50,-1</size>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="stext_space_bins">
+              <label># spacing bins</label>
+            </object>
+            <flag>wxALIGN_CENTER_VERTICAL</flag>
+          </object>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="text_space_axes">
+              <size>200,-1</size>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText" name="stext_space_axes">
+              <label>spacing axes</label>
+            </object>
+            <flag>wxALIGN_CENTRE</flag>
+          </object>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticLine" name="line_space2"/>
+        <flag>wxEXPAND</flag>
+      </object>
+      <orient>wxVERTICAL</orient>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxBoxSizer">
+              <orient>wxVERTICAL</orient>
+              <object class="sizeritem">
+                <object class="wxBoxSizer">
+                  <orient>wxHORIZONTAL</orient>
+                  <object class="sizeritem">
+                    <object class="wxTextCtrl" name="text_pos_binsize">
+                      <size>50,-1</size>
+                    </object>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxStaticText" name="stext_pos_binsize">
+                      <label>position bin size</label>
+                    </object>
+                    <flag>wxALIGN_CENTER_VERTICAL</flag>
+                  </object>
+                </object>
+              </object>
+              <object class="sizeritem">
+                <object class="wxBoxSizer">
+                  <orient>wxHORIZONTAL</orient>
+                  <object class="sizeritem">
+                    <object class="wxTextCtrl" name="text_pos_axes">
+                      <size>200,-1</size>
+                    </object>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxStaticText" name="stext_pos_axes">
+                      <label>position axes</label>
+                    </object>
+                    <flag>wxALIGN_CENTRE</flag>
+                  </object>
+                </object>
+              </object>
+            </object>
+          </object>
+        </object>
+        <option>1</option>
+        <flag>wxEXPAND</flag>
+      </object>
+    </object>
+  </object>
+</resource>

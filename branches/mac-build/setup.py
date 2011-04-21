@@ -11,7 +11,7 @@ numpyincludedirs = numpy.get_include()
 
 # read version number from version file
 path = os.path.abspath( os.curdir )
-Ctrax_path = os.path.join( path, 'Ctrax' )
+Ctrax_path = os.path.join( path, 'Ctrax_mac' )
 ver_filename = os.path.join( Ctrax_path, 'version.py' )
 ver_file = open( ver_filename, "r" )
 for line in ver_file: # parse through file version.py
@@ -22,16 +22,16 @@ for line in ver_file: # parse through file version.py
 ver_file.close()
 
 # add all of the .xrc and .bmp files
-Ctrax_package_data = [ f[6:] for f in glob.glob(os.path.join('Ctrax','xrc','*.xrc'))]+\
-                     [ f[6:] for f in glob.glob(os.path.join('Ctrax','icons','*.ico'))]+\
-                     [ f[6:] for f in glob.glob(os.path.join('Ctrax','xrc','*.bmp'))]
+Ctrax_package_data = [ f[6:] for f in glob.glob(os.path.join('Ctrax_mac','xrc','*.xrc'))]+\
+                     [ f[6:] for f in glob.glob(os.path.join('Ctrax_mac','icons','*.ico'))]+\
+                     [ f[6:] for f in glob.glob(os.path.join('Ctrax_mac','xrc','*.bmp'))]
 
 long_description = """
 Ctrax: The Caltech Multiple Fly Tracker
 
-(c) 2007-2010 The Caltech Ethomics Project
-http://www.dickinson.caltech.edu/ctrax
-branson@caltech.edu
+(c) 2007-2011 The Caltech Ethomics Project
+http://ctrax.berlios.de
+bransonk@janelia.hhmi.org
 
 Ctrax is an open-source, freely available, machine vision program for
 estimating the positions and orientations of many walking flies,
@@ -82,26 +82,26 @@ requires=['cython',
           ]
 
 setup( 
-    name="Ctrax",
+    name="Ctrax_mac",
     version=this_version,
-    author="Caltech Ethomics Project",
+    author="Caltech Ethomics Project / Kristin Branson",
     author_email="bransonk@janelia.hhmi.org",
-    maintainer="Kristin Branson",
-    maintainer_email="bransonk@janelia.hhmi.org",
-    url="http://www.dickinson.caltech.edu/Ctrax",
+    maintainer="John Bender",
+    maintainer_email="johnabender@gmail.com",
+    url="http://ctrax.berlios.de",
     description="Ctrax: The Caltech Multiple Fly Tracker",
     long_description=long_description,
     download_url="https://developer.berlios.de/projects/ctrax/",
     classifiers=classifiers,
     platforms=['Windows','Linux',],
-    packages=['Ctrax'],
+    packages=['Ctrax_mac'],
     requires=requires,
-    provides=['Ctrax',],
+    provides=['Ctrax_mac',],
     obsoletes=['mtrax',],
-    scripts=['Ctrax/Ctrax-script.py'],
+    scripts=['Ctrax_mac/Ctrax-script-mac.py'],
     cmdclass = {'build_ext': build_ext},
-    package_dir={'Ctrax': 'Ctrax'},
-    package_data = {'Ctrax':Ctrax_package_data},
+    package_dir={'Ctrax_mac': 'Ctrax_mac'},
+    package_data = {'Ctrax_mac':Ctrax_package_data},
     ext_modules=[Extension('hungarian',['hungarian/hungarian.cpp',
                                         'hungarian/asp.cpp'],
                            include_dirs=[numpyincludedirs,]),
