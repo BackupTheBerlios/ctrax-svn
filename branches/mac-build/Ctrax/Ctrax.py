@@ -51,10 +51,6 @@ import ellipsesk as ell
 #import setarena
 #import chooseorientations
 
-if DEBUG:
-    import pdb
-from pdb import bdb
-
 # about box
 # forward compatibility for AboutBox, added in wx 2.7.1.1
 # (currently 2.6.3.2 is packaged for Ubuntu Feisty)
@@ -75,19 +71,19 @@ class CtraxApp( algorithm.CtraxAlgorithm ): # eventually inherits from wx.App
 	"""
 	Start up the Ctrax GUI
 	"""
+#        self.RestoreStdio()
+
         # parse commandline
         self.ParseCommandLine()
 
         if DEBUG: print "parsed command line"
 
-        # initialization
-        if not self.InitGUI(): # in settings.py
-            print "initializing GUI failed"
-            return False
+	# initialization
+        self.InitGUI() # in settings.py
 
         if DEBUG: print "initialized GUI"
 
-        self.InitState() # in settings.py
+	self.InitState() # in settings.py
 
         if DEBUG: print "initialized state"
 
@@ -98,8 +94,8 @@ class CtraxApp( algorithm.CtraxAlgorithm ): # eventually inherits from wx.App
 
         self.alive = True
 
-        # open movie, ann file
-        self.OpenMovieAndAnn()
+	# open movie, ann file
+	self.OpenMovieAndAnn()
 
         if DEBUG: print "Opened movie and ann file"
 
@@ -1166,8 +1162,22 @@ If DiagnosticsFile is not set, then <basename>_ctraxdiagnostics.txt will be used
         if params.interactive:
             self.UpdateToolBar('started')
             self.menu.SetLabel( xrc.XRCID("menu_track_start"), const.TRACK_STOP )
-
-    	    self.EnableControls()
+	    self.EnableControls()
+            #self.menu.Enable( xrc.XRCID("menu_track_resume"), False )
+            #self.menu.Enable( xrc.XRCID("menu_track_resume_here"), False )
+            #self.menu.Enable( xrc.XRCID("menu_playback_show_ann"), True )
+            #self.menu.Check( xrc.XRCID("menu_playback_show_ann"), True )
+            #self.menu.Enable( xrc.XRCID("menu_choose_orientations"), False )
+            #self.menu.Enable( xrc.XRCID("menu_file_export"), True )
+            #self.menu.Enable( xrc.XRCID("menu_file_save_avi"), True )
+            #self.menu.Enable( xrc.XRCID("menu_load_settings"), False )
+            #self.menu.Enable( xrc.XRCID("menu_settings_bg"), False )
+            #self.menu.Enable( xrc.XRCID("menu_settings_bg_model"), False )
+            #self.menu.Enable( xrc.XRCID("menu_settings_tracking"), False )
+            ##self.menu.Enable( xrc.XRCID("menu_track_play"), False )
+            #self.menu.Enable( xrc.XRCID("menu_compute_background"), False )
+            #self.menu.Enable( xrc.XRCID("menu_compute_shape"), False )
+	    #self.slider.Enable( False )
 
             wx.Yield() # refresh GUI
 
@@ -1196,8 +1206,25 @@ If DiagnosticsFile is not set, then <basename>_ctraxdiagnostics.txt will be used
             self.UpdateToolBar('stopped')
 
             self.menu.SetLabel( xrc.XRCID("menu_track_start"), const.TRACK_START )
-            
-    	    self.EnableControls()
+	    self.EnableControls()
+            #if hasattr(self,'ann_data') and \
+            #       (self.ann_data is not None) and \
+            #       (len(self.ann_data) > 0):
+            #    self.menu.Enable(xrc.XRCID("menu_track_resume"),True)
+            #    self.menu.Enable(xrc.XRCID("menu_track_resume_here"),True)
+            #    self.menu.Enable( xrc.XRCID("menu_playback_show_ann"), True )
+            #    self.menu.Enable( xrc.XRCID("menu_choose_orientations"), True )
+            #    self.menu.Enable( xrc.XRCID("menu_file_export"), True )
+            #    self.menu.Enable( xrc.XRCID("menu_file_save_avi"), True )
+            #self.menu.Enable( xrc.XRCID("menu_track_start"), True )
+            #self.menu.Enable( xrc.XRCID("menu_load_settings"), True )
+            #self.menu.Enable( xrc.XRCID("menu_settings_bg"), True )
+            #self.menu.Enable( xrc.XRCID("menu_settings_bg_model"), True )
+            #self.menu.Enable( xrc.XRCID("menu_settings_tracking"), True )
+            ##self.menu.Enable( xrc.XRCID("menu_track_play"), True )
+            #self.menu.Enable( xrc.XRCID("menu_compute_background"), True )
+            #self.menu.Enable( xrc.XRCID("menu_compute_shape"), True )
+            #self.slider.Enable( True )
 
         # finish up... whether batch executed completely or not
         if self.alive:
@@ -1215,7 +1242,7 @@ If DiagnosticsFile is not set, then <basename>_ctraxdiagnostics.txt will be used
 
     def OnHelp( self, evt ):
         """Help requested. Popup box with website."""
-        wx.MessageBox( "Documentation available at\nhttp://ctrax.berlios.de", "Help" )
+        wx.MessageBox( "Documentation available at\nhttp://www.dickinson.caltech.edu/ctrax", "Help" )
 
     def OnAbout( self, evt ):
         """About box requested."""
@@ -1224,10 +1251,10 @@ If DiagnosticsFile is not set, then <basename>_ctraxdiagnostics.txt will be used
 def main():
     args = (0,)
     kw = {}
-    if int(os.environ.get('CTRAX_NO_REDIRECT','0')) or True:
+    if int(os.environ.get('CTRAX_NO_REDIRECT','0')):
         args = (0,)
         kw = {}
-        print "there is output!"
+        #print "there is output!"
         sys.stdout.flush()
     else:
         # redirect to a window
@@ -1238,17 +1265,9 @@ def main():
     if DEBUG_REPEATABLE_BEHAVIOR:
         num.random.seed(0)
 
+
     app = CtraxApp( *args, **kw )
-    
-    try:
-        app.MainLoop()
-    except bdb.BdbQuit: pass
-    except Exception as details:
-        if DEBUG and False:
-            print "EXCEPTION:", details
-            pdb.post_mortem()
-        else:
-            raise
+    app.MainLoop()
 
 if __name__ == '__main__':
     #import hotshot

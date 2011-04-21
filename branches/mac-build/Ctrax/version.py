@@ -1,6 +1,6 @@
 __version__ = "0.1.6.5"
 
-DEBUG = True
+DEBUG = False
 DEBUG_ESTCONNCOMPS = False
 DEBUG_HINDSIGHT = False
 DEBUG_IDASSIGNMENT = False

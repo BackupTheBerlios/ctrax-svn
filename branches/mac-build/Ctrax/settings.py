@@ -17,18 +17,15 @@ from version import __version__, DEBUG
 
 import os
 import codedir
-#RSRC_FILE = 'xrc/Ctrax.xrc'
 RSRC_FILE = os.path.join(codedir.codedir,'xrc','Ctrax.xrc')
-ICON_FILE = os.path.join(codedir.codedir,'icons','ctrax_icon1.ico')
-ICONS_FILE = ICON_FILE
+ICON_FILE = os.path.join(codedir.codedir,'icons','Ctraxicon.ico')
+#RSRC_FILE = 'xrc/Ctrax.xrc'
 
 # these may import 'const'
 import algorithm as alg
 import bg
 import draw
 import ellipsesk as ell
-
-if DEBUG: import pdb
 
 ID_PRINTINTERVALS = 837487
 ID_PRINTBUFFEREL = 837488
@@ -40,21 +37,9 @@ class AppWithSettings( wx.App ):
     def InitGUI( self ):
         """Load XML resources, create handles, bind callbacks."""
         rsrc = xrc.XmlResource( RSRC_FILE )
-        print RSRC_FILE
 
-        if rsrc:
-            print rsrc
-            if DEBUG: pdb.set_trace()
-            self.frame = rsrc.LoadFrame( None, "frame_Ctrax" )
-            if self.frame:
-#                self.frame.SetIcon(wx.Icon(ICON_FILE, wx.BITMAP_TYPE_ICO))
-                self.frame.SetIcons( wx.IconBundle( ICONS_FILE, wx.BITMAP_TYPE_ICO ) )
-            else:
-                print "no self.frame"
-                return False
-        else:
-            print "no rsrc"
-            return False
+        self.frame = rsrc.LoadFrame( None, "frame_Ctrax" )
+        self.frame.SetIcon(wx.Icon(ICON_FILE, wx.BITMAP_TYPE_ICO))
 
         # make references to useful objects
         self.menu = self.frame.GetMenuBar()
@@ -185,9 +170,6 @@ class AppWithSettings( wx.App ):
         self.ReadUserfile()
 
         self.OnResize(None)
-        
-        return True
-        
 
     def InitState(self):
         # initialize state values

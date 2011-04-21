@@ -468,17 +468,17 @@ class GUIConstants:
         self.info = AboutDialogInfo()
         self.info.SetName( "Ctrax" )
         self.info.SetVersion( __version__ )
-        self.info.SetCopyright( "2007-2011, Caltech ethomics project" )
+        self.info.SetCopyright( "2007-2010, Caltech ethomics project" )
         self.info.SetDescription( """The Caltech Multiple Fly Tracker.
 
-http://ctrax.berlios.de
+http://www.dickinson.caltech.edu/ctrax
 
 Distributed under the GNU General Public License
 (http://www.gnu.org/licenses/gpl.html) with
 ABSOLUTELY NO WARRANTY.
 
-Initial support for this project was provided by grant
-R01 DA022777-01 from the National Institute on Drug Abuse.""" )
+This project is supported by grant R01 DA022777-01 from
+the National Institute on Drug Abuse at the US NIH.""" )
         
         self.TRACK_START = "Start Tracking"
         self.TRACK_STOP = "Stop Tracking"
