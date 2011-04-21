@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resource>
+  <object class="wxFrame" name="bg_settings">
+    <title>Background Estimation Settings</title>
+    <centered>1</centered>
+    <object class="wxBoxSizer">
+      <orient>wxVERTICAL</orient>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <label>Algorithm:  </label>
+              <font>
+                <size>10</size>
+                <family>swiss</family>
+                <style>normal</style>
+                <weight>bold</weight>
+                <underlined>0</underlined>
+                <face>Sans</face>
+              </font>
+            </object>
+            <flag>wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+          <object class="sizeritem">
+            <object class="wxChoice" name="algorithm">
+              <content>
+                <item>Median/Median Absolute Difference</item>
+                <item>Mean/Standard Deviation</item>
+              </content>
+            </object>
+          </object>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticText">
+          <label>Algorithm used to estimate the background image and background deviation. Median/Median Absolute Deviation estimates the center image as the median of the sampled frames and the standard deviation from the median absolute deviation. Mean/Standard Deviation estimates the center image as the mean of the sampled frames and the deviation as the standard deviation of the sampled frames. </label>
+          <size>360,90</size>
+          <font>
+            <size>8</size>
+            <family>swiss</family>
+            <style>normal</style>
+            <weight>normal</weight>
+            <underlined>0</underlined>
+            <face>Sans</face>
+          </font>
+        </object>
+        <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticLine" name="">
+          <size>360,10</size>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <label>Number of Frames:  </label>
+              <size>155,16</size>
+              <font>
+                <size>10</size>
+                <family>swiss</family>
+                <style>normal</style>
+                <weight>bold</weight>
+                <underlined>0</underlined>
+                <face>Sans</face>
+              </font>
+            </object>
+            <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="nframes"/>
+          </object>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticText">
+          <label>Background is estimated from frames sampled evenly between the first frame and the last frame of the input video. Specify the number of frames to sample here. </label>
+          <size>360,45</size>
+          <font>
+            <size>8</size>
+            <family>swiss</family>
+            <style>normal</style>
+            <weight>normal</weight>
+            <underlined>0</underlined>
+            <face>Sans</face>
+          </font>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticLine" name="">
+          <size>360,10</size>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <label>First:  </label>
+              <size>50,16</size>
+              <font>
+                <size>10</size>
+                <family>swiss</family>
+                <style>normal</style>
+                <weight>bold</weight>
+                <underlined>0</underlined>
+                <face>Sans</face>
+              </font>
+            </object>
+            <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="bg_firstframe">
+              <value>0</value>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <label>   Last Frame:  </label>
+              <size>120,16</size>
+              <font>
+                <size>10</size>
+                <family>swiss</family>
+                <style>normal</style>
+                <weight>bold</weight>
+                <underlined>0</underlined>
+                <face>Sans</face>
+              </font>
+            </object>
+            <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="bg_lastframe">
+              <value>50000</value>
+            </object>
+          </object>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticText">
+          <label>Specify the first and last frames to sample here. If last frame is &gt;= total number of frames in the movie, nframes - 1 will be used. </label>
+          <size>360,45</size>
+          <font>
+            <size>8</size>
+            <family>swiss</family>
+            <style>normal</style>
+            <weight>normal</weight>
+            <underlined>0</underlined>
+            <face>Sans</face>
+          </font>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticLine" name="">
+          <size>360,10</size>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxButton" name="calculate_button">
+              <label>Calculate Now</label>
+            </object>
+            <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_HORIZONTAL</flag>
+          </object>
+          <object class="spacer">
+            <size>10,0</size>
+          </object>
+          <object class="sizeritem">
+            <object class="wxButton" name="done_button">
+              <label>Done</label>
+            </object>
+            <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+          </object>
+        </object>
+        <flag>wxALIGN_CENTRE_HORIZONTAL</flag>
+      </object>
+    </object>
+  </object>
+</resource>

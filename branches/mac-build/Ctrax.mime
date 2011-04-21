@@ -1,0 +1,4 @@
+video/fmf; /usr/bin/Ctrax --Input=%s; test=test -n "$DISPLAY"; description=fmf
+video/sbfmf; /usr/bin/Ctrax --Input=%s; test=test -n "$DISPLAY"; description=sbfmf
+video/ufmf; /usr/bin/Ctrax --Input=%s; test=test -n "$DISPLAY"; description=ufmf
+video/avi; /usr/bin/Ctrax %s; test=test -n "$DISPLAY"; description=avi

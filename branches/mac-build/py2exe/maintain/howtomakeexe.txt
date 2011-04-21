@@ -1,0 +1,67 @@
+1) Install dependencies in unzipped, non-egg form:
+$ easy_install.exe --always-unzip Ctrax
+[http://www.py2exe.org/index.cgi/ExeWithEggs]
+Remove installed Ctrax (C:\Python25\Lib\site-packages\Ctrax...) to avoid confusion (nec?)
+
+2) Copy Ctrax and motmot stuff here
+
+***
+python copy_files_here.py
+***
+
+3) Remove pkg_resources from motmot. Currently, pkg_resources is not used by any of the required files (removed from currently installed motmot/simple_overlay). 
+
+***
+python removepkgresources.py
+***
+
+4) Replace import statements for motmot libraries
+
+***
+python replacemotmotimports.py
+***
+
+5) Compare the Ctrax/setup.py and py2exe/setup_py2exe.py scripts -- see if there are any changes to setup.py that need to manually be added to the old setup_py2exe.py script. Update version numbers in setup_py2exe.py and setup.nsi. 
+
+6) Only needs to be done if scipy has been reinstalled:
+Change scipy.interpolate.polyint to import factorial from scipy.misc.common:
+Edit C:/Python25/Lib/site-packages/scipy/interpolate/polyint.py
+change the line:
+from scipy import factorial
+to 
+from scipy.misc.common import factorial
+
+7) Try to build
+
+***
+cd ..
+python setup_py2exe.py build -c mingw32
+***
+
+8) Try to make py2exe
+
+***
+python setup_py2exe.py build -c mingw32 py2exe
+***
+
+9) Copy dlls that are not automatically copied:
+
+***
+cp maintain/dlls/* dist/.
+cp build/lib.win32-2.5/*pyd dist/.
+***
+
+These dlls are:
+   _cobyla.pyd - /c/Python25/lib/site-packages/scipy/optimize/_cobyla.pyd
+   MSVCP71.dll - /c/Python25/lib/site-packages/wx-2.8-msw-unicode/wx/MSVCP71.dll
+   gdiplus.dll - /c/Python25/lib/site-packages/wx-2.8-msw-unicode/wx/gdiplus.dll
+   specfun.pyd - /c/Python25/lib/site-packages/scipy/special/specfun.pyd
+
+10) Try it out:
+$ cd dist
+$ ./Ctrax-script.exe
+
+12) Make the Windows installer using NSIS:
+Compile the script setup.nsi in the py2exe directory. (Start > NSIS, Compile NSI Scripts, File > Load > setup.nsi)
+
+13) This makes a file Ctrax-(ver).exe in the current directory that can be distributed. Try it out by double-clicking and installing. 

@@ -1,0 +1,18 @@
+prune py2exe
+prune matlab
+prune fixerrors
+prune behavioralmicroarray
+prune Ctrax/bak
+include stdeb.cfg
+global-exclude *test* *tmp* *temp* *.mat old* Ctrax.log
+include hungarian/asp.h
+include docs/RELEASENOTES*.txt
+include docs/CHANGES.txt
+include Ctrax/xrc/*.xrc
+include Ctrax/xrc/*.bmp
+include Ctrax/icons/*.ico
+include LICENSE.txt
+include Ctrax/LICENSE.txt
+include hungarian/LICENSE
+include hungarian/README
+include hungarian/changes.txt

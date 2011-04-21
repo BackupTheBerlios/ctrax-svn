@@ -1,0 +1,35 @@
+* python setup.py build
+* python setup.py install
+
+* build dumb, source, upload to PyPI:
+
+Windows:
+python setup.py sdist bdist_wininst register upload
+
+Linux:
+sudo python setup.py sdist bdist_dumb register upload
+
+* build dumb on other OS and upload
+
+Windows:
+python setup.py bdist_wininst upload
+
+Linux:
+sudo python setup.py bdist_dumb upload
+
+* Build Windows installer (follow instructions in py2exe/maintain/howtomakeexe.txt). 
+
+* Update CHANGES.txt. 
+
+* ftp new stuff to berlios:
+ftp ftp.berlios.de
+Name: ftp
+password: branson@caltech.edu
+cd incoming
+put py2exe/Ctrax-0.1.5.6-installer.exe
+put dist/Ctrax-0.1.5.6.zip
+put dist/Ctrax-0.1.5.6.win32-py2.5.exe
+quit
+
+* Add new releases to Berlios
+

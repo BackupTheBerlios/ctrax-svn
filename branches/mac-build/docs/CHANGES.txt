@@ -1,0 +1,505 @@
+2010-05-06 Kristin Branson
+
+* Modified code to potentially work if AVbin cannot be loaded (not yet debugged). Added avbin.dll to bundled dlls in Windows installer. 
+
+2010-05-04 Kristin Branson
+
+* Fixed error message that would pop up when trying to read a compressed movie (fails first when trying to read as uncompressed, this is normal). 
+
+2010-05-03 Kristin Branson
+
+* Version 0.1.5.5 released. 
+
+2010-05-03 Kristin Branson
+
+* Upped version number, migrated changes to py2exe version, made new Windows release. 
+
+2010-05-03 Kristin Branson
+
+* Fixed some bugs in tracking_settings.py -- showing e.g. split ellipses after fixed ellipses was not working correctly. 
+
+2010-04-30 Kristin Branson
+
+* Fixed some bugs in tracking_settings.py -- showing e.g. deleted ellipses was not working correctly. 
+
+2010-04-29 Kristin Branson
+
+* Fixed bug detecting small connected components: numpy.where returns a long not an int. 
+
+2010-04-29 Kristin Branson
+
+* Implemented buffering of background subtraction results. This should make merging and splitting in hindsight faster. 
+
+2010-04-28 Kristin Branson
+
+* Extra \n being written to annfile after every frame of new tracks. This was causing problems when the trajectories were read in from file; trajectories were being detected as dying every frame. 
+
+2010-04-28 Kristin Branson
+
+* * pyglet.media.avbin was not getting loaded correctly (DEP issue?). Added an extraneous "ctypes.cdll.LoadLibrary('avbin')" before the extraneous "import pyglet.media" at the top of Ctrax.py. 
+* Hopefully fixed frame slider being too long when Ctrax started by adding a call to OnResize() after the movie is opened. 
+* Fixed bug in splitting ellipses which occurred if clustering failed and returned NaNs. 
+* Removed some of the dependencies on maximum major axis length parameter. Now, actual major axis length is used instead. 
+* Fixed some issues with seeking for compressed movies using avbin. 
+
+2010-04-28 John Bender
+
+* small tweaks and bugfixes...
+
+2010-04-22 Kristin Branson
+
+* Modified behavior if "Cancel" hit when selecting annotation file. 
+* Modified REPEATABLE_BEHAVIOR behavior:
+  now just seeds with 0 at the beginning of the program. 
+* Added more DEBUG statements to hindsight.py
+
+2010-04-17 Kristin Branson
+
+* Version 0.1.5.4 released. 
+
+2010-04-17 Kristin Branson
+
+* Made py2exe version easier to maintain, hopefully. 
+
+2010-04-17 Kristin Branson
+
+* Migrated changes to py2exe. 
+
+2010-04-17 Kristin Branson
+
+* Re-organized code and data file locations. Stripped pkg_resources and setuptools from code. Now, Ctrax does not run from anywhere with the command "Ctrax" but instead with the command "Ctrax-script.py". Need to see how this affects things in Linux. 
+
+2010-04-16 Kristin Branson
+
+* Used Cython to speed up kcluster2d code. 
+
+2010-04-11 Kristin Branson
+
+* Version 0.1.5.3 released.
+
+2010-04-08 Kristin Branson
+
+* Migrated updates to py2exe version
+
+2010-04-08 Kristin Branson
+
+* Added support for ufmf reading. Ctrax now requires motmot.ufmf.ufmf. 
+
+2010-04-08 Kristin Branson
+
+* Started debugging error in hindsight.py, so far have just added DEBUG print statements. Upped version number for release. 
+
+2010-04-07 Kristin Branson
+
+* Replaced kcluster.py with kcluster2d.py -- hard-coded GMM EM for 2d data, removed tiles where unnecessary. Should be much faster now.
+
+2010-01-23 Kristin Branson
+
+* Added Matlab routine for selecting parts of arrays that may go beyond the edge of the array. 
+
+2010-01-23 Kristin Branson
+
+* Added routines for creating sbfmfs from avis. 
+
+2010-11-24 John Bender
+
+* fixed a subtle type error occurring in some code branches:
+File "build/bdist.linux-i686/egg/Ctrax/kcluster.py", line 234, in gmmupdate
+AttributeError: 'bool' object has no attribute 'any'
+
+2010-11-24 John Bender
+
+* small error-handling fix when copying converted files
+this could theoretically lead to downstream errors but will stop one I'm getting now!
+
+2010-11-22 John Bender
+
+* fixed batch-processing bugs
+* made UI less interactive in batch mode
+
+2010-11-19 John Bender
+
+* Don't prompt for ann_file overwrites when in batch mode.
+* Fixed batch-mode crash related to incomplete initialization of AnnotationFile. However, this raises a new error b/c algorithm.DoAll calls annfiles.WriteMAT after calling chooseorientations.ChooseOrientations, which closes the ann_file and doesn't reopen it.
+
+2009-10-29 Kristin Branson
+
+* Version 0.1.5.2 released.
+
+2009-10-29 Kristin Branson
+
+* Fixed wx error when saving mat file. 
+* Updated NSIS script to work better with Windows 7. 
+
+2009-10-27 Kristin Branson
+
+* Version 0.1.5.1 released.
+
+2009-10-26 Kristin Branson
+
+* Fixed bug in annfiles.GetNewIds.
+* Changed movie class so that it buffers a copy of the current frame. 
+
+2009-10-17 Kristin Branson
+
+* Version 0.1.5 released.
+
+2009-10-05 Kristin Branson
+
+* Fixed bug in WriteMAT. 
+
+2009-10-02 Kristin Branson
+
+* If all clusters in gmmupdate ended up with priors < epsilon, then normalizing the priors resulted in priors being set to nan. Fixed so that we don't divide by zero, and flag as small (bug noted by Alex Vaughan). 
+
+* Print statements in non-interactive mode changed to stdout instead of stderr.
+
+* Created a list "recycledids" field of ann_file so that ids for spurious trajectories that are deleted are recycled. 
+
+2009-10-01 Kristin Branson
+
+* Changed ann_data, ann_file format so that entire trajectories are not stored in memory, but instead only a chunk are stored. Currently, this chunk is hardcoded to be 1000 frames. At some point, we should let this be modified in some advanced parameters. 
+
+* Merged ReadSettings and ReadAnnHeader into one basic function call -- ReadSettings calls ReadAnnHeader and specifes not to read in the background model or the start frame. 
+
+* Fixed bug in ReadAnnHeader/ReadSettings: bool(value) always returns True if value is a string; changed to bool(int(value)) (bug fix noted by Alex Vaughan).
+
+2009-09-19 Kristin Branson
+
+* Moved many debugging "print" statements to "if DEBUG: print"
+
+* Added msgbox notifying users that background model need not/cannot be set for sbfmf files. 
+
+* Added msgbox notifying users of uniform normalization image
+
+* Commented out unused read_image, save_image write_img_text from bg.py
+
+* Added msgbox to fixbg to notify users that polygons with <= 2 points can't be closed. 
+
+* Removed redirection of stdio to "Ctrax.log". By default, stdio is redirected to a window now, unless CTRAX_NO_REDIRECT is set, in which case it is still shown in the command window. Hopefully, this will make it easier for users to tell when Ctrax is failing. 
+
+2009-09-08 Kristin Branson
+
+* Fixed bug when running Ctrax from the commandline or in batch mode and outputting an sbfmf file simultaneously. The "DoAll" function did not open and write the header for the sbfmf file. Added a call to "writesbfmf_start" to DoAll. Similarly, writesbfmf_close was not being called at the end of DoAll. Added a call to this function as well. Currently, sbfmf cannot be salvaged if tracking is canceled in the middle of tracking in non-interactive mode. I made some attempts at rectifying this situation, but couldn't get the KeyboardInterrupt exception to catch in the right place. 
+
+2009-08-11 Kristin Branson
+
+* Fixed bug in batch processing if matlab file name was not provided. 
+
+2009-07-23 Kristin Branson
+
+* Modified Ctrax.py to set default filename for ann file correctly. 
+
+2009-06-17 Kristin Branson
+
+* Modified setup.py to deal with failures of install_requires. Eggs are no longer available for many packages, and install_requires is more of a hinderence than a help. Set default behavior to now not use install_requires, unless DISABLE_INSTALL_REQUIRES is set to 0. 
+
+2009-06-16 Kristin Branson
+
+* More AVI fun. Fixed bug in estimating fps of compressed movie if there are <= 200 frames. Fixed bug if the timestamp for the first frame of the compressed movie was 0, and the video was such that seeking to 0 caused trouble. 
+
+2009-06-15 Kristin Branson
+
+* When reading compressed AVIs with a keyframe in every frame, the buffer offset was not being set correctly initially (initialized to 1 instead of 0, which caused trouble when the length of the buffer was 1). Fixed this bug. 
+
+2009-05-13 Kristin Branson
+
+* For some types of compressed movies, we need to read in a frame before
+seeking otherwise bad things happen. Added an unnecessary read to the 
+CompressedMovie constructor. 
+
+* Also added a check for None timestamp which seems to be returned for 
+some types of compressed movies. 
+
+* Added "Any" as a file type choice when opening movie. 
+
+2009-05-12 Kristin Branson
+
+* Version 0.1.4.1 released.
+
+* Major changes:
+
+  - Fixed bug in background estimation. "roi" attribute of background
+    was not being initialized correctly. This caused the program to
+    crash during background estimation. 
+
+2009-05-11 Kristin Branson
+
+* MANIFEST.in: Created this file to control which directories were
+  added to the source distribution
+
+* stdeb.cfg: Updated dependencies for deb package creation
+
+* bg.py: Major bug fix. "roi" attribute, used for region of interest
+  selection (introduced in version 0.1.4), was not being initialized
+  correctly. 
+
+2009-05-08 Kristin Branson
+
+* Added text files with notes about how to make a new release of Ctrax
+  to repository. 
+
+2009-05-07 Kristin Branson
+
+* Version 0.1.4 released. 
+
+* Major changes:
+
+  - Added "Regions of Interest" dialog for setting regions of interest
+    in the frame. One can set polygonal regions of interest using the
+    "Regions of Interest" dialog. Regions outside of all polygons set
+    are assumed to be background. In this dialog, the image panel can
+    show either the background model center or the currently selected
+    regions of interest in white and the always-background regions in
+    black. The previously selected polygons are shown by red lines. To
+    select a region, click on the image. Continue clicking to add more
+    points. Either double-click the start point or push the "Close"
+    button to close and add the selected region. To cancel adding the
+    current polygon, push the "Cancel" button. To remove the
+    last-added polygon, use the "Undo" button. To save the currently
+    selected regions, use the "Save" button. To close the dialog, use
+    the "Quit" button.
+
+  - Added "Fix Background Model" dialog. If a fly sits still for too
+    large a fraction of the video, the background model may assume
+    that this fly is part of the background. Errors in the background
+    modeling can be fixed using the "Fix Background Model" dialog [new
+    in version 0.1.4]. Using this dialog, one can select polygonal
+    regions of the image, and fill these regions by interpolating from
+    the boundaries. The interface is similar to the "Regions of
+    Interest" dialog. The image panel can show either the background
+    model center or deviation estimates.
+
+  - Added support for compressed movies via the AVbin
+    (http://code.google.com/p/avbin/) wrapper for FFmpeg. Ctrax
+    *should* now be able to read in any type of movie supported by
+    FFmpeg (see http://www.ffmpeg.org/general.html#SEC3 for a
+    description of codecs, formats supported by FFmpeg). Depending on
+    the type and parameters of the video compression, Ctrax may be
+    slow and inexact at allowing out-of-order frame access (used by
+    the GUIs). While Ctrax may be able to read a given file format, it
+    may not be able to successfully track the flies if compression
+    artifacts are too prevalent. All our experiments were performed
+    using Fly Movie Format and Static Background Fly Movie Format
+    videos. 
+
+  - Added ability to manually set the mean area, major, and minor axis
+    lengths, and eccentricity in the "Tracking Settings" dialog. The
+    mean area in particular is important for deciding how many flies
+    to split/merge connected components of foreground pixels into. 
+
+  - Added warnings when starting/restarting tracking will cause
+    computed trajectories to be lost. 
+
+  - Modified background model estimation and subtraction code to store
+    "isarena" attribute instead of "isnotarena"
+    attribute. isarena[i,j] is False if pixel (i,j) is always
+    background (based on minimum, maximum foreground intensity
+    thresholds, "Detect Circular Arena" results, and selected regions
+    of interest). Now, background subtraction is only performed on
+    areas where isarena == True, rather than the previous
+    implementation, which performed background subtraction on all
+    pixel locations and then zeroed out results where isarena ==
+    False. 
+
+  - Added progress bars for background model computation ("Background
+    Model") and shape bounds computation ("Tracking Settings Shape
+    Parameters"). 
+
+  - Fixed bug in background estimation based on mean and standard
+    deviation. There was a typo in setting "nframes" in "meanstd"
+    function, resulting in the mean and standard deviation not being
+    estimated from the correct interval of frames. 
+
+  - Updated Windows installer versions of all dependencies. 
+
+  - Added checks for out of bound frames to various functions, as it
+    is difficult to estimate the number of frames using avbin. 
+
+  - Fixed uncompressed AVI handling of video padded to have an even
+    number of elements per-frame. 
+
+2009-05-07 Kristin Branson
+
+* Updated py2exe directory code to reflect all changes to main code.
+* Made py2exe work with avbin and new versions of all dependencies. 
+
+2009-05-07 Kristin Branson
+
+* Modified background model estimation and subtraction code to store
+  "isarena" attribute instead of "isnotarena" attribute. isarena[i,j]
+  is False if pixel (i,j) is always background (based on minimum,
+  maximum foreground intensity thresholds, "Detect Circular Arena"
+  results, and selected regions of interest). Now, background
+  subtraction is only performed on areas where isarena == True, rather
+  than the previous implementation, which performed background
+  subtraction on all pixel locations and then zeroed out results where
+  isarena == False. Changes affect files bg.py and algorithm.py. 
+
+2009-05-07 Kristin Branson
+
+* Added "Regions of Interest" dialog for setting regions of interest
+  in the frame. The files roi.py and roi.xrc define this GUI. Changes
+  were made in bg.py to. annfiles.py was updated to store the regions
+  of interest to the annotation file. params.py was updated to
+  initialize the regions of interest to be unset by default. The
+  Matlab functions for reading annotation files were updated to ignore
+  the regions of interest parameter (regions of interest stored using
+  "pickle" module, which I didn't want to reverse-engineer). 
+
+2009-05-07 Kristin Branson
+
+* Fixed bug in medmad function in bg.py relating to progress bars. 
+
+2009-05-07 Kristin Branson
+
+* Modified slightly so that avbin would work in Windows -- for some
+  reason we need to import pyglet.media before scipy.linalg.decomp,
+  otherwise have_avbin is set to False. 
+
+* I didn't like the way wx.BeginBusyCursor was working in Windows, so
+  I added progress bars to compute shape and compute
+  background. 
+
+2009-05-07 Kristin Branson
+
+* Added "Fix Background Model" dialog for fixing the background model
+  to account for flies that sit still too long. The files fixbg.py and
+  fixbg.xrc define this GUI. 
+
+* Changed movies.py to catch any type of error in movie reading. 
+
+2009-05-06 Kristin Branson
+
+* Added support for reading compressed movies using avbin of pyglet. 
+
+* Removed calls to params.copy from tracking_settings
+
+* Fixed params.copy just in case so that it doesn't copy the movie
+
+* Added checks for out of bound frames to various functions, as it is 
+difficult to estimate the number of frames using avbin. 
+
+* Fixed uncompressed AVI handling of video padded to have an even number 
+of elements per-frame. 
+
+2009-05-04 Kristin Branson
+
+* Added control for mean area, major and minor axis lengths, and
+  eccentricity to tracking_settings dialog. 
+
+* Added warnings when starting/restarting tracking will cause computed
+  trajectories to be lost. 
+
+2009-05-03 Kristin Branson
+
+* Version 0.1.3.2 released. 
+
+  - Fixed bug if homomorphic filtering was used with SBFMF movie. 
+  - Fixed bugs in showing intermediate results in Tracking Settings
+    dialog. 
+  
+2009-04-30 Kristin Branson
+
+* Fixed bug in bg.py if homomorphic filtering was used with SBFMF
+  movie. 
+
+* Fixed bugs in estconncomps.py when looking at merged, split
+  connected components in Tracking Settings dialog. 
+
+* Updated help in setarena.xrc to reflect new colors of GUI. 
+
+2009-03-02 Kristin Branson
+
+* Version 0.1.3.1 released.
+
+* Major changes:
+
+  - Fixed bug in gmmem function of kcluster.py that occurred when prior
+    for one cluster was too small. 
+
+  - Fixed bug in matchidentities.py:
+    Default value for maxcost was set to params.max_jump, which uses
+    the initial, static value of max_jump, and does not update with
+    changes to params set in tracking_settings box. 
+
+  - Changed default bg_type to OTHER (not light flies on dark
+    background). 
+
+2009-03-02 Kristin Branson
+
+* Merged changes into py2exe version of code.
+
+2009-02-27 Kristin Branson
+
+* Fixed bug in gmmem function of kcluster.py that occurred when prior
+for one cluster was too small. 
+
+2009-02-24 Kristin Branson
+
+* Fixed bug in matchidentities.py:
+Default value for maxcost was set to params.max_jump, which uses the 
+initial, static value of max_jump, and does not update with changes to 
+params set in tracking_settings box. 
+
+2009-02-23 Kristin Branson
+
+* Changed default bg_type to OTHER (not light flies on dark background). 
+
+2009-02-05 Kristin Branson
+
+* Version 0.1.3 released.
+
+* Major changes:
+
+  - Scipy moved the locations of loadmat and savemat
+    functions. Updated code to deal with this. 
+
+  - Updated the AVI reader in movies.py to be slightly more tolerant to
+    some of the AVI header variants. Now, it should be able to read the
+    output of mencoder. 
+
+2009-02-05 Kristin Branson
+
+* Migrated changes to py2exe version of code.
+
+2009-02-05 Kristin Branson
+
+* The scipy.io.mio library was moved. The correct location for
+  loadmat, savemat is scipy.io. Changed bg.py and annfiles.py
+  accordingly.
+
+* Updated the AVI reader in movies.py to be slightly more tolerant to
+  some of the AVI header variants. Now, it should be able to read the
+  output of mencoder. At least temporarily.
+
+2008-12-09 Kristin Branson
+
+* Version 0.1.2 released. 
+
+* Major changes:
+
+* Fixed bugs in estconncomps that resulted from removing matplotlib
+  dependency.
+
+* Fixed bug in houghcircles_C.c for 64-bit machines: "dims" (size of
+  "accarray") needed to be of type "npy_intp" rather than int. Also
+  use "PyArray_DATA" to get pointer to data rather than just "->". 
+
+2008-12-09 Kristin Branson
+
+* Migrated changes to py2exe version of code.
+
+2008-12-02 Kristin Branson
+
+* Fixed bug in estconncomps that resulted from removing matplotlib
+  dependency.
+
+* Fixed bug in houghcircles_C.c for 64-bit machines: "dims" (size of
+  "accarray") needed to be of type "npy_intp" rather than int. Also
+  use "PyArray_DATA" to get pointer to data rather than just "->". 
+
+2008-11-19 Kristin Branson
+
+* Version 0.1 of Ctrax released. Ctrax obsoletes Mtrax. 
+
