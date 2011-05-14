@@ -365,13 +365,6 @@ class Parameters:
         self.max_median_frames = 100
         self.max_n_obj = 500 # 50 flies can each get lost 10 times before aborting
 
-        # Obsolete Parameters
-        #self.min_cluster_size = 10 # pixels
-        #self.default_thresh = 70
-        #self.n_hist_bins = 100
-        #self.uhistogram_cut = 5 # n-th percentile
-        #self.n_frames_trunc = 2
-
         # computing prior background/foreground models
 
         # number of frames to sample per video
@@ -468,17 +461,17 @@ class GUIConstants:
         self.info = AboutDialogInfo()
         self.info.SetName( "Ctrax" )
         self.info.SetVersion( __version__ )
-        self.info.SetCopyright( "2007-2010, Caltech ethomics project" )
+        self.info.SetCopyright( "2007-2011, Caltech ethomics project" )
         self.info.SetDescription( """The Caltech Multiple Fly Tracker.
 
-http://www.dickinson.caltech.edu/ctrax
+http://ctrax.berlios.de/
 
 Distributed under the GNU General Public License
 (http://www.gnu.org/licenses/gpl.html) with
 ABSOLUTELY NO WARRANTY.
 
-This project is supported by grant R01 DA022777-01 from
-the National Institute on Drug Abuse at the US NIH.""" )
+This project has been supported by the NIH and
+the HHMI.""" )
         
         self.TRACK_START = "Start Tracking"
         self.TRACK_STOP = "Stop Tracking"

@@ -71,7 +71,8 @@ class CtraxApp( algorithm.CtraxAlgorithm ): # eventually inherits from wx.App
 	"""
 	Start up the Ctrax GUI
 	"""
-#        self.RestoreStdio()
+        if DEBUG:
+            self.RestoreStdio()
 
         # parse commandline
         self.ParseCommandLine()
@@ -148,35 +149,43 @@ class CtraxApp( algorithm.CtraxAlgorithm ): # eventually inherits from wx.App
 	Print command line arguments for Ctrax.
 	"""
         self.RestoreStdio()
-        print "Ctrax:\n\
-Optional Command Line Arguments:\n\
---Interactive={True,False}\n\
---Input=<movie.fmf>\n\
---Output=<movie.ann>\n\
---SettingsFile=<settings.ann>\n\
---AutoEstimateBackground={True,False}\n\
---AutoEstimateShape={True,False}\n\
---AutoDetectCircularArena={True,False}\n\
---CompressMovie=<movie.sbfmf>\n\
---Matfile=<movie.mat>\n\
---DiagnosticsFile=<movie_ctraxdiagnostics.txt>\n\
-Example:\n\
-Ctrax --Interactive=True --Input=movie1.fmf \n\
---Output=movie1.ann \n\
---SettingsFile=exp1.ann\n\
---Matfile=movie1.mat\n\
---DiagnosticsFile=movie1_ctraxdiagnostics.txt\n\
-If not in interactive mode, then input must be defined.\n\
-If input is movie1.fmf then output is set to movie1.ann and\n\
-settings file is set to movie1.ann\n\
-By default, Interactive=True, AutoEstimateBackground=True,\n\
-AutoEstimateShape=True, AutoDetectCircularArena=True\n\
-If CompressMovie not set, then a compressed SBFMF will not\n\
-be created by default.\n\
-If Matfile is not set, then <basename>.mat will be used\n\
-instead, where <basename> is the base name of the movie.\n\
-If DiagnosticsFile is not set, then <basename>_ctraxdiagnostics.txt will be used\n\
-"
+        print """Ctrax:
+Optional Command Line Arguments:
+--Interactive={True,False}
+--Input=<movie.fmf>
+--Output=<movie.ann>
+--SettingsFile=<settings.ann>
+--AutoEstimateBackground={True,False}
+--AutoEstimateShape={True,False}
+--AutoDetectCircularArena={True,False}
+--CompressMovie=<movie.sbfmf>
+--Matfile=<movie.mat>
+--DiagnosticsFile=<movie_ctraxdiagnostics.txt>
+
+Example:
+Ctrax --Interactive=True --Input=movie1.fmf \\
+  --Output=movie1.fmf.ann \\
+  --SettingsFile=exp1.ann \\
+  --Matfile=movie1.mat \\
+  --DiagnosticsFile=movie1_ctraxdiagnostics.txt
+
+By default, Interactive=True, AutoEstimateBackground=True,
+AutoEstimateShape=True, AutoDetectCircularArena=True
+
+If not in interactive mode, then input must be defined.
+
+If input is movie1.fmf, then output and settings will go
+to movie1.fmf.ann.
+
+If CompressMovie not set, then a compressed SBFMF will not
+be created.
+
+If Matfile is not set, then <basename>.mat will be used,
+where <basename> is the base name of the movie.
+
+If DiagnosticsFile is not set, then
+<basename>_ctraxdiagnostics.txt will be used.
+"""
 
     def ParseCommandLine(self):
 	"""
@@ -237,9 +246,9 @@ If DiagnosticsFile is not set, then <basename>_ctraxdiagnostics.txt will be used
                 print 'Error parsing command line arguments. Unknown parameter name. Usage: '
                 self.PrintUsage()
                 raise NotImplementedError
+            
         # run noninteractive mode
         if params.interactive == False:
-
             self.run_noninteractive()
             exit()
 
@@ -283,17 +292,16 @@ If DiagnosticsFile is not set, then <basename>_ctraxdiagnostics.txt will be used
 
     def LoadSettings( self ):
 	"""
-	Load parameter values from another annotation file
+	Load parameter values from another annotation file.
 	"""
 
-        doreadbgmodel = not( params.interactive or self.IsBGModel())
+        doreadbgmodel = not( params.interactive or self.IsBGModel() )
         print "loading settings from file " + str(self.settingsfilename)
-        #try:
-        annot.LoadSettings(self.settingsfilename,self.bg_imgs,
-                           doreadbgmodel=doreadbgmodel)
-        #except:
-        #    print 'Could not read annotation file ' + self.settingsfilename
-        #    return
+        try:
+            annot.LoadSettings(self.settingsfilename,self.bg_imgs,
+                               doreadbgmodel=doreadbgmodel)
+        except:
+            print 'Could not read annotation file ' + self.settingsfilename
 
     def OpenMovie( self ):
         """Attempt to open a movie given the current filename."""
