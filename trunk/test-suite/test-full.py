@@ -20,16 +20,20 @@ def main():
         starttime = time.time()
 
         cmd = "Ctrax-script.py --Interactive=False --Input=%s"%filename
-        #os.system( cmd )
+        os.system( cmd )
 
         runtimes.append( time.time() - starttime )
 
     # get Matlab to make readable versions of the test suite's original (fixed) MAT-files
-    #os.system( "matlab -nodisplay -nojvm -nosplash -r 'make_test_data; exit'" )
+    os.system( "matlab -nodisplay -nojvm -nosplash -r 'make_test_data; exit'" )
 
     # compare original MAT-data with newly generated MAT-data
     comparator = datacompare.CtraxDataComparator( files.resaved_mat_files(), files.resaved_mat_tempfiles() )
-    comparator.save_data( files.stat_files(), runtimes )
+    out_filename = comparator.save_data( files, runtimes )
+
+    # run visualization in Matlab
+    print "wrote tracking data to ", out_filename
+    os.system( "matlab -r \"plot_test_data_comparisons( '" + out_filename + "' )\"" )
     
 
 if __name__ == '__main__':

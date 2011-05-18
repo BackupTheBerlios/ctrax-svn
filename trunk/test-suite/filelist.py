@@ -12,9 +12,11 @@ class CtraxFileList:
     def __init__( self ):
         """Make a list of filenames to be used in testing."""
         
-        use_datatypes = ['roach_fmf', 'sample_sbfmf1', 'sample_sbfmf2']
+        use_datatypes = ['roach_fmf']#, 'sample_sbfmf1', 'sample_sbfmf2',
+#                         'flybowl_ufmf1', 'flybowl_ufmf2', 'flybowl_ufmf3', 'flybowl_ufmf4',
+#                         'flybowl_ufmf5', 'flybowl_ufmf6', 'flybowl_ufmf7', 'flybowl_ufmf8']
         
-        self.base_dir = os.path.join( os.environ['HOME'], 'data', 'ctrax-data' )
+        self.base_dir = os.path.join( os.environ['HOME'], 'data', 'ctrax-data', 'test-suite' )
 
         self.tmp_dir = os.path.join( tempfile.gettempdir(), 'Ctrax-test-data' )
         if not os.access( self.tmp_dir, os.F_OK ):
@@ -33,6 +35,7 @@ class CtraxFileList:
                      'movie20100707_153630_trimmed.fmf',
                      'movie20100707_154448_trimmed.fmf']
 
+
         sample_sbfmf1_dir = os.path.join( 'samples-distributed',
                                           'example-sbfmfvideo-ann-mat-5M5F5min-20071009_163231' )
         sample_sbfmf1 = ['movie20071009_163231.sbfmf']
@@ -40,6 +43,41 @@ class CtraxFileList:
         sample_sbfmf2_dir = os.path.join( 'samples-distributed',
                                           'example-sbfmfvideo-ann-mat-25M25F5min-20071009_164618' )
         sample_sbfmf2 = ['movie20071009_164618.sbfmf']
+
+
+        flybowl_ufmf1_dir = os.path.join( 'Fixed_AR', 'EP00005_rc3',
+                                          'pBDPGAL4U_TrpA_Rig1Plate10BowlA_20110304T154712' )
+        flybowl_ufmf1 = ['movie.ufmf']
+
+        flybowl_ufmf2_dir = os.path.join( 'Fixed_AR', 'EP00005_rc3',
+                                          'pBDPGAL4U_TrpA_Rig1Plate10BowlB_20110302T155958' )
+        flybowl_ufmf2 = ['movie.ufmf']
+        
+        flybowl_ufmf3_dir = os.path.join( 'Fixed_AR', 'EP00005_rc3',
+                                          'pBDPGAL4U_TrpA_Rig1Plate10BowlC_20110303T111924' )
+        flybowl_ufmf3 = ['movie.ufmf']
+
+
+        flybowl_ufmf4_dir = os.path.join( 'Fixed_AR', 'EP00005_rc8',
+                                          'GMR_64F08_AE_01_TrpA_Rig2Plate14BowlC_20110310T112011' )
+        flybowl_ufmf4 = ['movie.ufmf']
+
+        flybowl_ufmf5_dir = os.path.join( 'Fixed_AR', 'EP00005_rc8',
+                                          'GMR_70F07_AE_01_TrpA_Rig1Plate10BowlC_20110310T130507' )
+        flybowl_ufmf5 = ['movie.ufmf']
+
+        flybowl_ufmf6_dir = os.path.join( 'Fixed_AR', 'EP00005_rc8',
+                                          'GMR_74H07_AE_01_TrpA_Rig2Plate14BowlB_20110316T152501' )
+        flybowl_ufmf6 = ['movie.ufmf']
+
+        flybowl_ufmf7_dir = os.path.join( 'Fixed_AR', 'EP00005_rc8',
+                                          'pBDPGAL4U_TrpA_Rig1Plate10BowlB_20110310T151713' )
+        flybowl_ufmf7 = ['movie.ufmf']
+
+        flybowl_ufmf8_dir = os.path.join( 'Fixed_AR', 'EP00005_rc8',
+                                          'pBDPGAL4U_TrpA_Rig2Plate14BowlC_20110316T155136' )
+        flybowl_ufmf8 = ['movie.ufmf']
+
 
         # make master file list
         self.files = []
@@ -169,10 +207,11 @@ class CtraxFileList:
     def stat_files( self ):
         """Make a list of MAT-file names to save comparison statistics in."""
 
-        filenames = self.mat_files()
-        stat_names = []
-        for fname in filenames:
-            time_str = time.strftime( '%Y-%m-%d_%H-%M-%S' )
-            stat_names.append( fname[1:fname.index( '.mat' )] + '_' + time_str + '_comparison.mat' )
+        if not hasattr( self, 'stat_names' ):
+            filenames = self.mat_files()
+            self.stat_names = []
+            for fname in filenames:
+                time_str = time.strftime( '%Y-%m-%d_%H-%M-%S' )
+                self.stat_names.append( fname[:fname.index( '.mat' )] + '_' + time_str + '_comparison.mat' )
 
-        return stat_names
+        return self.stat_names
