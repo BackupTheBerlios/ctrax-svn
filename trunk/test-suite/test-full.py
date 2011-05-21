@@ -20,7 +20,7 @@ def main():
         starttime = time.time()
 
         cmd = "Ctrax-script.py --Interactive=False --Input=%s"%filename
-        os.system( cmd )
+        #os.system( cmd )
 
         runtimes.append( time.time() - starttime )
 
@@ -33,7 +33,7 @@ def main():
 
     # run visualization in Matlab
     print "wrote tracking data to ", out_filename
-    os.system( "matlab -r \"plot_test_data_comparisons( '" + out_filename + "' )\"" )
+    #os.system( "matlab -r \"plot_test_data_comparisons( '" + out_filename + "' )\"" )
     
 
 if __name__ == '__main__':

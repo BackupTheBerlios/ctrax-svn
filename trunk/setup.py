@@ -29,9 +29,9 @@ Ctrax_package_data = [ f[6:] for f in glob.glob(os.path.join('Ctrax','xrc','*.xr
 long_description = """
 Ctrax: The Caltech Multiple Fly Tracker
 
-(c) 2007-2010 The Caltech Ethomics Project
-http://www.dickinson.caltech.edu/ctrax
-branson@caltech.edu
+(c) 2007-2011 The Caltech Ethomics Project
+http://ctrax.berlios.de
+bransonk@janelia.hhmi.org
 
 Ctrax is an open-source, freely available, machine vision program for
 estimating the positions and orientations of many walking flies,
@@ -88,7 +88,7 @@ setup(
     author_email="bransonk@janelia.hhmi.org",
     maintainer="Kristin Branson",
     maintainer_email="bransonk@janelia.hhmi.org",
-    url="http://www.dickinson.caltech.edu/Ctrax",
+    url="http://ctrax.berlios.de",
     description="Ctrax: The Caltech Multiple Fly Tracker",
     long_description=long_description,
     download_url="https://developer.berlios.de/projects/ctrax/",

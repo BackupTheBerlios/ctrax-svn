@@ -1,3 +1,5 @@
+#emacs, this is -*-Python-*- mode
+
 import numpy as num
 import scipy.cluster.vq as vq
 cimport numpy as num
@@ -113,7 +115,12 @@ def gmminit(num.ndarray[DTYPE_t,ndim=2] x not None,
             nidx = num.sum(num.uint32(idx==i))
             priors[i] = nidx
             # compute mean for each cluster
-            mu[i,:] = num.mean(x[idx==i,:],axis=0).astype(DTYPE)
+            try:
+                mu[i,:] = num.mean(x[idx==i,:],axis=0).astype(DTYPE)
+            except IndexError:
+                print i, idx
+                print (<object>x).shape, (<object>mu).shape
+                raise
             # compute covariance for each cluster
             diffs = x[idx==i,:] - mu[i,:].T
             S[:,:,i] = num.dot(diffs.T,diffs) / nidx
@@ -449,7 +456,7 @@ def fixsmallpriors(num.ndarray[DTYPE_t,ndim=2] x,
     #    print initcovars[:,:,i]
     #    print 'initcovars[:,:,%d].shape: '%i + str(initcovars[:,:,i].shape)
         
-    cdef num.ndarray[int,ndim=1] smalli
+    cdef num.ndarray[long,ndim=1] smalli
     smalli, = num.where(num.isnan(priors) | (priors < .01))
 
     if DEBUG:

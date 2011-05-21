@@ -12,9 +12,8 @@ class CtraxFileList:
     def __init__( self ):
         """Make a list of filenames to be used in testing."""
         
-        use_datatypes = ['roach_fmf']#, 'sample_sbfmf1', 'sample_sbfmf2',
-#                         'flybowl_ufmf1', 'flybowl_ufmf2', 'flybowl_ufmf3', 'flybowl_ufmf4',
-#                         'flybowl_ufmf5', 'flybowl_ufmf6', 'flybowl_ufmf7', 'flybowl_ufmf8']
+        use_datatypes = ['roach_fmf', 'sample_sbfmf1', 'sample_sbfmf2',
+                         'flybowl_ufmf1', 'flybowl_ufmf2']
         
         self.base_dir = os.path.join( os.environ['HOME'], 'data', 'ctrax-data', 'test-suite' )
 
@@ -23,7 +22,7 @@ class CtraxFileList:
             os.mkdir( self.tmp_dir )
 
         roach_fmf_dir = 'tietz'
-        roach_fmf = ['movie20100707_141914_trimmed.fmf',
+        roach_fmf = [#'movie20100707_141914_trimmed.fmf',
                      'movie20100707_142727_trimmed.fmf',
                      'movie20100707_143623_trimmed.fmf',
                      'movie20100707_144439_trimmed.fmf',
@@ -45,39 +44,17 @@ class CtraxFileList:
         sample_sbfmf2 = ['movie20071009_164618.sbfmf']
 
 
-        flybowl_ufmf1_dir = os.path.join( 'Fixed_AR', 'EP00005_rc3',
-                                          'pBDPGAL4U_TrpA_Rig1Plate10BowlA_20110304T154712' )
-        flybowl_ufmf1 = ['movie.ufmf']
+        flybowl_ufmf1_dir = os.path.join( 'Fixed_AR', 'EP00005_rc3' )
+        flybowl_ufmf1 = ['movie_pBDPGAL4U_TrpA_Rig1Plate10BowlA_20110304T154712.ufmf',
+                         'movie_pBDPGAL4U_TrpA_Rig1Plate10BowlB_20110302T155958.ufmf',
+                         'movie_pBDPGAL4U_TrpA_Rig1Plate10BowlC_20110303T111924.ufmf']
 
-        flybowl_ufmf2_dir = os.path.join( 'Fixed_AR', 'EP00005_rc3',
-                                          'pBDPGAL4U_TrpA_Rig1Plate10BowlB_20110302T155958' )
-        flybowl_ufmf2 = ['movie.ufmf']
-        
-        flybowl_ufmf3_dir = os.path.join( 'Fixed_AR', 'EP00005_rc3',
-                                          'pBDPGAL4U_TrpA_Rig1Plate10BowlC_20110303T111924' )
-        flybowl_ufmf3 = ['movie.ufmf']
-
-
-        flybowl_ufmf4_dir = os.path.join( 'Fixed_AR', 'EP00005_rc8',
-                                          'GMR_64F08_AE_01_TrpA_Rig2Plate14BowlC_20110310T112011' )
-        flybowl_ufmf4 = ['movie.ufmf']
-
-        flybowl_ufmf5_dir = os.path.join( 'Fixed_AR', 'EP00005_rc8',
-                                          'GMR_70F07_AE_01_TrpA_Rig1Plate10BowlC_20110310T130507' )
-        flybowl_ufmf5 = ['movie.ufmf']
-
-        flybowl_ufmf6_dir = os.path.join( 'Fixed_AR', 'EP00005_rc8',
-                                          'GMR_74H07_AE_01_TrpA_Rig2Plate14BowlB_20110316T152501' )
-        flybowl_ufmf6 = ['movie.ufmf']
-
-        flybowl_ufmf7_dir = os.path.join( 'Fixed_AR', 'EP00005_rc8',
-                                          'pBDPGAL4U_TrpA_Rig1Plate10BowlB_20110310T151713' )
-        flybowl_ufmf7 = ['movie.ufmf']
-
-        flybowl_ufmf8_dir = os.path.join( 'Fixed_AR', 'EP00005_rc8',
-                                          'pBDPGAL4U_TrpA_Rig2Plate14BowlC_20110316T155136' )
-        flybowl_ufmf8 = ['movie.ufmf']
-
+        flybowl_ufmf2_dir = os.path.join( 'Fixed_AR', 'EP00005_rc8' )
+        flybowl_ufmf2 = ['movie_GMR_64F08_AE_01_TrpA_Rig2Plate14BowlC_20110310T112011.ufmf',
+                         'movie_GMR_70F07_AE_01_TrpA_Rig1Plate10BowlC_20110310T130507.ufmf',
+                         'movie_GMR_74H07_AE_01_TrpA_Rig2Plate14BowlB_20110316T152501.ufmf',
+                         'movie_pBDPGAL4U_TrpA_Rig1Plate10BowlB_20110310T151713.ufmf',
+                         'movie_pBDPGAL4U_TrpA_Rig2Plate14BowlC_20110316T155136.ufmf']
 
         # make master file list
         self.files = []

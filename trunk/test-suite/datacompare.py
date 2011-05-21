@@ -13,20 +13,24 @@ class CtraxDataComparator:
         self.olddata = []
         for oldfile in old_matfiles:
             data = loadmat( oldfile )
-            self.olddata.append( {'x':data['x'],
-                                  'y':data['y'],
-                                  'theta':data['theta'],
-                                  'a':data['a'],
-                                  'b':data['b']} )
+            self.olddata.append( {'x':data['x_'],
+                                  'y':data['y_'],
+                                  'theta':data['theta_'],
+                                  'a':data['a_'],
+                                  'b':data['b_']} )
 
         self.newdata = []
         for newfile in new_matfiles:
             data = loadmat( newfile )
-            self.newdata.append( {'x':data['x'],
-                                  'y':data['y'],
-                                  'theta':data['theta'],
-                                  'a':data['a'],
-                                  'b':data['b']} )
+            try:
+                self.newdata.append( {'x':data['x_'],
+                                      'y':data['y_'],
+                                      'theta':data['theta_'],
+                                      'a':data['a_'],
+                                      'b':data['b_']} )
+            except KeyError:
+                print newfile
+                raise
 
 
     def save_data( self, filelist, runtimes ):

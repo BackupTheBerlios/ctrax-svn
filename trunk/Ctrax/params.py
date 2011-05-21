@@ -463,8 +463,10 @@ class GUIConstants:
         self.info.SetVersion( __version__ )
         self.info.SetCopyright( "2007-2011, Caltech ethomics project" )
         self.info.SetDescription( """The Caltech Multiple Fly Tracker.
+Kristin Branson et al.
 
 http://ctrax.berlios.de/
+http://dx.doi.org/10.1038/nmeth.1328
 
 Distributed under the GNU General Public License
 (http://www.gnu.org/licenses/gpl.html) with

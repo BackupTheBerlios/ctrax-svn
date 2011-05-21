@@ -10,7 +10,9 @@ base_name = which( 'make_test_data' );
 base_dir = base_name(1:strfind( base_name, 'make_test_data.m' ) - 1);
 
 % use Python to make lists of filenames
-eval( ['!python ' base_dir 'dump_mat_names.py'] )
+cmd = ['!python ' base_dir 'dump_mat_names.py'];
+fprintf( 1, [cmd '\n'] )
+eval( cmd )
 
 % read in list of original filenames
 fp = fopen( 'mat_name_dump.tmp', 'r' );
@@ -25,22 +27,26 @@ delete mat_name_dump.tmp
 
 % resave files
 for li = 1:length( tracked_filenames )
+   a_ = {}; b_ = {}; x_ = {}; y_ = {}; theta_ = {};
    % load data
    load( tracked_filenames{li} )
-   a = trx.a;
-   b = trx.b;
-   theta = trx.theta;
-   x = trx.x;
-   y = trx.y;
+   for an = 1:length( trx )
+      a_{an} = trx(an).a;
+      b_{an} = trx(an).b;
+      theta_{an} = trx(an).theta;
+      x_{an} = trx(an).x;
+      y_{an} = trx(an).y;
+   end
    
    % resave data in a Python-friendly MAT-file
    newname = [tracked_filenames{li}(1:strfind( tracked_filenames{li}, '.mat' ) - 1) '_forpython.mat'];
-   save( newname, 'x', 'y', 'theta', 'a', 'b' )
+   fprintf( 1, ['writing ' newname '\n'] )
+   save( newname, 'x_', 'y_', 'theta_', 'a_', 'b_' )
 end
 
 % read in list of newly tracked filenames
 fp = fopen( 'mat_new_name_dump.tmp', 'r' );
-new_filenames = {}; % need load_trx run on them
+new_filenames = {}; % need load_tracks() run on them
 line = fgetl( fp );
 while line ~= -1
    new_filenames{end+1} = line;
@@ -51,17 +57,24 @@ delete mat_new_name_dump.tmp
 
 % resave files
 for li = 1:length( new_filenames )
+   a_ = {}; b_ = {}; x_ = {}; y_ = {}; theta_ = {};
    [trx, matname, succeeded] = load_tracks( new_filenames{li} );
+   newname = [new_filenames{li}(1:strfind( new_filenames{li}, '.mat' ) - 1) '_forpython.mat'];
    if succeeded
-      a = trx.a;
-      b = trx.b;
-      theta = trx.theta;
-      x = trx.x;
-      y = trx.y;
+      for an = 1:length( trx )
+         a_{an} = trx(an).a;
+         b_{an} = trx(an).b;
+         theta_{an} = trx(an).theta;
+         x_{an} = trx(an).x;
+         y_{an} = trx(an).y;
+      end
       
       % resave
-      newname = [new_filenames{li}(1:strfind( new_filenames{li}, '.mat' ) - 1) '_forpython.mat'];
-      save( newname, 'x', 'y', 'theta', 'a', 'b' )
+      fprintf( 1, ['writing ' newname '\n'] )
+      save( newname, 'x_', 'y_', 'theta_', 'a_', 'b_' )
+   else
+      fprintf( 1, '**failed loading tracks in %s\n', newname )
+      eval( ['!rm ' newname] )
    end
 end
 
