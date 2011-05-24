@@ -1,0 +1,266 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+
+
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="robots" content="nofollow">
+
+
+<title>FixErrors Usage</title>
+
+<link rel="stylesheet" type="text/css" charset="utf-8" media="all" 
+href="styles/common.css">
+<link rel="stylesheet" type="text/css" charset="utf-8" media="screen" 
+href="styles/screen.css">
+<link rel="stylesheet" type="text/css" charset="utf-8" media="print" 
+href="styles/print.css">
+<link rel="stylesheet" type="text/css" charset="utf-8" 
+media="projection" href="styles/projection.css">
+</head><body dir="ltr" lang="en">
+
+<div id="title" dir="ltr" lang="en">
+<table width="100%" border="0">
+  <tr>
+    <td><a href="index.html"><img src="images/ctrax-logo2b_128.png" width="128" height="128" alt="Ctrax logo" border=0></a></td>
+    <td><h1>FixErrors Usage</h1></td>
+  </tr>
+</table>
+</div>
+
+<div id="page" dir="ltr" lang="en"><!-- start page -->
+<div id="content" dir="ltr" lang="en">
+
+<h2>FixErrors Matlab GUI</h2>
+<p>The FixErrors Matlab GUI identifies frames in which the tracker may
+have performed poorly, shows these to you, and allows you to 
+correct any mistakes. Suspicious frames and flies are any for which</p>
+<ul>
+  <li>A fly's trajectory ends.</li>
+  <li>A fly's trajectory begins.</li>
+  <li>The cost of swapping the identities of a pair of flies is small (i.e., the right identity assignments are not obvious).</li>
+  <li>The constant-velocity motion model poorly predicts the trajectories (e.g., a fly jumps).</li>
+  <li>The major axis length for a fly is large.</li>
+  <li>The orientation of a fly changes a lot from one frame to the next.</li>
+  <li>The direction of a fly's velocity and its orientation do not match (i.e., a fly appears to be walking backward).</li>
+</ul>
+<p>These frames are shown in order of most to least suspicious. The user then has the option to modify the fit trajectories to correct any mistakes in the tracking. Empirically, we found that all identity errors were easily located and fixed using this GUI.</p>
+
+<hr class="h2-divider">
+<h2>Contents</h2>
+<ul>
+  <li><a class="reference" href="#start-up" id="id41" 
+name="id41">Start-Up</a></li>
+  <li><a class="reference" href="#suspiciousness-parameters" 
+id="id42" name="id42">Suspiciousness Parameters</a></li>
+  <li><a class="reference" href="#gui-display" id="id43" 
+name="id43">FixErrors GUI Display</a></li>
+  <li><a class="reference" href="#manipulating-trajectories" 
+id="id44" name="id44">Manipulating Trajectories</a>
+  <ul>
+    <li><a class="reference" href="#edit-tools-delete-track" 
+id="id45" name="id45">Edit Tools: Delete Track</a></li>
+    <li><a class="reference" href="#edit-tools-swap-identities" 
+id="id46" name="id46">Edit Tools: Swap Identities</a></li>
+    <li><a class="reference" href="#edit-tools-connect-tracks" 
+id="id47" name="id47">Edit Tools: Connect Tracks</a></li>
+    <li><a class="reference" href="#edit-tools-interpolate" 
+id="id48" name="id48">Edit Tools: Interpolate</a></li>
+    <li><a class="reference" href="#edit-tools-extend-track" 
+id="id49" name="id49">Edit Tools: Extend Track</a></li>
+    <li><a class="reference" href="#edit-tools-auto-track" 
+id="id50" name="id50">Edit Tools: Auto Track</a></li>
+    <li><a class="reference" href="#edit-tools-flip-orientation" 
+id="id51" name="id51">Edit Tools: Flip Orientation</a></li>
+    <li><a class="reference" 
+href="#edit-tools-auto-track-multiple" id="id52" name="id52">Edit Tools: Auto Track Multiple</a></li>
+  </ul>
+  </li>
+</ul>
+
+<hr class="h2-divider">
+<h2><a name="start-up">FixErrors Start-Up</a></h2>
+<p>FixErrors begins by prompting you for the name of the raw movie whose trajectories are to be checked, followed by the name of the MAT-file containing the trajectories to be checked and the name of the corresponding Ctrax annotation file. If the trajectories have not yet been augmented with the pixel-to-millimeter and frame-to-second conversions, the <a class="reference" href="bmat.html#convert-units-m">convert_units.m</a> script (if available) is run to get these. FixErrors then checks to see if it has already been run on this movie and there is saved information available to pick up where it left off. If it finds such saved information, it will prompt to see if you want to continue.</p>
+
+<hr class="h2-divider">
+<h2><a name="suspiciousness-parameters">FixErrors Suspiciousness 
+Parameters</a></h2>
+<p>If FixErrors has never been run on this movie or you choose not to continue, you are then prompted for parameters used in detecting "suspicious" trajectory sequences -- these are sequences in which tracking is more likely to have failed. The suspiciousness parameters are the following:</p>
+<div class="figure" style="width: 210px;" align="center">
+<a class="reference image-reference" 
+href="images/ctrax_016.png"><img
+ alt="Screenshot of FixErrors Suspiciousness Parameters dialog" 
+src="images/ctrax_016.png" style="width: 200px;"></a>
+<p class="caption">Screenshot of FixErrors Suspiciousness Parameters 
+dialog.</p>
+</div>
+<ul>
+  <li><b>Minimum suspicious prediction - detection error (mm)</b>: This parameter is used to identify sequences in which the constant-velocity motion model poorly predicts the trajectories. All sequences in which the error between the constant-velocity prediction and the measured positions is greater than the set value will be flagged. By default, this is initialized to one-fifth the "Max Jump Error" from the Ctrax annotation file.</li>
+  <li><b>Minimum suspicious orientation change (deg)</b>: All sequences in which the change in orientation is greater than the set value will be flagged. We use 45 degrees in our experiments.</li>
+  <li><b>Minimum suspiciously large major axis (mm)</b>: All sequences in which the major axis length is greater than the set value will be flagged. For reference, the max and mean major axis lengths read from the Ctrax annotation file are shown.</li>
+  <li><b>Minimum suspicious orientation - velocity direction mismatch (deg)</b> and <b>Minimum walking speed (mm/frame)</b>: All sequences in which 
+the fly is walking with speed greater than this minimum walking speed <em>and</em> the orientation and velocity direction mismatch is more than above value will be flagged.</li>
+  <li><b>Maximum ambiguous error (mm^2)</b>: All sequences in which the increase in error for swapping a pair of identities is less than the set value will be flagged.</li>
+</ul>
+<p>Note that it is okay to set these suspiciousness parameters to be 
+overly cautious, i.e., so that a lot of sequences are flagged. The 
+FixErrors GUI will show the sequences in order from most suspicious to
+least suspicious sequence of a given type. Once you feel that the rest of the sequences of a given type are probably correct, you can move on to another type of suspicious sequence or quit the program altogether.</p>
+<p>Once these parameters are set, FixErrors goes through the 
+trajectories and identifies the suspicious sequences. Depending on the number and length of the trajectories, this may take some time. When it is done, it initializes the MAT-file containing the current/ongoing results of FixErrors (used to restart the GUI), then brings up the FixErrors GUI itself.</p>
+
+<hr class="h2-divider">
+<h2><a name="gui-display">GUI Display</a></h2>
+<div class="figure" style="width: 410px;" align="center">
+<a class="reference image-reference" href="images/ctrax_017.png"><img
+ alt="Screenshot of FixErrors GUI" src="images/ctrax_017.png" 
+style="width: 400px;"></a>
+<p class="caption">Screenshot of FixErrors GUI.</p>
+</div>
+<p>The left side of the GUI shows the current frame annotated with the
+trajectories of the fly. For each fly, the fit ellipse is shown. Tail 
+direction is indicated by a line segment. Using the "Plot Path" 
+drop-down menu, one can select whether the paths of "All Flies", "Seq 
+Flies" (only those flies that are part of the current suspicious 
+sequence), or "No Flies" are plotted. The number of frames of trajectory around the current frame that are plotted can be adjusted with the "NFrames Plot" control. The "Zoom" drop-down menu controls whether FixErrors zooms in on the flies in the current sequence or shows the whole arena.</p>
+<p>The "Sequence Info" box shows information about the current 
+suspicious sequence. The "Error" number shows which error sequence of 
+this type is shown (this is not indexed by suspiciousness, but rather 
+fly and frame). It shows the numbers of the frames and the identities of the flies that are suspicious ("Frames" and "Flies"). It shows the 
+"Type" of suspicious sequence, and finally the suspiciousness of the 
+sequence ("Susp"). The "suspiciousness" measure varies from one type of error to another, but will always be nonnegative for the selected 
+sequences, and zero for the least suspicious sequence selectable.</p>
+<p>The "Frame Info" box shows information about the current frame and 
+flies. It shows the (editable) current frame number, which frame of the current sequence this is, the suspiciousness for the current frame (the suspiciousness of the sequence is the maximum per-frame suspiciousness over all frames in the sequence). The "Selected Fly" shows the identity of the last clicked fly. This is useful if the colors of flies being examined are similar.</p>
+<p>The "Navigation Tools" control the order in which suspicious 
+sequences are shown. Here, you can select the next type of error to show and whether the sequences should be sorted by suspiciousness, fly, or frame. We recommend sorting by suspiciousness. When you are satisfied that the trajectories are correct, hit the "Correct" button to go on to the next sequence. The "Back" button is not yet implemented, the "Save" button saves the current state of the GUI to the restart file, and the "Quit" button exits the GUI.</p>
+<p>The "Seek Tools" allow you to change the current frame to the next or previous track birth or death in the currently selected axes.</p>
+
+<h2 class="h2-divider">
+<h2><a name="manipulating-trajectories">Manipulating Trajectories</a></h2>
+<p>The positions of the flies in the current frame can be manipulated by dragging around the plotted ellipses. The center position of the 
+ellipse can be changed by dragging the white circle at the center of the ellipse. The white circles at the four end points of the fly's axes can be dragged independently to set these points.</p>
+<p>For more drastic changes to the trajectories, use the following "Edit Tools":</p>
+
+<h3><a name="edit-tools-delete-track">Edit Tools: Delete Track</a></h3>
+<p>Deletes the trajectory of a selected fly from the selected frame to the end of its track. To delete the fly's entire trajectory, you would want to delete from the first frame of its trajectory. Follow these steps to delete a trajectory portion:</p>
+<ol>
+  <li>Scroll to the first frame of the portion of track to be deleted.</li>
+  <li>Click on the fly to be deleted.</li>
+  <li>Push the "Do It" button.</li>
+</ol>
+
+<h3><a name="edit-tools-swap-identities">Edit Tools: Swap Identities</a></h3>
+<p>Swaps the identities of a selected pair of flies from a selected frame to the end of their tracks. Follow these steps:</p>
+<ol>
+  <li>Scroll to the first frame of the portion of tracks to be swapped.</li>
+  <li>Select the two flies to be swapped.</li>
+  <li>Push the "Do It" button.</li>
+</ol>
+
+<h3><a name="edit-tools-connect-tracks">Edit Tools: Connect Tracks</a></h3>
+<p>Connects the end of one trajectory to the start of another (useful if, e.g., a fly is lost for some number of frames and then reborn as a new fly identity). Follow these steps:</p>
+<ol>
+  <li>Scroll to the first frame of the portion of track to be connected.</li>
+  <li>Select the first fly to be connected.</li>
+  <li>Push the "First Fly" button.</li>
+  <li>Scroll to the last frame of the portion of track to be connected.</li>
+  <li>Click on the second fly to be connected to.</li>
+  <li>Push the "Do It" button.</li>
+</ol>
+<p>If neither of the fly tracks is "alive" during a subset of the frames, the position of the fly is set by linearly interpolating between its start and end locations. If both flies are alive during a portion of the frames, the position of the fly is set as the average of these two.</p>
+
+<h3><a name="edit-tools-interpolate">Edit Tools: Interpolate</a></h3>
+<p>Replaces the positions and orientations of a single fly over a sequence of frames
+using linear interpolation between the start frame and the end frame. Follow these steps.</p>
+<ol>
+  <li>Scroll to the first frame of the portion of track to be 
+interpolated.</li>
+  <li>Click on the fly to be interpolated.</li>
+  <li>Push the "First Frame" button to select.</li>
+  <li>Scroll to the last frame of the portion of track to be interpolated.</li>
+  <li>Push the "Do It" button.</li>
+</ol>
+
+<h3><a name="edit-tools-extend-track">Edit Tools: Extend Track</a></h3>
+<p>Extends a selected fly's track in time from the end of its track to a selected frame. Follow these steps.</p>
+<ol>
+  <li>Click on the fly to be extended.</li>
+  <li>Push the "First Fly" button to select it.</li>
+  <li>Scroll to the last frame to extend until.</li>
+  <li>Push the "Do It" button.</li>
+</ol>
+<p>From the end of the fly's trajectory to the selected frame, the fly
+will be set to be in the position in its original last frame (useful if, e.g., a fly's track dies because it stops moving and becomes part of the background).</p>
+
+<h3><a name="edit-tools-auto-track">Edit Tools: Auto Track</a></h3>
+<p>Modifies a sequence of frames for a single fly in one step. During auto-tracking, FixErrors will remove all foreground pixels that can be attributed to other flies. Then, it finds
+the closest connected component of remaining foreground pixels and 
+stores the ellipse fit to this component as the position of the fly. 
+There are a few parameters that can be modified in the auto-tracking. 
+First, you can fix errors in the background modeling by selecting 
+regions of the frame and temporarily filling them with a selected color. Second, you can set the "Track Radius" -- the size of the square around the fly's predicted position that is examined during the auto-tracking. Third, you can temporarily alter the background-subtraction threshold. To automatically retrack a fly for a sequence of frames:</p>
+<div class="figure" style="width: 210px;" align="center">
+<a class="reference image-reference" 
+href="images/ctrax_005.png"><img
+ alt="Screenshot of FixErrors Retrack Settings dialog" 
+src="images/ctrax_005.png" style="width: 200px;"></a>
+<p class="caption">Screenshot of FixErrors Retrack Settings dialog.</p>
+</div>
+<ol>
+  <li>Click on the fly to be tracked in the frame to be tracked from.</li>
+  <li>Push the "First Frame" button to select this fly and frame.</li>
+  <li>If desired, modify the tracking settings by pushing the 
+"Settings..." button:</li>
+  <ol style="list-style-type:lower-alpha">
+    <li>The image panel shows the first frame in a window around the 
+selected fly's position in that frame. In red, it outlines the connected components of foreground pixels detected with the current settings.</li>
+    <li>To fix the background model, drag a rectangle in the 
+"retrack_settings" dialog image. Then, click the "Eyedropper" button, 
+and click on the image to select the color to fill the rectangle with. Finally, click the "Fill" button.</li>
+    <li>The window shown reflects the "Track Radius". The "Track Radius" can be modified with the corresponding "+" and "-" buttons.</li>
+    <li>The background subtraction "Threshold" can be modified with the corresponding "+" and "-" buttons.</li>
+    <li>Specify that the flies are light on a dark background, dark on a light background, or other.</li>
+    <li>Click the "Done" button when finished modifying the tracking settings.</li>
+  </ol>
+  <li>To see the tracking results as they are computed, select "Show Tracking". For faster tracking, deselect it.</li>
+  <li>Scroll to the frame to be tracked until, then click the "Do It" button.</li>
+  <li>To stop tracking at any time, hit the "Stop" button.</li>
+</ol>
+
+<h3><a name="edit-tools-flip-orientation">Edit Tools: Flip Orientation</a></h3>
+<p>Flip the head/tail assignment for a selected fly for an 
+interval (i.e. the fly is rotated by 180 degrees) by following these 
+steps:</p>
+<ol>
+  <li>Click on the fly to be flipped in the first frame to be flipped.</li>
+  <li>Push the "First Frame" button to select.</li>
+  <li>Scroll to the last frame to be flipped until.</li>
+  <li>Push the "Do It" button.</li>
+</ol>
+
+<h3><a name="edit-tools-auto-track-multiple">Edit Tools: Auto Track Multiple</a></h3>
+<p>Similar to <a class="reference" 
+href="#edit-tools-auto-track">Edit Tools: Auto Track</a>, you can re-track multiple flies for which the splitting of a single connected component into multiple flies has failed. As in auto-tracking, FixErrors removes the foreground pixels that can be attributed to flies other than those being retracked. It then fits a mixture of Gaussians to the remaining foreground pixels, initializing with the predicted positions of the flies. This can sometimes perform better than the Ctrax tracker, as it forces a given number of flies to be fit and can use the previous positions of the flies for initialization. To automatically retrack a set of flies for a sequence of frames:
+<ol>
+  <li>Click on the flies to be tracked in the first frame to be tracked.
+  <li>Push the "First Frame" button to select these flies and frame.
+  <li>If desired, modify the tracking settings by pushing the "Settings..." button:
+  <ol>
+    <li>The image panel shows the first frame in a window around the 
+selected fly's position in that frame. In red, it outlines the connected components of foreground pixels detected with the current settings.</li>
+    <li>To fix the background model, drag a rectangle in the 
+"retrack_settings" dialog image. Then, click the "Eyedropper" button, 
+and click on the image to select the color to fill the rectangle with. Finally, click the "Fill" button.</li>
+    <li>The window shown reflects the "Track Radius". The "Track Radius" can be modified with the corresponding "+" and "-" buttons.</li>
+    <li>The background subtraction "Threshold" can be modified with the corresponding "+" and "-" buttons.</li>
+    <li>Specify that the flies are light on a dark background, dark on a light background, or other.</li>
+    <li>Click the "Done" button when finished modifying the tracking settings.</li>
+  </ol>
+  <li>To see the tracking results as they are computed, select "Show 
+Tracking". For faster tracking, deselect it.</li>
+  <li>Scroll to the frame to be tracked until, then click the "Do It" 
+button.</li>
+  <li>To stop tracking at any time, hit the "Stop" button.</li>
+</ol>
+
+</body></html>

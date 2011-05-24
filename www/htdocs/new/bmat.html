@@ -1,0 +1,496 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+
+
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="robots" content="nofollow">
+
+
+<title>BehavioralMicroarray Usage</title>
+
+<link rel="stylesheet" type="text/css" charset="utf-8" media="all" 
+href="styles/common.css">
+<link rel="stylesheet" type="text/css" charset="utf-8" media="screen" 
+href="styles/screen.css">
+<link rel="stylesheet" type="text/css" charset="utf-8" media="print" 
+href="styles/print.css">
+<link rel="stylesheet" type="text/css" charset="utf-8" 
+media="projection" href="styles/projection.css">
+</head><body dir="ltr" lang="en">
+
+<div id="title" dir="ltr" lang="en">
+<table width="100%" border="0">
+  <tr>
+    <td><a href="index.html"><img src="images/ctrax-logo2b_128.png" width="128" height="128" alt="Ctrax logo" border=0></a></td>
+    <td><h1>BehavioralMicroarray Usage</h1></td>
+  </tr>
+</table>
+</div>
+
+<div id="page" dir="ltr" lang="en"><!-- start page -->
+<div id="content" dir="ltr" lang="en">
+
+<h2>BehavioralMicroarray Matlab Toolbox</h2>
+<p>The BehavioralMicroarray Toolbox for Matlab contains a number of 
+functions for analyzing the behaviors of the walking flies whose 
+trajectories are computed using Ctrax. The toolbox includes code for computing per-frame statistics such as speed, distance to closest fly, etc., code for learning behavior classifications, code for detecting learned behaviors in the trajectories, code for histogramming various statistics of behavior, and code for analyzing and comparing the distributions of behavioral statistics for different types of flies. The analyses possible are similar to those performed in our paper, <a href="http://dx.doi.org/10.1038/nmeth.1328">"High-Throughput Ethomics in Large Groups of <i>Drosophila</i>"</a>.</p>
+
+<hr class="h2-divider">
+<h2>Contents</h2>
+<ul>
+  <li><a class="reference" href="#showtrx-m" id="id57" name="id57">showtrx.m</a></li>
+  <li><a class="reference" href="#simple-diagnostics-m" id="id58" 
+name="id58">simple_diagnostics.m</a></li>
+  <li><a class="reference" href="#make-ctrax-results-movie-m" id="id59" name="id59">make_ctrax_results_movie.m</a></li>
+  <li><a class="reference" href="#load-tracks-m" id="id60" name="id60">load_tracks.m</a></li>
+  <li><a class="reference" href="#convert-units-m" id="id61" name="id61">convert_units.m</a></li>
+  <li><a class="reference" href="#compute-perframe-stats-m" id="id62"
+name="id62">compute_perframe_stats.m</a></li>
+  <li><a class="reference" href="#compute-perframe-stats-social-m" 
+id="id63" name="id63">compute_perframe_stats_social.m</a></li>
+  <li><a class="reference" href="#classify-by-area-m" id="id64" 
+name="id64">classify_by_area.m</a></li>
+  <li><a class="reference" href="#learn-params-m" id="id65" name="id65">learn_params.m</a></li>
+  <li><a class="reference" href="#learn-params-social-m" id="id66" 
+name="id66">learn_params_social.m</a></li>
+  <li><a class="reference" href="#detect-behaviors-m" id="id67" 
+name="id67">detect_behaviors.m</a></li>
+  <li><a class="reference" href="#histogramproperties-m" id="id68" 
+name="id68">histogramproperties.m</a></li>
+  <li><a class="reference" href="#plot-behaviormicroarray-m" id="id69" name="id69">plot_behaviormicroarray.m</a></li>
+</ul>
+
+<hr class="h2-divider">
+<h2><a name="showtrx-m">showtrx.m</a></h2>
+<a class="reference image-reference" href="images/ctrax_010.png"><div
+ class="align-center" align="center"><img alt="Screenshot of showtrx.m" class="align-center" src="images/ctrax_010.png" style="width: 400px;"></div>
+</a>
+<p>This script allows you to view a movie annotated with the 
+trajectories computed by Ctrax. First, input the movie and 
+corresponding trajectory MAT-file. This movie is shown in the main 
+window of the GUI that is started. You can scroll to different 
+frames or play the movie. You can select any number of flies and play the movie keeping the axes zoomed on these flies only. Per-frame properties of the last-clicked fly are also shown in the "Selected Flies" panel. More per-frame statistics can be computed by clicking the "Compute Per-Frame Stats" button, which calls the <a class="reference" href="#compute-perframe-stats-m">compute_perframe_stats.m</a> script.</p>
+
+<hr class="h2-divider">
+<h2><a name="simple-diagnostics-m">simple_diagnostics.m</a></h2>
+<p>This script inputs the trajectories of flies in a video and outputs a few simple visualizations of the data. In figure 1, it plots the (x,y) position of each fly in a separate subplot. In figure 2, it plots a histogram of the position in the arena of all flies (frequency in the left subplot, log frequency in the right subplot). In figure 3, it plots a histogram of the speed of all the flies in black as well as each fly individually in color. In figure 4, it plots a histogram of the angular speed (change in orientation) of all the flies in black as well as each fly individually in color.</p>
+<a class="reference image-reference" href="images/ctrax_008.png"><div
+ class="align-center" align="center"><img alt="Screenshot of 
+simple_diagnostics.m" class="align-center" src="images/ctrax_008.png" style="width: 400px;"></div>
+</a>
+
+<hr class="h2-divider">
+<h2><a name="make-ctrax-results-movie-m">make_ctrax_results_movie.m</a></h3>
+<a class="reference image-reference" 
+href="images/ctrax_003.jpg"><div class="align-center" align="center"><img alt="25 female and 25 male flies in 24.5-cm diameter open arena." class="align-center" src="images/ctrax_003.jpg" style="width: 400px;"></div>
+</a>
+<p>This function makes an AVI out of the raw video of the flies in the arena and the trajectories returned by Ctrax/FixErrors like those shown in <a class="reference" href="install.html#arena-and-video-requirements">Arena and Video Requirements</a>. You will be prompted for the raw video to input, the name of the MAT-file containing the trajectories, and the name of the AVI file to output the annotated movie to. You can then set which frames to output (first frame and number of frames to output), the video frames per second, the compressor (Windows only), and the number and size of the zoomed-in fly boxes to show in the right panel of the movie. Uncompressed videos exported by this function can easily be compressed by any of the programs listed under <a href="ctrax.html#other-commands">Ctrax: File->Export as AVI</a>.</p>
+
+<hr class="h2-divider">
+<h2><a name="load-tracks-m">load_tracks.m</a></h2>
+<p>Usage: <tt>[trx,matname,succeeded] = load_tracks</tt></p>
+<p>This function loads the trajectories output to a MAT-file by Ctrax into the easier-to-use structure <tt>trx</tt>. The <tt>trx</tt> structure is the representation of the trajectories used throughout this toolbox. It prompts you for a MAT-file containing trajectories -- this can either be a MAT-file output by Ctrax or any <tt>.mat</tt> file containing the <tt>trx</tt> variable: the output of <a class="reference" 
+href="#load-tracks-m">load_tracks.m</a>, <a class="reference" 
+href="#convert-units-m">convert_units.m</a>, <a class="reference" 
+href="#compute-perframe-stats-m">compute_perframe_stats.m</a>, <a 
+class="reference" href="#compute-perframe-stats-social-m">compute_perframe_stats_social.m</a>, <a class="reference" href="#classify-by-area-m">classify_by_area.m</a>.  If the input MAT-file is the raw output from Ctrax, the function stores <tt>trx</tt> to the auto-created file defined by the returned value <tt>matname</tt>. The returned value <tt>succeeded</tt> reflects whether trajectories were successfully loaded or not. <tt>trx</tt> is an array of structs with an element for each fly (i.e., <tt>length(trx)</tt> is the number of flies). <tt>trx(fly)</tt> has the following member variables.</p>
+<ul>
+  <li><tt>firstframe</tt> is the frame that the trajectory begins on.</li>
+  <li><tt>endframe</tt> is the frame that the trajectory ends on.</li>
+  <li><tt>nframes</tt> (<tt>= endframe - firstframe + 1</tt>) is the length of the trajectory in frames.</li>
+  <li><tt>x</tt> is a <tt>1 x nframes</tt> array containing the x-position of the fly (in pixels) in each frame. Thus, <tt>trx(fly).x(i)</tt> is the x-position of <tt>fly</tt> in the <tt>i</tt>th frame of <tt>fly</tt>'s trajectory (frame <tt>trx(fly).firstframe + i - 1</tt>).</li>
+  <li><tt>y</tt> is the <tt>1 x nframes</tt> array of the y-position of <tt>fly</tt> in each frame (pixels),</li>
+  <li><tt>theta</tt> is the <tt>1 x nframes</tt> array of the orientation of <tt>fly</tt> in each frame (radians),</li>
+  <li><tt>a</tt> is the <tt>1 x nframes</tt> array of the quarter-major axis length of <tt>fly</tt> in each frame (pixels).</li>
+  <li><tt>b</tt> is the <tt>1 x nframes</tt> array of the quarter-minor axis length of <tt>fly</tt> in each frame (pixels).</li>
+</ul>
+
+<hr class="h2-divider">
+<h2><a name="convert-units-m">convert_units.m</a></h2>
+<p>This script allows you to convert from the video units of pixels and frames to the real units of millimeters and seconds.</p>
+<ol>
+  <li>Select a MAT-file containing the flies' trajectories to convert.</li>
+  <li>Set the number of frames per second.</li>
+  <li>Set the conversion from pixels to millimeters manually or compute this conversion by entering the known distance in millimeters between two landmark points.</li>
+  <ol>
+    <li>In the "Compute" option, you will first select the movie file corresponding to the trajectories. The first frame of this movie is then read in and displayed.</li>
+    <li>Draw a line between two landmark points.</li>
+    <li>Set the length of this line in millimeters.</li>
+    <li>Select a MAT-file to save the results to.</li>
+  </ol>
+</ol>
+<p>The resulting <tt>trx</tt> structure (see <a class="reference" 
+href="#load-tracks-m">load_tracks.m</a>) is augmented with the following member variables:</p>
+<ul>
+  <li><tt>x_mm</tt> is the <tt>1 x nframes</tt> array of x-position in millimeters.</li>
+  <li><tt>y_mm</tt> is the <tt>1 x nframes</tt> array of y-position in millimeters.</li>
+  <li><tt>a_mm</tt> is the <tt>1 x nframes</tt> array of quarter-major axis length in millimeters.</li>
+  <li><tt>b_mm</tt> is the <tt>1 x nframes</tt> array of quarter-minor axis length in millimeters.</li>
+  <li><tt>pxpermm</tt> is the number of pixels per millimeter.</li>
+  <li><tt>fps</tt> is the number of frames per second.</li>
+</ul>
+
+<hr class="h2-divider">
+<h2><a name="compute-perframe-stats-m">compute_perframe_stats.m</a></h2>
+<p>This script inputs the trajectories of flies in a video and outputs a number of per-frame properties of interest. These include per-frame speed and acceleration properties such as velocity, angular velocity, forward and sideways velocity, velocity direction, change in velocity direction, velocity of the nose and tail of the fly, center of rotation, speed of center of rotation, and acceleration. In addition, there is the option to compute arena-based properties for circular arenas, such as distance to wall, orientation relative to the wall, and change in distance to the wall. Finally, there is the option to compute per-frame properties involving other flies, such as distance to the closest fly (center-center, nose-ellipse), maximum angle of the fly's vision subtended by another fly, velocity toward the closest fly, orientation and velocity direction relative to closest fly, and change in any of these properties. More specifically, the following per-frame properties are always computed. All of these fields are appended to the <tt>trx</tt> structure.</p>
+
+<h3>Basic parameters:</h3>
+<ul>
+  <li><tt>dtheta</tt>: angular velocity (rad/s) [<tt>1 x (nframes - 1)</tt>].</li>
+  <li><tt>absdtheta</tt>: angular speed (rad/s) (<tt>|dtheta|</tt>) [<tt>1 x (nframes - 1)</tt>].</li>
+  <li><tt>signdtheta</tt>: boolean expressing whether change in 
+orientation is positive or negative (no units) [<tt>1 x (nframes - 1)</tt>].</li>
+  <li><tt>d2theta</tt>: angular acceleration (rad/s^2) [<tt>1 x (nframes - 1)</tt>]. Note that <tt>d2theta(1)</tt> is always set to 0, and <tt>d2theta(t)</tt> is the acceleration computed from the angular velocities in frames <tt>t</tt> and <tt>t + 1</tt>.</li>
+  <li><tt>absd2theta</tt>: absolute angular acceleration (<tt>|d2theta|</tt>) (rad/s^2) [<tt>1 x (nframes - 1)</tt>].</li>
+  <li><tt>smooththeta</tt>: orientation, smoothed with the filter <tt>[1,4,6,4,1]/16</tt> (rad) [<tt>1 x nframes</tt>].</li>
+  <li><tt>smoothdtheta</tt>: angular velocity, computed from the smoothed orientation (rad/s) [<tt>1 x (nframes - 1)</tt>].</li>
+  <li><tt>abssmoothdtheta</tt>: angular speed, computed from the smoothed orientation (rad/s) [<tt>1 x (nframes - 1)</tt>].</li>
+  <li><tt>smoothd2theta</tt>: angular acceleration, computed from the smoothed orientation (rad/s^2) [<tt>1 x (nframes - 1)</tt>]. Note that <tt>smoothd2theta(1)</tt> is always set to 0, and <tt>d2theta(t)</tt> is the acceleration computed from the angular velocities in frames <tt>t</tt> and <tt>t + 1</tt>.
+  <li><tt>abssmoothd2theta</tt>: absolute angular acceleration, computed from the smoothed orientation (<tt>|smoothd2theta|</tt>)(rad/s^2) [<tt>1 x (nframes - 1)</tt>].</li>
+  <li><tt>velmag_ctr</tt>: speed (mm/s) [<tt>1 x (nframes - 1)</tt>].</li>
+  <li><tt>du_ctr</tt>: forward velocity of the fly's center (mm/s) [<tt>1 x (nframes - 1)</tt>]. This is the projection of the fly's velocity on its orientation direction.</li>
+  <li><tt>dv_ctr</tt>: sideways velocity of the fly's center (mm/s) [<tt>1 x (nframes - 1)</tt>]. This is the projection of the fly's velocity on the direction orthogonal to the orientation. Right is positive, left is negative.</li>
+  <li><tt>corfrac_maj</tt>: projection of the center of rotation on the fly's major axis (no units) [<tt>1 x (nframes - 1)</tt>]. This is a measure of the point on the fly that translates least from one frame to the next. It is 0 at the center of the fly, 1 at the forward tip of the major axis, and -1 and the backward tip of the major axis.</li>
+  <li><tt>corfrac_min</tt>: projection of the center of rotation on the fly's minor axis (no units) [<tt>1 x (nframes - 1)</tt>]. This is a measure of the point on the fly that translates least from one frame to the next. It is 0 at the center of the fly, 1 at the right tip of the minor axis, and -1 and the backward tip of the minor axis.</li>
+    <li><tt>abscorfrac_min</tt>: absolute value of <tt>corfrac_min</tt> (no units) [<tt>1 x (nframes - 1)</tt>].</li>
+  <li><tt>velmag</tt>: speed of the center of rotation (defined by <tt>corfrac_maj</tt> and <tt>corfrac_min</tt>) (mm/s) [<tt>1 x (nframes - 1)</tt>].</li>
+  <li><tt>corisonfly</tt>: boolean expressing whether any point on the fly does not move (no units) [<tt>1 x (nframes - 1)</tt>].</li>
+  <li><tt>du_cor</tt>: forward velocity of the fly's center of rotation (defined by <tt>corfrac_maj</tt> and <tt>corfrac_min</tt>) (mm/s) [<tt>1 x (nframes - 1)</tt>]. This is the projection of the change in the position of the center of rotation on the fly onto the fly's orientation direction.</li>
+  <li><tt>dv_cor</tt>: sideways velocity of the fly's center of rotation (defined by <tt>corfrac_maj</tt> and <tt>corfrac_min</tt>) (mm/s) [<tt>1 x (nframes - 1)</tt>]. This is the projection of the change in the position of the center of rotation on the fly onto the direction orthogonal to the fly's orientation.</li>
+  <li><tt>absdv_cor</tt>: sideways speed of the fly's center of rotation (<tt>|dv_cor|</tt>) (mm/s) [<tt>1 x (nframes - 1)</tt>].</li>
+  <li><tt>flipdv_cor</tt>: sideways velocity of the fly's center of 
+rotation, sign-normalized so that if the fly's orientation is turning right, then <tt>flipdv_cor</tt> is positive if the fly's center of 
+rotation is also translating to the right (<tt>dv_cor * signdtheta</tt>) (mm/s) [<tt>1 x (nframes - 1)</tt>].</li>
+  <li><tt>accmag</tt>: acceleration of the center of rotation (defined by <tt>corfrac_maj</tt> and <tt>corfrac_min</tt>) (mm/s^2) [<tt>1 x (nframes - 1)</tt>]. Note that <tt>accmag(1)</tt> is always set to 0, and <tt>accmag(t)</tt> is the acceleration computed from the velocities in frames <tt>t</tt> and <tt>t + 1</tt>.</li>
+  <li><tt>phi</tt>: velocity direction (rad) [<tt>1 x nframes</tt>].</li>
+  <li><tt>yaw</tt>: difference between velocity direction and orientation (rad) [<tt>1 x nframes</tt>].</li>
+  <li><tt>absyaw</tt>: absolute difference between velocity direction and orientation (rad) [<tt>1 x nframes</tt>].</li>
+  <li><tt>du_tail</tt>: forward velocity of the backmost point on the fly (mm/s) [<tt>1 x (nframes - 1)</tt>]. This is the projection of the fly's velocity on its orientation direction.</li>
+  <li><tt>dv_tail</tt>: sideways velocity of the backmost point on the fly (mm/s) [<tt>1 x (nframes - 1)</tt>]. This is the projection of the fly's velocity on the direction orthogonal to the orientation. Right is positive, left is negative.</li>
+  <li><tt>absdu_tail</tt>: forward speed of the backmost point on the fly (mm/s) [<tt>1 x (nframes - 1)</tt>].</li>
+  <li><tt>absdv_tail</tt>: sideways speed of the backmost point on the fly (mm/s) [<tt>1 x (nframes - 1)</tt>].</li>
+  <li><tt>dtheta_tail</tt>: change in orientation of fly's head around mean tail location (rad/s) [<tt>1 x (nframes - 1)</tt>].</li>
+  <li><tt>absdtheta_tail</tt>: absolute change in orientation of fly's head around mean tail location (rad/s) [<tt>1 x (nframes - 1)</tt>].</li>
+  <li><tt>phisideways</tt>: difference between velocity direction and 
+direction orthogonal to fly's orientation (range is [-pi/2,pi/2)) (rad) [<tt>1 x nframes</tt>].</li>
+  <li><tt>absphisideways</tt>: absolute difference between velocity 
+direction and direction orthogonal to fly's orientation (range is 
+[0,pi/2]) (rad)  [<tt>1 x nframes</tt>].</li>
+</ul>
+
+<h3>Circular arena parameters:</h3>
+<ul>
+  <li><tt>dist2wall</tt>: distance to arena wall (mm) [<tt>1 x nframes</tt>]</li>
+  <li><tt>theta2wall</tt>: angle to closest point on the arena wall, 
+relative to the fly's orientation (rad) [<tt>1 x nframes</tt>].</li>
+<li><tt>ddist2wall</tt>: change in distance to arena wall (mm/s) [<tt>1 x (nframes-1)</tt>.</li>
+  <li><tt>absdangle2wall</tt>: absolute value of change in direction to closest point on the wall (rad/s) [<tt>1 x (nframes-1)</tt>].</li>
+</ul>
+
+<h3>Closest fly parameters:</h3>
+<ul>
+  <li><tt>dcenter</tt>: minimum distance between this fly's center and other flies' centers (mm) [<tt>1 x nframes</tt>].</li>
+  <li><tt>closestfly_center</tt>: identity of closest fly, based on 
+dcenter [<tt>1 x nframes</tt>].</li>
+  <li><tt>dnose2ell</tt>: minimum distance between this fly's nose and any point on another fly (mm) [<tt>1 x nframes</tt>].</li>
+  <li><tt>closestfly_nose2ell</tt>: identity of closest fly, based on 
+dnose2ell [<tt>1 x nframes</tt>].</li>
+  <li><tt>dell2nose</tt>: minimum distance between any point on this fly and the nose of other flies (mm) [<tt>1 x nframes</tt>].</li>
+  <li><tt>closestfly_ell2nose</tt>: identity of closest fly, based on 
+dell2nose [<tt>1 x nframes</tt>].</li>
+  <li><tt>anglesub</tt>: maximum total angle of fly's view occluded by another fly (rad) [<tt>1 x nframes</tt>]. The fly's view is restricted to <tt>[-fov/2,fov/2]</tt>, where <tt>fov</tt> is the set field of view.</li>
+  <li><tt>closestfly_anglesub</tt>: identity of closest fly, based on 
+anglesub [<tt>1 x nframes</tt>].</li>
+  <li><tt>magveldiff_center</tt>: magnitude of difference in velocity of this fly and velocity of closest fly based on dcenter (mm/s) [<tt>1 x (nframes-1)</tt>].</li>
+  <li><tt>magveldiff_nose2ell</tt>: magnitude of difference in velocity of this fly and velocity of closest fly based on dnose2ell (mm/s) [<tt>1 x (nframes-1)</tt>].</li>
+  <li><tt>magveldiff_ell2nose</tt>: magnitude of difference in velocity of this fly and velocity of closest fly based on dell2nose (mm/s) [<tt>1 x (nframes-1)</tt>].</li>
+  <li><tt>magveldiff_anglesub</tt>: magnitude of difference in velocity of this fly and velocity of closest fly based on anglesub (mm/s) [<tt>1 x (nframes-1)</tt>].</li>
+  <li><tt>veltoward_center</tt>: velocity of this fly in direction to 
+closest fly based on dcenter (mm/s) [<tt>1 x (nframes-1)</tt>].</li>
+  <li><tt>veltoward_nose2ell</tt>: velocity of this fly in direction to closest fly based on dnose2ell (mm/s) [<tt>1 x (nframes-1)</tt>].</li>
+  <li><tt>veltoward_ell2nose</tt>: velocity of this fly in direction to closest fly based on dell2nose (mm/s) [<tt>1 x (nframes-1)</tt>].</li>
+  <li><tt>veltoward_anglesub</tt>: velocity of this fly in direction to closest fly based on anglesub (mm/s) [<tt>1 x (nframes-1)</tt>].</li>
+  <li><tt>absthetadiff_center</tt>: absolute difference in orientation between this fly and closest fly based on dcenter (rad) [<tt>1 x nframes</tt>].</li>
+  <li><tt>absthetadiff_nose2ell</tt>: absolute difference in orientation between this fly and closest fly based on dnose2ell (rad) [<tt>1 x nframes</tt>].</li>
+  <li><tt>absthetadiff_ell2nose</tt>: absolute difference in orientation between this fly and closest fly based on dell2nose (rad) [<tt>1 x nframes</tt>].</li>
+  <li><tt>absthetadiff_anglesub</tt>: absolute difference in orientation between this fly and closest fly based on anglesub (rad) [<tt>1 x nframes</tt>].</li>
+  <li><tt>absphidiff_center</tt>: absolute difference in velocity 
+direction between this fly and closest fly based on dcenter (rad) [<tt>1 x (nframes-1)</tt>].</li>
+  <li><tt>absphidiff_nose2ell</tt>: absolute difference in velocity 
+direction between this fly and closest fly based on dnose2ell (rad) [<tt>1 x (nframes-1)</tt>].</li>
+  <li><tt>absphidiff_ell2nose</tt>: absolute difference in velocity 
+direction between this fly and closest fly based on dell2nose (rad) [<tt>1 x (nframes-1)</tt>].</li>
+  <li><tt>absphidiff_anglesub</tt>: absolute difference in velocity 
+direction between this fly and closest fly based on anglesub (rad) [<tt>1 x (nframes-1)</tt>].</li>
+  <li><tt>absanglefrom1to2_center</tt>: absolute difference between 
+direction to closest fly based on dcenter and this fly's orientation 
+(rad) [<tt>1 x nframes</tt>].</li>
+  <li><tt>absanglefrom1to2_nose2ell</tt>: absolute difference between 
+direction to closest fly based on dnose2ell and this fly's orientation (rad) [<tt>1 x nframes</tt>].</li>
+  <li><tt>absanglefrom1to2_ell2nose</tt>: absolute difference between 
+direction to closest fly based on dell2nose and this fly's orientation (rad) [<tt>1 x nframes</tt>].</li>
+  <li><tt>absanglefrom1to2_anglesub</tt>: absolute difference between 
+direction to closest fly based on anglesub and this fly's orientation 
+(rad) [<tt>1 x nframes</tt>].</li>
+  <li><tt>ddcenter</tt>: change in minimum distance between this fly's center and other flies' centers (mm/s) [<tt>1 x (nframes-1)</tt>].</li>
+  <li><tt>ddnose2ell</tt>: change in minimum distance between this fly's nose and any point on another fly (mm/s) [<tt>1 x (nframes-1)</tt>].</li>
+  <li><tt>ddell2nose</tt>: change in minimum distance between any point on this fly and the nose of other flies (mm/s) [<tt>1 x (nframes-1)</tt>].</li>
+  <li><tt>danglesub</tt>: change in maximum total angle of fly's view 
+occluded by another fly (rad/s) [<tt>1 x (nframes-1)</tt>].</li>
+</ul>
+
+<hr class="h2-divider">
+<h2><a name="compute-perframe-stats-social-m">compute_perframe_stats_social.m</a></h2>
+<p>Like <a class="reference" href="#compute-perframe-stats-m">compute_perframe_stats.m</a>, this script inputs the trajectories of flies in a video and outputs a number of per-frame properties of interest. These per-frame properties are functions of the trajectories of each pair of flies. Because there will be a trajectory computed for each pair of flies, the script saves the results to multiple MAT-files. Each MAT-file corresponds to the main fly <tt>fly1</tt> being a different fly, and the saved trajectory in <tt>pairtrx(fly2)</tt>
+ corresponds to the pair <tt>(fly1,fly2)</tt>. The names of each MAT-file are autogenerated, created as the original mat name appended with
+"_perframepairs_fly``[fly1]``_start``[t0]``_end``[t1]``", with <tt>[fly1]</tt> standing in for the index of the main fly, <tt>[t0]</tt> standing in for the first frame of the pair trajectory and <tt>[t1]</tt> standing in for the last frame of the pair trajectory. For example, if <tt>fly1 = 5</tt>, <tt>t0 = 1</tt>, and <tt>t1 = 1000</tt>, then the script will append the MAT-file's name with "_perframepairs_fly05_start00001_end01000". The per-frame pairwise parameters computed are:</p>
+<ul>
+  <li><tt>dcenter</tt>: distance between <tt>fly1</tt> and <tt>fly2</tt>'s centers (mm) [<tt>1 x nframes</tt>].</li>
+  <li><tt>distnose2ell</tt>: distance between <tt>fly1</tt>'s nose and any point on <tt>fly2</tt> (mm) [<tt>1 x nframes</tt>].</li>
+  <li><tt>magveldiff</tt>: magnitude of difference in velocity of <tt>fly1</tt> and <tt>fly2</tt>  (mm/s) [<tt>1 x (nframes-1)</tt>].</li>
+  <li><tt>veltoward</tt>: velocity of <tt>fly1</tt> in direction to <tt>fly2</tt> (mm/s) [<tt>1 x (nframes-1)</tt>].</li>
+  <li><tt>thetadiff</tt>: difference in orientation between <tt>fly2</tt> and <tt>fly1</tt> (rad) [<tt>1 x nframes</tt>].</li>
+  <li><tt>absthetadiff</tt>: absolute difference in orientation between <tt>fly2</tt> and <tt>fly1</tt> (rad) [<tt>1 x nframes</tt>].</li>
+  <li><tt>phidiff</tt>: difference in velocity directions between <tt>fly2</tt> and <tt>fly1</tt> (rad)  [<tt>1 x (nframes-1)</tt>].</li>
+  <li><tt>minvelmag</tt>: minimum <tt>velmag</tt> of <tt>fly1</tt> and <tt>fly2</tt> (mm/s) [<tt>1 x (nframes-1)</tt>].</li>
+  <li><tt>maxvelmag</tt>: maximum <tt>velmag</tt> of <tt>fly1</tt> and <tt>fly2</tt> (mm/s) [<tt>1 x (nframes-1)</tt>].</li>
+  <li><tt>anglefrom1to2</tt>: difference between direction from <tt>fly1</tt> to <tt>fly2</tt> and <tt>fly1</tt>'s orientation (rad) [<tt>1 x nframes</tt>].</li>
+  <li><tt>absanglefrom1to2</tt>: absolute difference between direction from <tt>fly1</tt> to <tt>fly2</tt> and <tt>fly1</tt>'s orientation 
+(rad) [<tt>1 x nframes</tt>].</li>
+  <li><tt>danglefrom1to2</tt>: change in direction from <tt>fly1</tt> to <tt>fly2` in ``fly1</tt>'s coordinate system.</li>
+  <li><tt>minabsanglefrom1to2</tt>: minimum absolute angle from <tt>fly1</tt> to some point on <tt>fly2</tt> in <tt>fly1</tt>'s coordinate system.</li>
+</ul>
+
+<hr class="h2-divider">
+<h2><a name="classify-by-area-m">classify_by_area.m</a></h2>
+<a class="reference image-reference" 
+href="images/ctrax_029.png"><div class="align-center" align="center"><img alt="Screenshot of classify_by_area.m" class="align-center" src="images/ctrax_029.png" style="width: 400px;"></div>
+</a>
+<p>This script allows classifies the types of flies in a movie based on their areas. For example, it can be used to classify the sex of flies, as males are smaller than females.</p>
+<ol>
+  <li>The script first prompts for MAT-files containing the trajectories of the flies. Note that you can enter multiple files to classify the types of the flies in more than one movie simultaneously.</li>
+  <li>If an area-based classifier has already been defined during a 
+previous run of this script, it can be loaded in at this step by 
+choosing the saved MAT-file containing the parameters of this area-based classifier.</li>
+  <li>The measured image area of the fly will often depend on its location in the arena, in particular because of lighting differences. There is the option to normalize for this effect by learning the quadratic regression that best predicts the area of the fly given its location in the arena. For trajectory MAT-files which may contain more than one type of fly, the script actually predicts the ratio of the area in a particular frame to the median area for a fly over the entire trajectory. Better performance may be achieved by using homogeneous trajectory files -- files where all flies are approximately the same size. Then, the algorithm can predict the ratio of per-frame area to the median area over all frames and flies. You can load in more trajectory MAT-files to optimize these normalization parameters, including homogeneous trajectory files, at this step. You can specify whether the extra MAT-files loaded in are homogeneous or not. If they are, then the normalization terms are estimated only from these homogeneous MAT-files, otherwise all MAT-files are used. Also, if the normalization parameters have already been estimated, there is an option to load these in from a saved MAT-file. After the normalization parameters have been estimated, a figure will pop up showing the normalization function learned -- each pixel in the image encodes the fit ratio of area to median area for that location in the image.</li>
+  <li>The script then brings up a figure showing the (possibly normalized) median for each area fly over its entire trajectory. The fly identities (x-axis) are sorted in order of increasing area (y-axis). The color of the plotted point reflects which MAT-file the fly is from and a key is given in the legend. For reference, gray lines give the 5th, 25th, 75th, and 95th percentile area for the fly over its trajectory. The red cross-hairs show the current estimate of the threshold between the two types of flies. They can be dragged to move the threshold. To select the currently displayed threshold, hit ENTER.</li>
+  <li>Now define the name of the type variable, as well as the names of the two types of flies. For instance, the type variable might be defined to be "sex", and the smaller type might be defined to be "M" (for male) and the larger type might be defined to be "F" (for female). In this case, for each fly, the field <tt>sex</tt> would be added to the <tt>trx</tt> variable, and its value will be set to either <tt>'M'</tt> or <tt>'F'</tt>, depending on the fly's median area.</li>
+  <li>The updated <tt>trx</tt> variable can then be saved to a MAT-file. The script prompts for the names of these files.</li>
+  <li>The parameters of the area-based classifier can then be saved to a MAT-file for future use.</li>
+</ol>
+
+<hr class="h2-divider">
+<h2><a name="learn-params-m">learn_params.m</a></h2>
+<p>This script allows you to label the starts and ends of episodes of a single behavior. It then learns the threshold-based classifier that best replicates these labels.</p>
+<ol>
+  <li>Choose whether to learn a behavior classifier from pre-labeled data (i.e. whether you have already labeled data or want to label new data).</li>
+  <li>To label data where the fly is performing and not performing the behavior:
+<div class="align-center" align="center"><a class="reference image-reference" href="images/ctrax_007.png"><img alt="Screenshot of labelbehaviors.m" class="align-center" src="images/ctrax_007.png" style="width: 400px;"></a>
+<p class="caption">Screenshot of labelbehaviors.m function</p></div>
+  <ol style="list-style-type:upper-latin">
+    <li>Choose corresponding pairs of movies and MAT-files containing per-frame properties (see <a class="reference" href="#compute-perframe-stats-m">compute_perframe_stats.m</a>).</li>
+    <li>Choose the number of flies to label in each movie, and the number of frames to label for each fly labeled. Flies and intervals of frames to label are selected randomly from each movie.</li>
+    <li>Choose the file to save the labels to. If you want to learn 
+parameters again from this labeled data using different settings, you 
+can load this file instead of relabeling.</li>
+    <li>A GUI will then open, allowing you to set the start and ends of sequences in which the fly is performing the behavior.</li>
+    <li>The frame of the video currently shown can be moved using the frame slider or by clicking on the fly's trajectory.</li>
+    <li>To add a sequence in which the fly is performing the behavior, go to the start of the sequence and hit the "Add Start" button. This will highlight the segment starting at the current frame and going to the end of the trajectory (or until the start of the next segment).</li>
+    <li>To set the end of this segment, go to the last frame of the 
+behavior, and hit the "Add End" button.</li>
+    <li>Labeled segments can be removed with the "Delete" button.</li>
+    <li>You can zoom in and out using the figure toolbar. The small window in the top right shows what part of the video is shown in the larger main window.</li>
+    <li>In the bottom panel below the main window, per-frame properties of the fly are shown. <tt>du_ctr</tt> is the forward velocity of the fly's center (relative to the fly's orientation, in pixels/frame), <tt>dv_ctr</tt> is the sideways velocity of the fly's center of rotation, and <tt>dtheta</tt> is the change in orientation (degrees/frame). <tt>cor</tt> is the center of rotation along the fly's major axis. The center of rotation is defined as the point on the fly that translates the least from one frame to the next, and <tt>cor</tt> is this point projected onto the major axis (varies between -1 corresponding to the tail and 1 corresponding to the nose). <tt>du_cor</tt> and <tt>dv_cor</tt> are the forward and sideways velocity of the fly's center of rotation.</li>
+    <li>The color of the plotted point is related to the fly's speed [for Matlab experts, the "Scatter Command" can be changed to any valid Matlab command to change the property encoding the trajectory's color].</li>
+    <li>When done labeling a fly and its trajectory interval, close the window to go to the next fly/movie/finish.</li>
+  </ol>
+  </li>
+  <li>Choose a MAT-file to save the learned parameters to.
+  <div class="align-center" align="center"><a class="reference image-reference" href="images/ctrax_025.png"><img alt="Screenshot of 
+chooseproperties.m" class="align-center" src="images/ctrax_025.png"
+ style="width: 400px;"></a>
+<p class="caption">Screenshot of chooseproperties.m function</p></div>
+  </li>
+  <li>Choose properties of the behavior classifier to learn. The behavior classifier is based on four thresholds. The trajectory from from time <i>t</i><sub>1</sub> to time <i>t</i><sub>2</sub> can be classified as the behavior if:
+  <ol>
+    <li>the per-frame bounds hold: in each frame, given properties are within given loose ranges,
+    <li>the near-frame bounds hold: there is a frame within <i>r</i> frames from each frame <i>t</i> such that given properties are within given tighter ranges,
+    <li>the sequence sum bounds: the total summed value of given properties over the entire sequence must be within given bounds, and
+    <li>the sequence mean bounds: the mean value of a given property over the entire sequence must be within given bounds.
+  </ol>
+  Within the "chooseproperties" dialog, you can select which properties are used for each of the four types of bounds. The exact parameter ranges will be learned automatically later, but you can also set sensible bounds on the values that these ranges can take. For instance, if the property cannot be negative, it is useful to bound the ranges at &gt;=0.</li>
+  <li>Now that all the parameters have been set, the software will 
+automatically try to find the ranges of the bounds that result in the 
+segmentation of the training data closest to the labels provided. Figure 1234 shows the current "Score" of the classifiers considered (higher is better). You can hit "Quit" at any time to use the best classifier found so far, or wait until the search converges. Properties of the current distribution of the classifier parameters and the types of classification errors made on the training data are printed out at fixed intervals.</li>
+  <li>The learned parameters have been saved to the file selected in step 3. These can be input to a behavior detector.</li>
+  <li>To illustrate the differences between the detected and labeled 
+behaviors, the script will plot the fly's position in and around frames where either the behavior is labeled or detected. The fly's position is plotted in black. Labeled behaviors are plotted in magenta and detected behaviors in cyan. At the start and end of each detected behavior, green and red circles are shown, respectively. There is a subplot for each labeled "fly". Nothing is plotted in cases where no behaviors are labeled or detected.</li>
+  <li>We finally print out the parameters of the classifier.</li>
+  <div class="align-center" align="center"><a class="reference image-reference" href="images/ctrax_023.png"><img alt="Screenshot of learn_params.m output." class="align-center" src="images/ctrax_023.png" style="width: 400px;"></a>
+<p class="caption">Screenshot of learn_params.m output.</p></div>
+</ol>
+
+<hr class="h2-divider">
+<h2><a name="learn-params-social-m">learn_params_social.m</a></h2>
+<p>Similar to the <a class="reference" href="#learn-params-m">learn_params.m</a> script, learn_params_social.m allows a user to label the starts and ends of episodes of a single social behavior -- a behavior involving a pair of flies. It then learns the threshold-based classifier that operates on a pair of fly trajectories and best replicates these labels. The following directions parallel the directions in <a class="reference" href="#learn-params-m">learn_params.m</a>.</p>
+<ol>
+  <li>Choose whether to learn a behavior classifier from pre-labeled data (i.e. whether you have already labeled data or want to label new data).</li>
+  <li>To label data where the flies are performing and not performing the behavior:
+  <div class="align-center" align="center"><a class="reference image-reference" href="images/ctrax_002.png"><img alt="Screenshot of 
+labelbehaviorssocial.m" class="align-center" src="images/ctrax_002.png" style="width: 400px;"></a>
+<p class="caption">Screenshot of labelbehaviorssocial.m function.</p></div>
+  <ol style="list-style-type:upper-latin">
+    <li>Choose corresponding pairs of movies and MAT-files containing per-frame properties (see <a href="#compute-perframe-stats-m">compute_perframe_stats.m)</a>.</li>
+    <li>Choose the number of flies to label of each sex in each movie, and the number of frames to label for each fly labeled (the "sex" property should have previously been set using the <a class="reference" href="#classify-by-area-m">classify_by_area.m</a> script). Flies and intervals of frames to label are selected randomly from each movie.</li>
+    <li>Choose the file to save the labels to. If you want to learn 
+parameters again from this labeled data using different settings, you 
+can load this file instead of relabeling.</li>
+    <li>A GUI will then open, allowing you to set the start and ends of behavior sequences and the other fly involved.</li>
+    <li>The frame of the video currently shown can be moved using the frame slider or by clicking on the fly's trajectory.</li>
+    <li>The currently selected other fly is highlighted and a white line is drawn from the main fly to the other fly.</li>
+    <li>To add a sequence in which the fly is performing the behavior, select the correct "other fly", go to the start of the sequence, and hit the "Add Start" button. This will highlight the segment starting at the current frame and going to the end of the trajectory (or until the start of the next segment). A colored line will connect the other fly's initial position to the labeled trajectory sequence.</li>
+    <li>To set the end of this segment, go to the last frame of the behavior, and hit the "Add End" button.</li>
+    <li>Labeled segments can be removed with the "Delete" button.</li>
+    <li>You can zoom in and out using the figure toolbar. The small window in the top right shows what part of the video is shown in the larger main window.</li>
+    <li>In the bottom panel below the main window, per-frame properties of the fly are shown. <tt>du_ctr</tt> is the forward velocity of the fly's center (relative to the fly's orientation, in pixels/frame), <tt>dv_ctr</tt> is the sideways velocity of the fly's center of rotation, and <tt>dtheta</tt> is the change in orientation (degrees/frame). <tt>cor</tt> is the center of rotation along the fly's major axis. The center of rotation is defined as the point on the fly that translates the least from one frame to the next, and <tt>cor</tt> is this point projected onto the major axis (varies between -1 corresponding to the tail and 1 corresponding to the nose). <tt>du_cor</tt> and <tt>dv_cor</tt> are the forward and sideways velocity of the fly's center of rotation.</li>
+    <li>The color of the plotted point is related to the distance to the closest fly [for Matlab experts, the "Scatter Command" can be changed to any valid Matlab command to change the property encoding the trajectory's color].</li>
+    <li>When done labeling a fly and its trajectory interval, close the window to go to the next fly/movie/finish.</li>
+  </ol>
+  <li>Choose a MAT-file to save the learned parameters to.</li>
+  <li>Choose properties of the behavior classifier to learn. The behavior classifier is based on four thresholds. The trajectory from from time <i>t</i><sub>1</sub> to time <i>t</i><sub>2</sub> can be classified as the behavior if:
+  <ol>
+    <li>the per-frame bounds hold: in each frame, given properties are within given loose ranges,
+    <li>the near-frame bounds hold: there is a frame within <i>r</i> frames from each frame <i>t</i> such that given properties are within given tighter ranges,
+    <li>the sequence sum bounds: the total summed value of given properties over the entire sequence must be within given bounds, and
+    <li>the sequence mean bounds: the mean value of a given property over the entire sequence must be within given bounds.
+  </ol>
+  Within the "chooseproperties" dialog, you can select which properties are used for each of the four types of bounds. The exact parameter ranges will be learned automatically later, but you can also set sensible bounds on the values that these ranges can take. For instance, if the property cannot be negative, it is useful to bound the ranges at &gt;=0.</li>
+  <li>Now that all the parameters have been set, the software will 
+automatically try to find the ranges of the bounds that result in the 
+segmentation of the training data closest to the labels provided. Figure 1234 shows the current "Score" of the classifiers considered (higher is better). You can hit "Quit" at any time to use the best classifier found so far, or wait until the search converges. Properties of the current distribution of the classifier parameters and the types of classification errors made on the training data are printed out at fixed intervals.</li>
+  <li>The learned parameters have been saved to the file selected in step 3. These can be input to a behavior detector.</li>
+  <li>To illustrate the differences between the detected and labeled 
+behaviors, the fly's position is plotted in and around frames where either the behavior is labeled or detected. The main fly is plotted in black; the other fly is plotted in green. Corresponding frames are connected in yellow. Labeled behaviors are shown in magenta and detected behaviors in cyan. At the start and end of each detected behavior, green and red circles are shown, respectively. There is a subplot for each labeled fly. Nothing is plotted in cases where no behaviors are labeled or detected.</li>
+  <li>The parameters of the classifier are output.</li>
+  <div class="align-center" align="center"><a class="reference image-reference" href="images/ctrax_004.png"><img alt="Screenshot of 
+learn_params_social.m output." class="align-center" src="images/ctrax_004.png" style="width: 600px;"></a>
+<p class="caption">Screenshot of learn_params_social.m output.</p></div>
+</ol>
+
+<hr class="h2-divider">
+<h2><a name="detect-behaviors-m">detect_behaviors.m</a></h2>
+<p>This script uses a defined behavior classifier to segment trajectories of each fly (or pair of flies, for social behaviors) into sequences in which the fly is and is not performing the given behavior.</p>
+<ol>
+  <li>Prompt for the names of MAT-file(s) containing the trajectories of the flies. These MAT-files should contain all the per-frame properties necessary for the behavior detection (see <a 
+class="reference" href="#compute-perframe-stats-m">compute_perframe_stats.m</a> and <a class="reference" href="#compute-perframe-stats-social-m">compute_perframe_stats_social.m</a>).</li>
+  <li>Prompt for the MAT-file defining the behavior to be classified. This is the output of either <a class="reference" href="#learn-params-m">learn_params.m</a> or <a class="reference" 
+href="#learn-params-social-m">learn_params_social.m</a>.</li>
+  <li>If there are missing per-frame parameters in the read-in 
+trajectories, the script will try to figure out which functions it must call to compute these.</li>
+  <li>The script then segments each trajectory and prompts for the name of the MAT-file to save the results to. In this MAT-file, it saves the array of structs <tt>seg</tt>, where <tt>seg(fly)</tt> is the segmentation for fly <tt>fly</tt>. <tt>seg</tt> has the fields <tt>t1</tt> and <tt>t2</tt>, which define the start and end frames of intervals in which the fly is performing the behavior.</li>
+  <li>The segmented trajectories are also plotted in a manner similar to <a class="reference" href="#learn-params-m">learn_params.m</a> and <a class="reference" href="#learn-params-social-m">learn_params_social.m</a>. There is a subplot for each fly. The fly's position in each frame is plotted in black. Frames in which the behavior is detected are plotted in magenta. At the start and end of each detected behavior, green and red circles, are shown, respectively. In the case of social behaviors, during and near detected behaviors, the the other fly's position is plotted in green. orresponding frames for the main and other fly are connected in yellow.</li>
+</ol>
+<div class="align-center" align="center"><a class="reference image-reference" href="images/ctrax_006.png"><img alt="Screenshot of 
+detect_behaviors.m output." class="align-center" src="images/ctrax_006.png" style="width: 400px;"></a>
+<p class="caption">Screenshot of output of detect_behaviors.m.</p></div>
+
+<hr class="h2-divider">
+<h2><a name="histogramproperties-m">histogramproperties.m</a></h2>
+<div class="align-center" align="center"><a class="reference image-reference" href="images/ctrax.png"><img alt="Screenshot of 
+histogramproperties.m for one property" class="align-center" src="images/ctrax.png" style="width: 600px;"></a>
+<p class="caption">Screenshot of histogramproperties.m for one property over four 
+different data types.</p></div>
+<p>The histogramproperties GUI allows you to make histograms of single and 
+pairs of per-frame properties. When the GUI is started, you will be prompted for a MAT-file containing the trajectories with per-frame properties. You can then interact with the GUI to explore statistics of the per-frame properties for the flies in the trajectories. The "No. Properties" radio buttons allow you to specify whether you want to histogram a single per-frame property or 
+jointly histogram a pair of per-frame properties. In the former case, 
+the histogram will consist of the property plotted against frequency. In the latter case, a 2-D histogram will be computed and displayed as an image, the color of the image reflecting the frequency. The "Property 1" and "Property 2" (if two properties are histogrammed) panels allow you to specify which properties to histogram. The pop-up menu displays the name of the per-frame property (the actual name of the field of the "trx" struct). You can also specify properties of the histogram in this panel -- the number of bins to histogram into and the range of the data to histogram, either in percent or in absolute units. Finally, you can specify whether a transformation should be applied to the per-frame data before histogramming. "None (Identity)" specifies that no transformation should be applied, "Absolute value" specifies that the absolute value of the data should be taken, and "Log absolute value" specifies that the log of the absolute value should be taken. If the loaded trajectories do not have sufficient per-frame statistics to explore, clicking the "Compute Per-Frame Stats" button calls <a href="#compute-perframe-stats-m">compute_perframe_stats.m</a> on the current trajectories.</p>
+<p>You can compare histograms of different portions of the data. 
+The Data panel defines different histograms to compute. You can specify a behavior segmentation file (computed using <a class="reference" href="#detect-behaviors-m">detect_behaviors.m</a>), and look at the per-frame properties only during ("During behavior...") or only not during ("Invert behavior") the specified behavior. You can look at the histogram of the properties during all frames of the behavior or condense each sequence of a behavior into a single statistic and then histogram these statistics ("Interval Averaging"). "None (Per-frame)" specifies that all frames should be used, i.e., there is no summarizing of each sequence, and instead the per-frame properties from all intervals are just concatenated together. "Interval mean" specifies that the mean per-frame property for each interval should be histogrammed. "Interval median" indicates that the median per-frame property for each interval should be histogrammed. "Interval start" indicates that the per-frame property in the first frame of the interval should be histogrammed. "Interval end" indicates that the per-frame property in the last frame of the interval should be histogrammed. If the <tt>type</tt> or <tt>sex</tt> fields of the <tt>trx</tt> struct have been set to reflect the type or sex of each fly (e.g., with the <a class="reference" href="#classify-by-area-m">classify_by_area.m</a> script), you can also 
+separate the flies by type/sex ("Fly Type(s)"). You can set the name of this data type in the "Data Name" field.</p>
+<p>Properties of the plot can be set in the "Plot Parameters" panel. 
+First, you can set precisely what histogram statistic is plotted ("Plot Statistic"). "Total Count" is the total frequency over all flies for each bin. "Total Fraction" is the total fraction (frequency normalized to sum to 1) over all flies. "Mean Fraction per Fly" computes the fraction histogram for each fly, then averages the histograms. "Mean Count per Fly" computes the frequency histogram for each fly, then averages the histograms. Next, you can set whether the standard deviation or standard error should be plotted ("Plot Error Bars"). Standard deviations/errors are computed over flies. If one selects "Plot Individual Flies", the histograms for each individual fly will also be plotted, in addition to the population summaries. If "Plot log of counts/fraction" is checked, then the log frequencies/fractions are plotted.</p>
+<div class="align-center" align="center"><a class="reference image-reference" href="images/ctrax_022.png"><img alt="Screenshot of 
+histogramproperties.m for two properties" class="align-center" src="images/ctrax_022.png" style="width: 600px;"></a>
+<p class="caption">Screenshot of histogramproperties.m for two properties and one 
+data type.</p></div>
+<p>Clicking the "Update Plot" button will update the plotted histogram
+to reflect any changes to the parameters made. Clicking the "Export..." button allows you to export the computed histograms to a selected MAT-file. The following variables are exported:</p>
+<ul>
+  <li><tt>countsperfly</tt>: The frequency histograms for each fly and data type. [<tt>nflies x nbins x ndata</tt>].</li>
+  <li><tt>fracperfly</tt>: The normalized fraction histograms for each fly and data type. [<tt>nflies x nbins x ndata</tt>].</li>
+  <li><tt>propnames</tt>: Name(s) of the per-frame properties 
+histogrammed, including transformations performed on the per-frame 
+parameters (absolute value, log absolute value, ...).</li>
+  <li><tt>countstotal</tt>: Frequency histograms for all flies per data type [<tt>1 x nbins x ndata</tt>].</li>
+  <li><tt>countsmean</tt>: Mean of frequency histograms over flies for each data type [<tt>1 x nbins x ndata</tt>].</li>
+  <li><tt>countsstd</tt>: Standard deviation of frequency histograms over flies for each data type [<tt>1 x nbins x ndata</tt>].</li>
+  <li><tt>countsstderr</tt>: Standard error of frequency histograms over flies for each data type [<tt>1 x nbins x ndata</tt>].</li>
+  <li><tt>fractotal</tt>: Normalized fraction histograms over all flies per data type [<tt>1 x nbins x ndata</tt>].</li>
+  <li><tt>fracmean</tt>: Mean of normalized fraction histograms over flies for each data type [<tt>1 x nbins x ndata</tt>].</li>
+  <li><tt>fracstd</tt>: Standard deviation of normalized fraction 
+histograms over flies for each data type [<tt>1 x nbins x ndata</tt>].</li>
+  <li><tt>fracstderr</tt>: Standard error of normalized fraction 
+histograms over flies for each data type [<tt>1 x nbins x ndata</tt>].</li>
+  <li><tt>centers</tt>: Centers of the bins for each property. This is a cell with an element for each property (so either a <tt>1 x 1</tt> or <tt>1 x 2</tt> cell). <tt>centers{propi}</tt> is <tt>1 x nbins</tt>.</li>
+  <li><tt>props</tt>: Field name(s) of the per-frame properties [<tt>1 x nprops</tt> cell].</li>
+  <li><tt>nbins</tt>: Number of bins for each property [<tt>1 x nprops</tt>].</li>
+  <li><tt>lb</tt>: Lower bound(s) on per-frame properties histogrammed [<tt>1 x nprops</tt>].</li>
+  <li><tt>ub</tt>: Upper bound(s) on per-frame properties histogrammed [<tt>1 x nprops</tt>].</li>
+  <li><tt>transforms</tt>: Transformations to the per-frame properties before histogramming [<tt>1 x nprops</tt> cell].</li>
+  <li><tt>isbehavior</tt>: <tt>isbehavior(datai)</tt> indicates whether histogram <tt>datai</tt> is restricted to frames during/not during a behavior [<tt>1 x ndata</tt>].</li>
+  <li><tt>segfile</tt>: <tt>segfile{datai}</tt> is the name of the 
+behavior segmentation file for histogram <tt>datai</tt> [<tt>1 x ndata</tt> cell].</li>
+  <li><tt>doinvert</tt>: <tt>doinvert(datai)</tt> indicates whether we are looking at the per-frame properties not during or during the behavior [<tt>1 x ndata</tt>].</li>
+  <li><tt>flytype</tt>: <tt>flytype{datai}</tt> are the type(s) of flies that are histogrammed for <tt>datai</tt> [<tt>1 x ndata</tt> cell]. If empty, then all fly types are histogrammed.</li>
+  <li><tt>dataname</tt>: <tt>dataname{datai}</tt> is the name of histogram <tt>datai</tt> [<tt>1 x ndata</tt> cell].</li>
+</ul>
+
+<hr class="h2-divider">
+<h2><a name="plot-behaviormicroarray-m">plot_behaviormicroarray.m</a></h2>
+<p>This script allows you to explore differences in the behavioral statistics of different types of flies. When the GUI is started, you will first be prompted to input the name(s) of the trajectory files already augmented with the per-frame properties. You can then interact with the GUI to plot and compare various behavioral statistics for different populations of flies.</p>
+<a class="reference image-reference" href="images/ctrax_019.png"><div class="align-center" align="center"><img alt="Screenshot of plotbehaviormicroarray.m parameter settings." class="align-center" src="images/ctrax_019.png" style="width: 400px;"></div>
+</a>
+<ul>
+  <li>The <em>Trajectories</em> panel shows the <tt>trx</tt> MAT-files currently loaded in. These can be modified with the "Add..." and "Delete" buttons.</li>
+  <li>The <em>Behaviors</em> panel shows the behaviors currently loaded in. To load in a behavior, you must associate a behavior segmentation file (the output of <a class="reference" href="#detect-behaviors-m">detect_behaviors.m</a>) with each trajectory file listed in the "Trajectories" panel. A new behavior can be added with the "Add..." button. This will go through each <tt>trx</tt> file and prompt for the associated segmentation file. Once the segmentation files have been defined, you can edit the name of the behavior. The currently displayed behavior can be changed using the drop-down menu with the names of all the behaviors. You can change the segmentation file associated with a specific <tt>trx</tt> file by selecting that segmentation file and clicking the "Edit..." button. Note that the selected <tt>trx</tt> file in the "Trajectories" panel corresponds to the selected segmentation file.</li>
+  <li>The <em>Populations</em> panel allows you to define different populations of flies to be compared. A fly type consists of subsets of the <tt>trx</tt> files and <tt>sex</tt> and <tt>type</tt> fields of <tt>trx</tt>. The <tt>sex</tt> and <tt>type</tt> fields can be set, for instance, using the <a class="reference" href="#classify-by-area-m">classify_by_area.m</a> script. A new population can be defined by clicking the "Add New" button. The types and trx files associated with the current population can be selected using the listbox. The population currently displayed can be changed with the drop-down menu. The name of the population can be set in the edit box. The current population definition can be removed with the "Delete" button.</li>
+  <li>The behavioral statistics to be plotted are set in the "Properties" panel. The drop-down menu allows you to select the currently displayed property. The text-edit box allows you to set the name of this property. The current property may be associated with a behavior, selectable by behavior name using the drop-down menu. The property may be one of the following, selectable using the radio buttons:
+  <ul>
+    <li><em>Duration</em>: The mean duration of bouts of the associated behavior for the fly.</li>
+    <li><em>Fraction of time</em>: The fraction of time the fly performs the associated behavior.</li>
+    <li><em>Frequency</em>: The frequency of onsets of the associated behavior for the fly.</li>
+    <li><em>Per-frame props</em>: The average value of a per-frame property (as computed by <a class="reference" href="#compute-perframe-stats-m">compute_perframe_stats.m</a> or <a class="reference" href="#compute-perframe-stats-social-m">compute_perframe_stats_social.m</a>). The per-frame property is set in the "Per-Frame Property" panel, visible only if "Per-frame props" is selected.</li>
+  </ul>
+  </li>
+  <li>In the "Per-Frame Property" panel, the drop-down menu allows you to select the per-frame property (as computed by <a class="reference" href="#compute-perframe-stats-m">compute_perframe_stats.m</a> or <a class="reference" href="#compute-perframe-stats-social-m">compute_perframe_stats_social.m</a> script) the current property is based on. The radio buttons allow you to select whether the property is averaged over only frames during the associated behavior ("During behavior"), not during the associated behavior ("Not during behavior"), or over all frames ("All frames"). If the per-frame property is during or not during behaviors, then you may prefer to represent each bout of the behavior or non-behavior with a single statistic, then average the statistics over bouts. The "Interval 
+averaging" drop-down menu allows you to specify this. If "None 
+(per-frame)" is selected, then the average per-frame property over all relevant frames is computed. If "Interval mean"/"Interval median" is 
+selected, then the mean/median per-frame property per bout is computed and averaged over all bouts. If "Interval start"/"Interval end" is 
+selected, then the per-frame property at the start/end of the bout is 
+averaged over all bouts. A new property can be defined with the "Add 
+new" button, and the currently displayed property definition can be 
+removed with the "Delete" button.
+  <div class="align-center" align="center"><a class="reference image-reference" href="images/ctrax_020.png"><img alt="Screenshot of property means per population output by plotbehaviormicroarray.m." class="align-center" src="images/ctrax_020.png" style="width: 600px;"></a>
+<p class="caption">Screenshot of means per population output by 
+plotbehaviormicroarray.m.</p></div>
+<div class="align-center" align="center"><a class="reference image-reference" href="images/ctrax_021.png"><img alt="Screenshot of per-fly behavioral microarray output by plotbehaviormicroarray.m." 
+class="align-center" src="images/ctrax_021.png" style="width: 
+600px;"></a>
+<p class="caption">Screenshot of per-fly behavioral microarray output by 
+plotbehaviormicroarray.m.</p></div>
+  </li>
+  <li>The <em>Plot</em> panel allows you to control properties of the plots. In the first figure, the mean of each property over all flies in each population is plotted. Thus, you can compare the properties over the whole population. Error bars may also be plotted, indicating either the population standard deviation or standard error ("Error bars" drop-down menu). If "Normalize per-prop" is selected, then the total population statistics are shown in the top subplot, and in the bottom subplot it shows the number of standard deviations each population is from the total population mean. This is often useful, as the differences in values between different properties may be much larger than differences between different populations. If "Plot individuals" is selected, then the properties for each individual fly is plotted. If "Normalize per-prop" is selected, then it shows the z-scored properties (the number of standard deviations from the mean for all flies). In the second figure is the "behavioral microarray". It has an image for each population of flies. Each row in the image corresponds to a different property and each column to an individual fly. The color of the pixel for a given property and fly is related to the value of that property, or the normalized value of that property if "Normalize per-prop" is selected. Clicking "Update Plot" updates the two figures to reflect the current settings.</li>
+  <li>The properties shown can also be selected automatically selected to best differentiate the populations. If more than one population is defined, then the properties which maximize a variant of <a class="reference" href="http://en.wikipedia.org/wiki/Linear_discriminant_analysis#Fisher.27s_linear_discriminant">Fisher's linear discriminant</a> are selected. More specifically, if <i>μ</i><sub>i</sub> is the mean for population <i>i</i> and <i>σ</i><sub>i</sub> is the standard deviation for population <i>i</i>, the properties are chosen to maximize
+<div class="align-center" align="center"><img 
+alt="tex:\frac{\sum_{(i,j)} (\mu_i - \mu_j)^2}{\sum_i \sigma_i^2}" 
+class="align-center" src="images/ctrax_002.jpg" style="width: 
+150px;"></div>
+  </li>
+  <li>If "Choose independently" is selected, then the top 
+properties are chosen. If it is not selected, the algorithm will greedily choose the best property, remove the correlations between the chosen properties and the remaining property, then choose the property whose residual has the highest discriminative power. If there is only one population of flies, then properties are chosen so that flies cluster into two groups. For every nearly-even split of flies (at least 30% of flies must be in one group), Fisher linear discriminant is computed. The algorithm chooses the properties with maximal maximum discrimant over all allowed splits. As with multiple types of flies, if "Choose independently" is selected, the top properties are chosen independently. If it is not selected, then correlations with previously chosen properties are removed before choosing again.</li>
+  <li>There are a large number of potential properties to choose from, and it may be useful to restrict those under consideration by the 
+auto-choose program. The allowed properties can be manipulated in the 
+"Auto-choose" panel. The total number of available properties to choose from is shown.</li>
+</ul>
+
+</body></html>
