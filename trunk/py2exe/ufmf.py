@@ -8,12 +8,15 @@ import os, stat
 import numpy
 import numpy as np
 from numpy import nan
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 import time
 
 import math
 
-import motmot.FlyMovieFormat.FlyMovieFormat as FMF
+import FlyMovieFormat as FMF
 
 class UfmfError(Exception):
     pass
@@ -54,6 +57,21 @@ FMT = {1:BaseDict(HEADER = '<IIdII', # version, ....
                   POINTS1 = '<dH', # timestamp, n_pts
                   POINTS2 = '<HHHH', # x0, y0, w, h
                   ),
+
+       # Format 4 is the same as format 3, except it allows for width
+       # and height of boxes to be fixed and encoded only once
+
+       4:BaseDict(HEADER = '<4sIQHHBB', # 'ufmf', version, index location,
+                                        # max w, max h, isfixedsize,
+                                        # raw coding string length
+                  CHUNKID = '<B', # 0 = keyframe, 1 = points
+                  KEYFRAME1 = '<B', # (type name)
+                  KEYFRAME2 = '<cHHd', # (dtype, width,height,timestamp)
+                  POINTS1 = '<dI', # timestamp, n_pts
+                  POINTS2 = '<HHHH', # x0, y0, w, h
+                  POINTS3 = '<HH', #x0, y0 -- for fixed size boxes
+                  ),
+
        }
 
 KEYFRAME_CHUNK = 0
@@ -154,10 +172,14 @@ def _read_min_chars(fd,keylen,buf_remaining):
         buf_remaining = buf_remaining[keylen:]
         return x,buf_remaining
     else:
-        readlen = max(4096,keylen)
+        readlen = max(4096,keylen - len(buf_remaining))
         newbuf = fd.read(readlen)
         buf_remaining = buf_remaining+newbuf
-        return _read_min_chars(fd,keylen,buf_remaining)
+        # if we can't read in enough from the file
+        if len(buf_remaining) < keylen:
+            return _read_min_chars(fd,len(buf_remaining),buf_remaining)
+        else:
+            return _read_min_chars(fd,keylen,buf_remaining)
 
 def _read_array(fd,buf_remaining):
     x,buf_remaining = _read_min_chars(fd,1,buf_remaining)
@@ -192,7 +214,7 @@ def _read_dict(fd,buf_remaining=None):
             value,buf_remaining = _read_array(fd,buf_remaining)
         else:
             raise ValueError("don't know how to read value with id %s"%(id,))
-        assert key not in value
+        #assert key not in value
         result[key] = value
     return result,buf_remaining
 
@@ -227,6 +249,10 @@ def Ufmf(filename,**kwargs):
         if 'seek_ok' in kwargs:
             kwargs.pop('seek_ok')
         return UfmfV3(filename,**kwargs)
+    elif version==4:
+        if 'seek_ok' in kwargs:
+            kwargs.pop('seek_ok')
+        return UfmfV4(filename,**kwargs)
     else:
         raise ValueError('unknown .ufmf version %d'%version)
 
@@ -362,10 +388,22 @@ class _UFmfV3LowLevelReader(object):
     def __init__(self,fd,version):
         self._fd = fd
         self._version = version
+        self._coding = ''
 
         self._keyframe2_sz = struct.calcsize(FMT[self._version].KEYFRAME2)
         self._points1_sz =   struct.calcsize(FMT[self._version].POINTS1)
         self._points2_sz =   struct.calcsize(FMT[self._version].POINTS2)
+
+    def set_coding(self,coding):
+        self._coding = coding.lower()
+        # added by KB:
+        if self._coding == 'rgb24':
+            self._bytesperpixel = 3
+        elif self._coding == 'mono8':
+            self._bytesperpixel = 1
+        else:
+            self._bytesperpixel = 1
+            raise NotImplementedError('Color coding %s not yet implemented'%self._coding)
 
     def _read_keyframe_chunk(self):
         """read keyframe chunk from just after chunk_id byte
@@ -389,10 +427,23 @@ class _UFmfV3LowLevelReader(object):
         else:
             raise ValueError('unknown dtype char "%s" (0x%0x)'%(dtype_char,
                                                                 ord(dtype_char)))
-        read_len = width*height*sz
-        buf = self._fd_read(read_len)
-        frame = np.fromstring(buf,dtype=dtype)
-        frame.shape = (height,width)
+        # added by KB:
+        # read in RGB24 data
+        # the data is indexed by column, then row, then color
+        # colors are in the order RGB.
+        if self._coding == 'rgb24':
+            read_len = width*height*sz*self._bytesperpixel
+            buf = self._fd_read(read_len)
+            frame = np.fromstring(buf,dtype=dtype)
+            frame.shape = (3,height,width)
+            frame = frame.transpose((1,2,0))
+        elif self._coding == 'mono8':
+            read_len = width*height*sz
+            buf = self._fd_read(read_len)
+            frame = np.fromstring(buf,dtype=dtype)
+            frame.shape = (height,width)
+        else:
+            raise NotImplementedError('Color coding %s not yet implemented'%self._coding)
         return keyframe_type,frame,timestamp
 
     def _read_frame_chunk(self):
@@ -410,10 +461,23 @@ class _UFmfV3LowLevelReader(object):
             intup = struct.unpack(FMT[self._version].POINTS2,
                                   self._fd_read(self._points2_sz))
             (xmin, ymin, w, h) = intup
-            lenbuf = w*h
-            buf = self._fd_read(lenbuf)
-            im = np.fromstring(buf,dtype=np.uint8)
-            im.shape = (h,w)
+            # added by KB
+            # read in RGB24 data
+            # the data is indexed by column, then row, then color
+            # colors are in the order RGB.
+            if self._coding == 'rgb24':
+                lenbuf = w*h*self._bytesperpixel
+                buf = self._fd_read(lenbuf)
+                im = np.fromstring(buf,dtype=np.uint8)
+                im.shape = (self._bytesperpixel,h,w)
+                im = im.transpose((1,2,0))
+            elif self._coding == 'mono8':
+                lenbuf = w*h
+                buf = self._fd_read(lenbuf)
+                im = np.fromstring(buf,dtype=np.uint8)
+                im.shape = (h,w)
+            else:
+                raise NotImplementedError('Color coding %s not yet implemented'%self._coding)
             regions.append( (xmin,ymin,im) )
         return timestamp,regions
 
@@ -424,6 +488,91 @@ class _UFmfV3LowLevelReader(object):
                 raise ShortUFMFFileError('expected %d bytes, got %d: short file %s?'%(
                     n_bytes,len(buf), self._fd.name))
         return buf
+
+# V4 added by KB
+# Main difference from V3: allows fixed-size UFMFs
+class _UFmfV4LowLevelReader(_UFmfV3LowLevelReader):
+
+    # Set parameters not set in V3
+    # We don't do this in __init__ because these require the header
+    # to have been read already.
+    def set_params(self,max_width,max_height,isfixedsize):
+        # whether the boxes are fixed size
+        self._isfixedsize = isfixedsize
+        # if fixed size, then we only have the left, top pixel
+        # location, not the width and the height. This is set in POINTS3
+        if self._isfixedsize == 1:
+            self._FMT_POINTS2 = FMT[self._version].POINTS3
+        else:
+            self._FMT_POINTS2 = FMT[self._version].POINTS2
+        self._points2_sz = struct.calcsize(self._FMT_POINTS2)
+        # the fixed size is the max_width and max_height parameters
+        self._w = max_width
+        self._h = max_height
+
+    def _read_frame_chunk(self,isbackcompat=False):
+        """read frame chunk from just after chunk_id byte
+
+        start_location is the file locate at which the chunk started
+        (i.e. curpos-1)
+        """
+        intup = struct.unpack(FMT[self._version].POINTS1,
+                              self._fd_read(self._points1_sz))
+        timestamp, n_pts = intup
+
+        regions = []
+
+        # read the fixed size data
+        if self._isfixedsize == 1:
+
+            # for quicker reading and writing, the data here is stored as
+            # all x-locations, followed by all y-locations, followed by
+            # all pixel values.
+            lenbuf = n_pts*self._points2_sz
+            buf = self._fd_read(lenbuf)
+            locs = np.fromstring(buf,dtype=np.uint16)
+            locs.shape = (2,n_pts)
+            # the pixel values are indexed by box number, followed by
+            # column, followed by row, followed by color
+            lenbuf = n_pts*self._w*self._h*self._bytesperpixel
+            buf = self._fd_read(lenbuf)
+            im = np.fromstring(buf,dtype=np.uint8)
+            im.shape = (self._bytesperpixel,self._h,self._w,n_pts)
+            im = im.transpose(1,2,0,3)
+            # if we need regions to be backwards compatible, we
+            # compute in the standard way
+            if isbackcompat:
+                for ptno in range(n_pts):
+                    regions.append((locs[0,ptno],locs[1,ptno],im[:,:,:,ptno]))
+            else:
+                # otherwise, regions is just the pair of locations and
+                # image data
+                regions = (locs,im)
+        else:
+            for ptno in range(n_pts):
+                intup = struct.unpack(self._FMT_POINTS2,
+                                      self._fd_read(self._points2_sz))
+                (xmin, ymin, w, h) = intup
+                # read in RGB24 data
+                # the data is indexed by column, then row, then color
+                # colors are in the order RGB.
+                if self._coding == 'rgb24':
+                    lenbuf = w*h*self._bytesperpixel
+                    buf = self._fd_read(lenbuf)
+                    im = np.fromstring(buf,dtype=np.uint8)
+                    im.shape = (self._bytesperpixel,h,w)
+                    im = im.transpose((1,2,0))
+                elif self._coding == 'mono8':
+                    lenbuf = w*h
+                    buf = self._fd_read(lenbuf)
+                    im = np.fromstring(buf,dtype=np.uint8)
+                    im.shape = (h,w)
+                else:
+                    raise NotImplementedError('Color coding %s not yet implemented'%self._coding)
+                regions.append( (xmin,ymin,im) )
+        return timestamp,regions
+
+
 
 class _UFmfV3Indexer(object):
     """create an index from an un-unindexed .ufmf v3 file"""
@@ -591,9 +740,15 @@ class UfmfV3(UfmfBase):
         (ufmf_str, self._version, index_location,
          self._max_width, self._max_height,
          coding_str_len) = intup
+
         assert ufmf_str=='ufmf'
         assert expected_version==self._version
         self._coding = self._r._fd_read( coding_str_len )
+        self._coding = self._coding.lower()
+
+        # store the coding in the low-level reader
+        self._r.set_coding(self._coding)
+
         self._next_frame = 0
         if ignore_preexisting_index:
             index_location = 0
@@ -727,6 +882,146 @@ class UfmfV3(UfmfBase):
             self._fd.close()
             self._file_opened = False
 
+# added by KB:
+# UfmfV4 is the same as V3 except the header contains an extra
+# field. This field is a uint8 and is 1 if all the boxes are
+# fixed at size max_height, max_width, and 0 if the standard,
+# variable-size boxes are used.
+class UfmfV4(UfmfV3):
+    def _get_interface_version(self):
+        return 4
+
+    def __init__(self,file,
+                 mode='rb',
+                 ignore_preexisting_index=False,
+                 is_ok_to_write_regenerated_index=True,
+                 short_file_ok=False,
+                 raise_write_errors=False,
+                 index_progress=False,
+                 ):
+        """
+        **Arguments**
+        file : file name or file object
+            The file with the .ufmf data to read
+
+        **Optional keyword arguments**
+        mode : string
+            The mode to open the file with (e.g. 'rb' for read only, binary)
+        ignore_preexisting_index : boolean
+            Whether to ignore the index generate a new one
+        is_ok_to_write_regenerated_index : boolean
+            Whether to write index to disk if regenerated
+        short_file_ok : boolean
+            Whether to ignore short file errors
+        raise_write_errors : boolean
+            Whether to ignore short file errors
+        index_progress : boolean
+            Whether to display a text-based progressbar while indexing
+        """
+        super(UfmfV3,self).__init__()
+        if hasattr(file,'read'):
+            # file-like object
+            self._file_opened=False
+            self._fd = file
+        else:
+            # filename
+            stat_result = os.stat(file)
+            self._fd = open(file,mode=mode)
+            self._file_opened=True
+
+        expected_version = self._get_interface_version()
+        # V4: use V4 low-level reader
+        self._r = _UFmfV4LowLevelReader(self._fd,expected_version)
+
+        bufsz = struct.calcsize(FMT[expected_version].HEADER)
+        buf = self._r._fd_read( bufsz )
+        intup = struct.unpack(FMT[expected_version].HEADER, buf)
+        # V4: set isfixedsize to 1 if all boxes will be the same size
+        # and the width and height are not being stored for each box
+        (ufmf_str, self._version, index_location,
+         self._max_width, self._max_height, self._isfixedsize,
+         coding_str_len) = intup
+        # store the new parameters in V4
+        self._r.set_params(self._max_width,self._max_height,self._isfixedsize)
+
+        assert ufmf_str=='ufmf'
+        assert expected_version==self._version
+        self._coding = self._r._fd_read( coding_str_len )
+        self._coding = self._coding.lower()
+
+        # store the coding in the low-level reader
+        self._r.set_coding(self._coding)
+
+        self._next_frame = 0
+        if ignore_preexisting_index:
+            index_location = 0
+
+        self._keyframe2_sz = struct.calcsize(FMT[self._version].KEYFRAME2)
+        self._points1_sz = struct.calcsize(FMT[self._version].POINTS1)
+        self._points2_sz = struct.calcsize(FMT[self._version].POINTS2)
+        # V4: POINTS3 corresponds to fixed size boxes, POINTS2 variable
+        self._points3_sz = struct.calcsize(FMT[self._version].POINTS3)
+
+        if index_location == 0:
+            # no pre-existing index. generate it.
+            # save it.
+            # just using V3 indexer. is this okay?
+            tmp = _UFmfV3Indexer(
+                self._fd, self._version,
+                ignore_preexisting_index=ignore_preexisting_index,
+                short_file_ok=short_file_ok,
+                index_progress=index_progress,
+                )
+            self._index = tmp.get_index()
+            if not is_ok_to_write_regenerated_index:
+                return
+            loc = tmp.get_expected_index_chunk_location()
+            self._fd.seek(loc)
+            try:
+                index_dict_location = self._fd.tell()+1 # not the chunk location - add one
+                if self._version==2 and index_dict_location > 4294967295:
+                    raise ValueError('index location will not fit in .ufmf v2 file')
+
+                b = chr(INDEX_DICT_CHUNK)
+                self._fd.write(b)
+                _write_dict( self._fd, self._index )
+                self._fd.truncate()
+                self._fd.seek(0)
+                # V4: include isfixedsize in buf
+                buf = struct.pack( FMT[self._version].HEADER, 'ufmf',
+                                   self._version, index_dict_location,
+                                   self._max_width, self._max_height,
+                                   self._isfixedsize,
+                                   len(self._coding) )
+                self._fd.write(buf)
+            except IOError, err:
+                if raise_write_errors:
+                    raise
+                else:
+                    warnings.warn('IO error when trying to save .ufmf index '
+                                  'for %s (was .ufmf file opened read-only?)'%(
+                        file,))
+        else:
+            # we are already in the chunk, so we don't expect INDEX_DICT_CHUNK
+            # read index
+            self._seek(index_location)
+            buf = self._fd.read(4096)
+
+            # next char is 'd' for dict
+            id = buf[:1]
+            buf = buf[1:]
+            try:
+                assert id=='d' # dictionary
+
+                self._index,buf_remaining = _read_dict(self._fd, buf_remaining=buf)
+                if len(buf_remaining)!=0:
+                    raise ValueError('bytes after expected end of file')
+            except:
+                raise CorruptIndexError('the .ufmf index is corrupt. '
+                                        '(Hint: Try the ufmf_reindex command.)')
+
+
+
 class UfmfV2(UfmfV3):
     """class to read .ufmf version 2 files"""
     def _get_interface_version(self):
@@ -782,6 +1077,11 @@ class FlyMovieEmulator(object):
                     self._ufmf.use_conventional_named_mean_fmf):
                 raise NotImplementedError('abs_diff currently requires UfmfV1 '
                                           'and use_conventional_named_mean_fmf')
+        if isinstance(self._ufmf,UfmfV4) and self._ufmf._isfixedsize:
+            self._isfixedsize = True
+        else:
+            self._isfixedsize = False
+
 
     def close(self):
         self._ufmf.close()
@@ -877,10 +1177,41 @@ class FlyMovieEmulator(object):
                 more['mean'] = mean_image
             have_frame = True
             more['regions'] = regions
-            for xmin,ymin,bufim in regions:
-                h,w=bufim.shape
-                self._last_frame[ymin:ymin+h, xmin:xmin+w]=\
-                                              np.clip(bufim-self._darken, 0,255)
+            if self._isfixedsize:
+                locs,im = regions
+                h,w,ncolors,npts = im.shape
+                if self._last_frame.ndim == 2:
+                    im = im.reshape(h,w,npts)
+                if h == 1 and w == 1:
+                    if self._last_frame.ndim == 3:
+                        self._last_frame[locs[1,:],locs[0,:],:] = np.reshape(im,(ncolors,npts)).T
+                    else:
+                        self._last_frame[locs[1,:],locs[0,:]] = np.reshape(im,(npts,))
+                else:
+                    if self._last_frame.ndim == 3:
+                        for ptno in range(npts):
+                            self._last_frame[locs[1,ptno]:(locs[1,ptno]+h),
+                                             locs[0,ptno]:(locs[0,ptno]+w),:] = \
+                                             im[:,:,:,ptno]
+                    else:
+                        for ptno in range(npts):
+                            self._last_frame[locs[1,ptno]:(locs[1,ptno]+h),
+                                             locs[0,ptno]:(locs[0,ptno]+w)] = \
+                                             im[:,:,ptno]
+
+            else:
+                for xmin,ymin,bufim in regions:
+                    if bufim.ndim == 3:
+                        h,w,ncolors=bufim.shape
+                        tmp = self._last_frame[ymin:ymin+h, xmin:xmin+w, :]
+                        self._last_frame[ymin:ymin+h, xmin:xmin+w, :]=\
+                            np.clip(bufim-self._darken, 0,255)
+                    elif bufim.ndim == 2:
+                        h,w=bufim.shape
+                        self._last_frame[ymin:ymin+h, xmin:xmin+w]=\
+                            np.clip(bufim-self._darken, 0,255)
+                    else:
+                        raise NotImplementedError('bufim.ndim = %d not implemented'%bufim.ndim)
             if self.abs_diff:
                 self._last_frame=abs(self._last_frame.astype(np.float32)-
                                      mean_image.astype(np.float32))

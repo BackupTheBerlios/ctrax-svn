@@ -76,7 +76,122 @@
         <object class="wxStaticLine">
           <size>375,10</size>
         </object>
-        <flag></flag>
+        <flag/>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <object class="spacer">
+            <size>20,0</size>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <size>60,20</size>
+              <label>Radius:</label>
+              <style>wxALIGN_RIGHT</style>
+            </object>
+            <flag>wxALIGN_RIGHT</flag>
+          </object>
+          <object class="spacer">
+            <size>10,0</size>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <label>Min:</label>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="minradius_text"/>
+          </object>
+          <object class="spacer">
+            <size>10,0</size>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <label>Max: </label>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="maxradius_text"/>
+          </object>
+          <orient>wxHORIZONTAL</orient>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <object class="spacer">
+            <size>20,0</size>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <size>60,20</size>
+              <label>X:</label>
+            </object>
+          </object>
+          <object class="spacer">
+            <size>10,0</size>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <label>Min:</label>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="minx_text"/>
+          </object>
+          <object class="spacer">
+            <size>10,0</size>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <label>Max: </label>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="maxx_text"/>
+          </object>
+          <orient>wxHORIZONTAL</orient>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <object class="spacer">
+            <size>20,0</size>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <size>60,20</size>
+              <label>Y:</label>
+            </object>
+          </object>
+          <object class="spacer">
+            <size>10,0</size>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <label>Min:</label>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="miny_text"/>
+          </object>
+          <object class="spacer">
+            <size>10,0</size>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <label>Max: </label>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="maxy_text"/>
+          </object>
+          <orient>wxHORIZONTAL</orient>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticLine">
+          <size>375,10</size>
+        </object>
       </object>
       <object class="sizeritem">
         <object class="wxBoxSizer">

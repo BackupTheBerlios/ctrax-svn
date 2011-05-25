@@ -103,6 +103,7 @@ class AppWithSettings( wx.App ):
         self.frame.Bind( wx.EVT_MENU, self.OnSave, id=xrc.XRCID("menu_file_export") )
         self.frame.Bind( wx.EVT_MENU, self.OnSaveTimestamps, id=xrc.XRCID("menu_file_write_timestamps") )
         self.frame.Bind( wx.EVT_MENU, self.OnSaveAvi, id=xrc.XRCID("menu_file_save_avi") )
+        self.frame.Bind( wx.EVT_MENU, self.OnSaveDiagnostics, id=xrc.XRCID("menu_file_save_diagnostics") )
         self.frame.Bind( wx.EVT_MENU, self.OnQuit, id=xrc.XRCID("menu_file_quit") )
         # help menu
         self.frame.Bind( wx.EVT_MENU, self.OnHelp, id=xrc.XRCID("menu_help_help") )

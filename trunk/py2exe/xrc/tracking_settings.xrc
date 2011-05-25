@@ -348,14 +348,14 @@
                     </object>
                     <object class="sizeritem">
                       <object class="wxStaticText">
-                        <label>Weight of the angle parameter in computing distance between predicted target and observation positions. Angle distance multiplied by weight is added to unweighted Euclidean distance between centers. </label>
                         <size>400,52</size>
+                        <label>Weight of the angle parameter in computing distance between predicted target and observation positions. Angle distance multiplied by weight is added to unweighted Euclidean distance between centers. </label>
                         <font>
                           <size>8</size>
-                          <family>swiss</family>
                           <style>normal</style>
                           <weight>normal</weight>
                           <underlined>0</underlined>
+                          <family>swiss</family>
                           <face>Sans</face>
                         </font>
                       </object>
@@ -381,14 +381,45 @@
                     </object>
                     <object class="sizeritem">
                       <object class="wxStaticText">
-                        <label>Maximum distance between predicted position and observation for a target identity and observation to be matched. </label>
                         <size>400,28</size>
+                        <label>Maximum distance between predicted position and observation for a target identity and observation to be matched. </label>
                         <font>
                           <size>8</size>
-                          <family>swiss</family>
                           <style>normal</style>
                           <weight>normal</weight>
                           <underlined>0</underlined>
+                          <family>swiss</family>
+                          <face>Sans</face>
+                        </font>
+                      </object>
+                    </object>
+                    <object class="spacer">
+                      <size>0,15</size>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxBoxSizer">
+                        <orient>wxHORIZONTAL</orient>
+                        <object class="sizeritem">
+                          <object class="wxStaticText">
+                            <size>300,20</size>
+                            <label>Min Jump Distance: </label>
+                          </object>
+                        </object>
+                        <object class="sizeritem">
+                          <object class="wxTextCtrl" name="min_jump"/>
+                        </object>
+                      </object>
+                    </object>
+                    <object class="sizeritem">
+                      <object class="wxStaticText">
+                        <size>400,42</size>
+                        <label>Minimum distance between the previous and current center position to consider the fly jumping. When jumping, the motion model predicts the previous position instead of using the dampened constant velocity model.</label>
+                        <font>
+                          <size>8</size>
+                          <style>normal</style>
+                          <weight>normal</weight>
+                          <underlined>0</underlined>
+                          <family>swiss</family>
                           <face>Sans</face>
                         </font>
                       </object>
@@ -443,8 +474,6 @@
                   </object>
                 </object>
               </object>
-              <size>400,420</size>
-              <style>wxNB_DEFAULT</style>
               <object class="notebookpage">
                 <label>Observation</label>
                 <object class="wxPanel" name="observation_panel">
@@ -864,6 +893,7 @@
                   </object>
                 </object>
               </object>
+              <size>410,420</size>
             </object>
             <flag>wxEXPAND</flag>
           </object>

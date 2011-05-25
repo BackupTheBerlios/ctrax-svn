@@ -1,4 +1,4 @@
-__version__ = "0.1.6.6"
+__version__ = "0.1.5.7"
 
 DEBUG = False
 DEBUG_ESTCONNCOMPS = False

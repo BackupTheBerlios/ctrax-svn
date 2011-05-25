@@ -791,9 +791,9 @@ def find_flies( old0, old1, obs, ann_file=None ):
     # make predicted targets
     targ = m_id.cvpred( old0, old1 )
 
-    if params.print_crap:
-        print "targ (%d)"%len(targ), targ
-        print "obs (%d)"%len(obs), obs
+    if DEBUG_TRACKINGSETTINGS:
+        print "targ (%d) = %s"%(len(targ),str(targ))
+        print "obs (%d) = %s"%(len(obs),str(obs))
 
     # make a cost matrix containing the distance from each target to each obs
     ids = []
@@ -810,9 +810,12 @@ def find_flies( old0, old1, obs, ann_file=None ):
             else:
                 cost[i,j] = observation.dist( target )
 
+    if DEBUG_TRACKINGSETTINGS:
+        print "cost = " + str(cost)
+
     # find optimal matching between targ and observations
     obs_for_target, unass_obs = m_id.matchidentities( cost, params.max_jump )
-    if params.print_crap: print "best matches:", obs_for_target
+    if DEBUG_TRACKINGSETTINGS: print "best matches:", obs_for_target
 
     # make a new list containing the best matches to each prediction
     flies = TargetList()
@@ -833,7 +836,7 @@ def find_flies( old0, old1, obs, ann_file=None ):
                 obs[oo].identity = ann_file.GetNewId()
             flies.append( obs[oo] )
             
-    if params.print_crap:
+    if DEBUG_TRACKINGSETTINGS:
         print "returning", flies
     return flies
 

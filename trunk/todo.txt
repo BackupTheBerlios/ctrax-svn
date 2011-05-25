@@ -1,0 +1,5 @@
+--for version 0.1.5.8--
+Port to Python 2.7
+Change Ctrax-script back to Ctrax
+Update About box
+Change icon

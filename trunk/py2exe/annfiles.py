@@ -10,8 +10,8 @@ import shutil
 
 from version import __version__
 from version import DEBUG_ANN as DEBUG
-from version import DEBUG_HINDSIGHT
-from params import params
+from version import DEBUG_IDASSIGNMENT
+from params import params, diagnostics
 import ellipsesk as ell
 import pickle
 
@@ -23,7 +23,8 @@ class InvalidFileFormatException(Exception):
 class AnnotationFile:
 
     def __init__( self, filename=None, bg_imgs=None, doreadheader=True,
-                  justreadheader=False, doreadbgmodel=True ):
+                  justreadheader=False, doreadbgmodel=True, doreadtrx=False,
+                  readonly=False):
         """This function should be called inside an exception handler
         in case the annotation header versions are different from expected
         or the file doesn't exist."""
@@ -99,11 +100,14 @@ class AnnotationFile:
 
         # open the file for reading
         newfile = False
-        try:
-            self.file = open(filename,'rb+')
-        except IOError:
-            self.file = open(filename,'wb+')
-            newfile = True
+        if readonly:
+            self.file = open(filename,'rb')
+        else:
+            try:
+                self.file = open(filename,'rb+')
+            except IOError:
+                self.file = open(filename,'wb+')
+                newfile = True
 
         # check the annotation header
         if not newfile:
@@ -141,7 +145,7 @@ class AnnotationFile:
 
         # in non-interactive mode or for brand-new annotation files,
         # we will not read in the trajectories
-        if (not params.interactive) or params.batch_executing or newfile:
+        if (not doreadtrx) and ((not params.interactive) or params.batch_executing or newfile):
             return
 
         # read in the header
@@ -150,10 +154,11 @@ class AnnotationFile:
         # if we don't read it, we will still be at the correct file location from call to CheckAnnHeader
         
         # check if we want to read in the trajectories from this file
-        msgtxt = "Read old trajectories from %s? Choosing not to read will cause the trajectories in this file to be overwritten."%filename
-        if wx.MessageBox(msgtxt,"Read trajectories?",wx.YES|wx.NO) == wx.NO:
-            if DEBUG: print "Not reading trajectories"
-            return
+        if params.interactive:
+            msgtxt = "Read old trajectories from %s? Choosing not to read will cause the trajectories in this file to be overwritten."%filename
+            if wx.MessageBox(msgtxt,"Read trajectories?",wx.YES|wx.NO) == wx.NO:
+                if DEBUG: print "Not reading trajectories"
+                return
 
 
         if DEBUG: print "Reading trajectories..."
@@ -181,8 +186,11 @@ class AnnotationFile:
                 if DEBUG: print "i = %d, adding %x to the lookup table for frame = %d"%(i,p,self.lastframetracked+1)
                 if DEBUG: print "line = " + str(line.split())
                 self.lookup.append(p)
-
-            ells = self.ParseData(line)
+            try:
+                ells = self.ParseData(line)
+            except:
+                print "Error parsing line %d. Aborting."%self.n
+                break
             # count ids
             self.CountIds(ells)
             #ells = self.ReplaceIds(ells)
@@ -662,6 +670,13 @@ class AnnotationFile:
             self.file.write("arena_center_x:%.2f\n"%params.arena_center_x)
             self.file.write("arena_center_y:%.2f\n"%params.arena_center_y)
             self.file.write("arena_radius:%.2f\n"%params.arena_radius)
+        self.file.write("min_arena_center_x:%.3f\n"%params.min_arena_center_x)
+        self.file.write("max_arena_center_x:%.3f\n"%params.max_arena_center_x)
+        self.file.write("min_arena_center_y:%.3f\n"%params.min_arena_center_y)
+        self.file.write("max_arena_center_y:%.3f\n"%params.max_arena_center_y)
+        self.file.write("min_arena_radius:%.3f\n"%params.min_arena_radius)
+        self.file.write("max_arena_radius:%.3f\n"%params.max_arena_radius)
+
         self.file.write("do_set_circular_arena:%d\n"%params.do_set_circular_arena)
         self.file.write("do_use_morphology:%d\n" %params.do_use_morphology)
         self.file.write("opening_radius:%d\n" %params.opening_radius)
@@ -679,6 +694,10 @@ class AnnotationFile:
             sz = self.bg_imgs.mean.size*SIZEOFDOUBLE
             self.file.write("background mean:%d\n"%sz)
             self.file.write(self.bg_imgs.mean)
+        if hasattr(self.bg_imgs,'center'):
+            sz = num.prod(self.bg_imgs.center.size)*SIZEOFDOUBLE
+            self.file.write("background center:%d\n"%sz)
+            self.file.write(self.bg_imgs.center)
         self.file.write('bg_norm_type:%d\n'%params.bg_norm_type)
         if hasattr(self.bg_imgs,'mad'):
             sz = self.bg_imgs.mad.size*SIZEOFDOUBLE
@@ -688,10 +707,25 @@ class AnnotationFile:
             sz = self.bg_imgs.std.size*SIZEOFDOUBLE
             self.file.write("background std:%d\n"%sz)
             self.file.write(self.bg_imgs.std)
+        if hasattr(self.bg_imgs,'dev'):
+            sz = num.prod(self.bg_imgs.dev.size)*SIZEOFDOUBLE
+            self.file.write("background dev:%d\n"%sz)
+            self.file.write(self.bg_imgs.dev)
+        if hasattr(self.bg_imgs,'fracframesisback'):
+            sz = num.prod(self.bg_imgs.fracframesisback.size)*SIZEOFDOUBLE
+            self.file.write("fracframesisback:%d\n"%sz)
+            self.file.write(self.bg_imgs.fracframesisback)            
+        if hasattr(self.bg_imgs,'isarena'):
+            sz = num.prod(self.bg_imgs.isarena.size)*SIZEOFDOUBLE
+            self.file.write("isarena:%d\n"%sz)
+            self.file.write(self.bg_imgs.isarena.astype(float))            
         if hasattr(self.bg_imgs,'hfnorm'):
             sz = self.bg_imgs.hfnorm.size*SIZEOFDOUBLE
             self.file.write("hfnorm:%d\n"%sz)
             self.file.write(self.bg_imgs.hfnorm)
+        if hasattr(params,'movie_size'):
+            self.file.write("movie_height:%d\n"%params.movie_size[0])
+            self.file.write("movie_width:%d\n"%params.movie_size[1])
         if hasattr(params,'roipolygons'):
             s = pickle.dumps(params.roipolygons)
             self.file.write("roipolygons:%d\n"%len(s))
@@ -719,6 +753,7 @@ class AnnotationFile:
 
         # motion model parameters
         self.file.write('max_jump:%.2f\n'%params.max_jump)
+        self.file.write('min_jump:%.2f\n'%params.min_jump)
         self.file.write('ang_dist_wt:%.2f\n'%params.ang_dist_wt)
         self.file.write('center_dampen:%.2f\n'%params.dampen)
         self.file.write('angle_dampen:%.2f\n'%params.angle_dampen)
@@ -748,10 +783,24 @@ class AnnotationFile:
 
         self.file.write('do_fix_lost:%d\n'%params.do_fix_lost)
         self.file.write('lostdetection_length:%d\n'%params.lostdetection_length)
+        self.file.write('lostdetection_distance:%d\n'%params.lostdetection_distance)        
+        # expbgfgmodel params
+        if params.expbgfgmodel_filename is None:
+            expbgfgmodel_filename = ''
+        else:
+            expbgfgmodel_filename = params.expbgfgmodel_filename
 
+        self.file.write('expbgfgmodel_filename:%s\n'%expbgfgmodel_filename)
+        self.file.write('use_expbgfgmodel:%d\n'%params.use_expbgfgmodel)
+        self.file.write('expbgfgmodel_llr_thresh:%f\n'%params.expbgfgmodel_llr_thresh)
+        self.file.write('expbgfgmodel_llr_thresh_low:%f\n'%params.expbgfgmodel_llr_thresh_low)
+        self.file.write('min_frac_frames_isback:%f\n'%params.min_frac_frames_isback)
+        if hasattr(params,'expbgfgmodel_fill'):
+            self.file.write('expbgfgmodel_fill:%s\n'%params.expbgfgmodel_fill)                
         self.file.write('movie_name:' + params.movie_name + '\n')
 
         self.max_jump = params.max_jump
+        self.min_jump = params.max_jump
         self.file.write('start_frame:%d\n'%start_frame)
         
         self.file.write('data format:%s\n'%dataformatstring)
@@ -804,7 +853,10 @@ class AnnotationFile:
                 continue
             if parameter == 'background median' or parameter == 'background mean' or \
                    parameter == 'background mad' or parameter == 'background std' or \
-                   parameter == 'hfnorm' or parameter == 'roipolygons':
+                   parameter == 'hfnorm' or parameter == 'roipolygons' or \
+                   parameter == 'background center' or parameter == 'background dev' or \
+                   parameter == 'fracframesisback' or \
+                   parameter == 'isarena':
                 sz = int(value)
                 self.file.seek(sz,1)
             elif parameter == 'data format':
@@ -873,16 +925,30 @@ class AnnotationFile:
                 params.arena_center_y = float(value)
             elif parameter == 'arena_radius':
                 params.arena_radius = float(value)
+            elif parameter == 'min_arena_center_x':
+                params.min_arena_center_x = float(value)
+            elif parameter == 'min_arena_center_y':
+                params.min_arena_center_y = float(value)
+            elif parameter == 'min_arena_radius':
+                params.min_arena_radius = float(value)
+            elif parameter == 'max_arena_center_x':
+                params.max_arena_center_x = float(value)
+            elif parameter == 'max_arena_center_y':
+                params.max_arena_center_y = float(value)
+            elif parameter == 'max_arena_radius':
+                params.max_arena_radius = float(value)
             elif parameter == 'do_set_circular_arena':
                 params.do_set_circular_arena = bool(int(value))
             elif parameter == 'do_use_morphology':
                 params.do_use_morphology = bool(int(value))
             elif parameter == 'opening_radius':
                 params.opening_radius = int(value)
-                self.bg_imgs.opening_struct = self.bg_imgs.create_morph_struct(params.opening_radius)
+                if self.bg_imgs is not None:
+                    self.bg_imgs.opening_struct = self.bg_imgs.create_morph_struct(params.opening_radius)
             elif parameter == 'closing_radius':
                 params.closing_radius = int(value)
-                self.bg_imgs.closing_struct = self.bg_imgs.create_morph_struct(params.closing_radius)
+                if self.bg_imgs is not None:
+                    self.bg_imgs.closing_struct = self.bg_imgs.create_morph_struct(params.closing_radius)
             elif parameter == 'bg_algorithm':
                 if value == 'median':
                     params.use_median = True
@@ -890,23 +956,30 @@ class AnnotationFile:
                     params.use_median = False
             elif parameter == 'background median':
                 sz = int(value)
-                if doreadbgmodel:
+                if doreadbgmodel and (self.bg_imgs is not None):
                     self.bg_imgs.med = num.fromstring(self.file.read(sz),'<d')
                     self.bg_imgs.med.shape = params.movie_size
                 else:
                     self.file.seek(sz,1)
             elif parameter == 'background mean':
                 sz = int(value)
-                if doreadbgmodel:
+                if doreadbgmodel and (self.bg_imgs is not None):
                     self.bg_imgs.mean = num.fromstring(self.file.read(sz),'<d')
                     self.bg_imgs.mean.shape = params.movie_size
+                else:
+                    self.file.seek(sz,1)
+            elif parameter == 'background center':
+                sz = int(value)
+                if doreadbgmodel and (self.bg_imgs is not None):
+                    self.bg_imgs.center = num.fromstring(self.file.read(sz),'<d')
+                    self.bg_imgs.center.shape = params.movie_size
                 else:
                     self.file.seek(sz,1)
             elif parameter == 'bg_norm_type':
                 params.bg_norm_type = int(value)
             elif parameter == 'background mad':
                 sz = int(value)
-                if doreadbgmodel:
+                if doreadbgmodel and (self.bg_imgs is not None):
                     self.bg_imgs.mad = num.fromstring(self.file.read(sz),'<d')
                     self.bg_imgs.mad.shape = params.movie_size
                 else:
@@ -918,9 +991,30 @@ class AnnotationFile:
                     self.bg_imgs.std.shape = params.movie_size
                 else:
                     self.file.seek(sz,1)
-            elif parameter == 'hfnorm':
+            elif parameter == 'background dev':
+                sz = int(value)
+                if doreadbgmodel and (self.bg_imgs is not None):
+                    self.bg_imgs.dev = num.fromstring(self.file.read(sz),'<d')
+                    self.bg_imgs.dev.shape = params.movie_size
+                else:
+                    self.file.seek(sz,1)
+            elif parameter == 'fracframesisback':
                 sz = int(value)
                 if doreadbgmodel:
+                    self.bg_imgs.fracframesisback = num.fromstring(self.file.read(sz),'<d')
+                    self.bg_imgs.fracframesisback.shape = params.movie_size
+                else:
+                    self.file.seek(sz,1)
+            elif parameter == 'isarena':
+                sz = int(value)
+                if doreadbgmodel:
+                    self.bg_imgs.isarena = num.fromstring(self.file.read(sz),'<d').astype(bool)
+                    self.bg_imgs.isarena.shape = params.movie_size
+                else:
+                    self.file.seek(sz,1)
+            elif parameter == 'hfnorm':
+                sz = int(value)
+                if doreadbgmodel and (self.bg_imgs is not None):
                     self.bg_imgs.hfnorm = num.fromstring(self.file.read(sz),'<d')
                     self.bg_imgs.hfnorm.shape = params.movie_size
                 else:
@@ -968,6 +1062,9 @@ class AnnotationFile:
             elif parameter == 'max_jump':
                 params.max_jump = float(value)
                 self.max_jump = params.max_jump
+            elif parameter == 'min_jump':
+                params.min_jump = float(value)
+                self.min_jump = params.min_jump
             elif parameter == 'ang_dist_wt':
                 params.ang_dist_wt = float(value)
             elif parameter == 'center_dampen':
@@ -1008,6 +1105,25 @@ class AnnotationFile:
                 params.do_fix_lost = bool(int(value))
             elif parameter == 'lostdetection_length':
                 params.lostdetection_length = int(value)
+            elif parameter == 'lostdetection_distance':
+                params.lostdetection_distance = int(value)
+            elif parameter == 'expbgfgmodel_filename':
+                if value == '':
+                    params.expbgfgmodel_filename = None
+                else:
+                    params.expbgfgmodel_filename = value
+                    if self.bg_imgs is not None:
+                        self.bg_imgs.setExpBGFGModel(params.expbgfgmodel_filename)
+            elif parameter == 'use_expbgfgmodel':
+                params.use_expbgfgmodel = bool(int(value))
+            elif parameter == 'expbgfgmodel_llr_thresh':
+                params.expbgfgmodel_llr_thresh = float(value)
+            elif parameter == 'expbgfgmodel_llr_thresh_low':
+                params.expbgfgmodel_llr_thresh_low = float(value)
+            elif parameter == 'expbgfgmodel_fill':
+                params.expbgfgmodel_fill = value
+            elif parameter == 'min_frac_frames_isback':
+                params.min_frac_frames_isback = float(value)                
             elif parameter == 'movie_name':
                 params.annotation_movie_name = value
             elif parameter == 'start_frame':
@@ -1016,7 +1132,7 @@ class AnnotationFile:
             elif parameter == 'data format':
                 self.n_fields = len(value.split())
 
-        if doreadbgmodel:
+        if doreadbgmodel and (self.bg_imgs is not None):
             self.bg_imgs.updateParameters()
 
     def ReadSettings( self ):
@@ -1137,8 +1253,14 @@ class AnnotationFile:
         for j in range( nframes ):
             ells = self.get_frame(off+j)
             for ee in ells.itervalues():
-                x_pos[i] = ee.center.x
-                y_pos[i] = ee.center.y
+                if num.isnan( ee.center.x ):
+                    x_pos[i] = num.inf
+                else:
+                    x_pos[i] = ee.center.x
+                if num.isnan( ee.center.y ):
+                    y_pos[i] = num.inf
+                else:
+                    y_pos[i] = ee.center.y
                 maj_ax[i] = ee.height
                 min_ax[i] = ee.width
                 angle[i] = ee.angle
@@ -1163,7 +1285,7 @@ class AnnotationFile:
         scipy.io.savemat( filename, save_dict, oned_as='column' )
         # menu_file_write_timestamps
     
-    def tell():
+    def tell(self):
         return self.file.tell()
 
     def get_frame_prev(self):
@@ -1174,16 +1296,16 @@ class AnnotationFile:
     def GetNewId(self):
         if len(self.recycledids) > 0:
             newid = self.recycledids.pop()
-            if DEBUG_HINDSIGHT: print "Recycled id %d"%newid
+            if DEBUG_IDASSIGNMENT: print "Assigned recycled id %d"%newid
         else:
             newid = params.nids
-            if DEBUG_HINDSIGHT: print "Used new id %d"%newid
+            if DEBUG_IDASSIGNMENT: print "Assigned new id %d"%newid
             params.nids+=1
         return newid
 
     def RecycleId(self,id):
         self.recycledids.append(id)
-        if DEBUG_HINDSIGHT: print "Recycling id %d"%id
+        if DEBUG_IDASSIGNMENT: print "Recycling id %d"%id
 
     def rename_file(self,newfilename=None):
         oldfile = self.file
@@ -1201,8 +1323,23 @@ class AnnotationFile:
         shutil.copyfileobj(oldfile,self.file)
         oldfile.close()
 
+    def close(self):
+        if hasattr(self,'file'):
+            try:
+                self.file.close()
+            except:
+                print "could not close annotation file"
+
 def LoadSettings(filename, bg_imgs, doreadbgmodel=False):
     tmpannfile = AnnotationFile(filename,
                                 bg_imgs,
                                 justreadheader=True,
                                 doreadbgmodel=doreadbgmodel)
+
+def WriteDiagnostics(filename):
+
+    file = open(filename,'w')
+    for (name,value) in diagnostics.iteritems():
+        file.write("%s,%s\n"%(name,value))
+
+    file.close()

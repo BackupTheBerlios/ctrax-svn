@@ -2,7 +2,6 @@
 # KMB 09/07/07
 
 import numpy as num
-from scipy.linalg.basic import eps
 import time
 import wx
 from wx import xrc
@@ -155,6 +154,12 @@ class CtraxAlgorithm (settings.AppWithSettings):
             if self.break_flag:
                 break
 
+            if (self.start_frame % 100) == 0:
+                # save tracking diagnostics
+                if not(hasattr(self,'diagnosticsfilename')) or self.diagnosticsfilename is None:
+                    (basename,ext) = os.path.splitext(self.ann_filename)
+                    self.diagnosticsfilename = basename + '_ctraxdiagnostics.txt'
+                annot.WriteDiagnostics(self.diagnosticsfilename)
 
         self.Finish()
 
@@ -162,6 +167,7 @@ class CtraxAlgorithm (settings.AppWithSettings):
 
         # write the rest of the frames to file
         self.ann_file.finish_writing()
+        annot.WriteDiagnostics(self.diagnosticsfilename)
 
     # enddef: Track()
 
@@ -177,6 +183,11 @@ class CtraxAlgorithm (settings.AppWithSettings):
         # estimate the background
         if (not self.IsBGModel()) or params.batch_autodetect_bg_model:
             print "Estimating background model"
+            print "BG Modeling parameters:"
+            print "n_bg_frames = " + str(params.n_bg_frames)
+            print "use_median = " + str(params.use_median)
+            print "bg_firstframe = " + str(params.bg_firstframe)
+            print "bg_lastframe = " + str(params.bg_lastframe)
             if params.interactive:
                 self.bg_imgs.est_bg(self.frame)
             else:
@@ -248,6 +259,7 @@ class CtraxAlgorithm (settings.AppWithSettings):
             savename = self.matfilename
         print "Saving to mat file "+savename+"...\n"
 
-        self.ann_file.WriteMAT( savename )
+        self.ann_file.WriteMAT( savename, dosavestamps=True )
+
         print "Done\n"
 

@@ -10,21 +10,26 @@
 #if wxversion.checkInstalled(WXVER):
 #    wxversion.select(WXVER)
 
+import os # use os for manipulating path names
+import sys # use sys for parsing command line
+import time # use time for setting playback rate
+
 # we need to import pyglet.media before scipy.linalg.decomp is 
 # imported by kcluster, as this seems to cause have_avbin to be false
 # on windows
 # and now we need to import ctypes before media because this seems to 
 # be necessary to be able to find the avbin dll on windows. 
 # man!
-
 try:
     if sys.platform == 'win32' or sys.platform == 'cygwin':
         import ctypes
-        import sys
         avbin = ctypes.cdll.avbin
 except:
     pass
-import pyglet.media as media
+
+from version import USE_AVBIN
+if USE_AVBIN:
+    import pyglet.media as media
 
 import os # use os for manipulating path names
 import sys # use sys for parsing command line
@@ -66,21 +71,34 @@ class CtraxApp( algorithm.CtraxAlgorithm ): # eventually inherits from wx.App
 	"""
 	Start up the Ctrax GUI
 	"""
-#        self.RestoreStdio()
+        if DEBUG:
+            self.RestoreStdio()
 
         # parse commandline
         self.ParseCommandLine()
 
+        if DEBUG: print "parsed command line"
+
 	# initialization
         self.InitGUI() # in settings.py
+
+        if DEBUG: print "initialized GUI"
+
 	self.InitState() # in settings.py
+
+        if DEBUG: print "initialized state"
 
         # draw GUI
         self.frame.Show()
+
+        if DEBUG: print "drew GUI"
+
         self.alive = True
 
 	# open movie, ann file
 	self.OpenMovieAndAnn()
+
+        if DEBUG: print "Opened movie and ann file"
 
         if params.interactive:
             print "******** Ctrax Warning and Error Messages ********"
@@ -131,30 +149,43 @@ class CtraxApp( algorithm.CtraxAlgorithm ): # eventually inherits from wx.App
 	Print command line arguments for Ctrax.
 	"""
         self.RestoreStdio()
-        print "Ctrax:\n\
-Optional Command Line Arguments:\n\
---Interactive={True,False}\n\
---Input=<movie.fmf>\n\
---Output=<movie.ann>\n\
---SettingsFile=<settings.ann>\n\
---AutoEstimateBackground={True,False}\n\
---AutoEstimateShape={True,False}\n\
---AutoDetectCircularArena={True,False}\n\
---CompressMovie=<movie.sbfmf>\n\
---Matfile=<movie.mat>\n\
-Example:\n\
-Ctrax --Interactive=True --Input=movie1.fmf \n\
---Output=movie1.ann \n\
---SettingsFile=exp1.ann\n\
-If not in interactive mode, then input must be defined.\n\
-If input is movie1.fmf then output is set to movie1.ann and\n\
-settings file is set to movie1.ann\n\
-By default, Interactive=True, AutoEstimateBackground=True,\n\
-AutoEstimateShape=True, AutoDetectCircularArena=True\n\
-If CompressMovie not set, then a compressed SBFMF will not\n\
-be created by default.\n\
-If Matfile is not set, then <basename>.mat will be used\n\
-instead, where <basename> is the base name of the movie.\n"
+        print """Ctrax:
+Optional Command Line Arguments:
+--Interactive={True,False}
+--Input=<movie.fmf>
+--Output=<movie.ann>
+--SettingsFile=<settings.ann>
+--AutoEstimateBackground={True,False}
+--AutoEstimateShape={True,False}
+--AutoDetectCircularArena={True,False}
+--CompressMovie=<movie.sbfmf>
+--Matfile=<movie.mat>
+--DiagnosticsFile=<movie_ctraxdiagnostics.txt>
+
+Example:
+Ctrax --Interactive=True --Input=movie1.fmf \\
+  --Output=movie1.fmf.ann \\
+  --SettingsFile=exp1.ann \\
+  --Matfile=movie1.mat \\
+  --DiagnosticsFile=movie1_ctraxdiagnostics.txt
+
+By default, Interactive=True, AutoEstimateBackground=True,
+AutoEstimateShape=True, AutoDetectCircularArena=True
+
+If not in interactive mode, then input must be defined.
+
+If input is movie1.fmf, then output and settings will go
+to movie1.fmf.ann.
+
+If CompressMovie not set, then a compressed SBFMF will not
+be created.
+
+If Matfile is not set, then <basename>.mat will be used,
+where <basename> is the base name of the movie.
+
+If DiagnosticsFile is not set, then
+<basename>_ctraxdiagnostics.txt will be used.
+"""
 
     def ParseCommandLine(self):
 	"""
@@ -194,6 +225,7 @@ instead, where <basename> is the base name of the movie.\n"
             elif name.lower() == '--settingsfile':
                 self.settingsfilename = value
                 self.settingsdir = os.path.dirname(value)
+                print "settingsfile = " + str(self.settingsfilename)
             elif name.lower() == '--autoestimatebackground':
                 if value.lower() == 'false':
                     params.batch_autodetect_bg_model = False
@@ -208,13 +240,15 @@ instead, where <basename> is the base name of the movie.\n"
                 self.dowritesbfmf = True
             elif name.lower() == '--matfile':
                 self.matfilename = value
+            elif name.lower() == '--diagnosticsfile':
+                self.diagnosticsfilename = value
             else:
                 print 'Error parsing command line arguments. Unknown parameter name. Usage: '
                 self.PrintUsage()
                 raise NotImplementedError
+            
         # run noninteractive mode
         if params.interactive == False:
-
             self.run_noninteractive()
             exit()
 
@@ -258,22 +292,23 @@ instead, where <basename> is the base name of the movie.\n"
 
     def LoadSettings( self ):
 	"""
-	Load parameter values from another annotation file
+	Load parameter values from another annotation file.
 	"""
 
-        doreadbgmodel = not( params.interactive or self.IsBGModel())
+        doreadbgmodel = not( params.interactive or self.IsBGModel() )
+        print "loading settings from file " + str(self.settingsfilename)
         try:
             annot.LoadSettings(self.settingsfilename,self.bg_imgs,
                                doreadbgmodel=doreadbgmodel)
         except:
             print 'Could not read annotation file ' + self.settingsfilename
-            return
 
     def OpenMovie( self ):
         """Attempt to open a movie given the current filename."""
         try:
             # open movie file
             self.movie = movies.Movie( self.filename, params.interactive )
+            if DEBUG: print "Opened movie " + str(self.filename)
         except:
             # error messages should be handled by the movie object
             self.movie = None
@@ -292,19 +327,25 @@ instead, where <basename> is the base name of the movie.\n"
         self.n_frames = self.movie.get_n_frames()
         self.img_size = [self.movie.get_height(),self.movie.get_width()]
         # get a pointer to the "Ctraxmain" child
+        if DEBUG: print "About to try to draw to window"
         if params.interactive:
             img = num.zeros((self.img_size[0],self.img_size[1]),dtype=num.uint8)
             sys.stdout.flush()
             self.img_wind.update_image_and_drawings("Ctraxmain",
                                                     img,
                                                     format="MONO8")
+            if DEBUG: print "drew img to window"
             sys.stdout.flush()
             self.img_wind_child = self.img_wind.get_child_canvas("Ctraxmain")
             # mouse click
             self.img_wind_child.Bind(wx.EVT_LEFT_DOWN,self.MouseClick)
 
+            if DEBUG: print "bound mouseclick event"
+            
         # setup background-subtraction pieces
         self.bg_imgs = bg.BackgroundCalculator( self.movie )
+
+        if DEBUG: print "initialized backsub data structure"
 
         while True:
             # open annotation file, read header if readable, read
@@ -312,14 +353,24 @@ instead, where <basename> is the base name of the movie.\n"
 
             if params.interactive:
                 start_color = self.status.GetBackgroundColour()
+                if DEBUG: print "got status background color"
                 self.status.SetBackgroundColour( params.status_blue )
+                if DEBUG: print "set status background color"
                 self.status.SetStatusText( "Reading annotation from file",
                                            params.status_box )
+                if DEBUG: print "Set status text"
                 wx.BeginBusyCursor()
+                if DEBUG: print "began busy cursor"
                 wx.Yield()
+                if DEBUG: print "Set status text"
 
             self.ann_file = annot.AnnotationFile( self.ann_filename,
                                                   self.bg_imgs)
+
+            if hasattr(self,'settingsfilename'):
+                self.LoadSettings()
+
+            if DEBUG: print "read annotation file"
 
             if params.interactive:
                 self.status.SetBackgroundColour( start_color )
@@ -398,8 +449,8 @@ instead, where <basename> is the base name of the movie.\n"
 
         else:
 
-            wx.MessageBox( "No ann file chosen. Aborting open.", 
-                           "No ann file chosen", wx.ICON_WARNING )
+            wx.MessageBox( "No movie chosen. Aborting open.", 
+                           "No movie chosen", wx.ICON_WARNING )
 
             
 
@@ -513,6 +564,35 @@ instead, where <basename> is the base name of the movie.\n"
             wx.Yield()
 
             movies.write_results_to_avi(self.movie,self.ann_file,filename,framestart,frameend)
+
+            self.status.SetBackgroundColour( start_color )
+            self.status.SetStatusText( "", params.status_box )
+            wx.EndBusyCursor()
+            wx.Yield()
+
+        dlg.Destroy()
+
+    def OnSaveDiagnostics( self, evt ):
+        """Choose filename to save diagnostics to."""
+
+        defaultDir = self.save_dir
+        (basename,ext) = os.path.splitext(self.file)
+        defaultFile = basename + '_ctraxdiagnostics.txt'
+        dlg = wx.FileDialog( self.frame, "Save diagnostics to text file", defaultDir, defaultFile, "*.txt", wx.SAVE )
+
+        if dlg.ShowModal() == wx.ID_OK:
+            this_file = dlg.GetFilename()
+            self.save_dir = dlg.GetDirectory()
+            filename = os.path.join( self.save_dir, this_file )
+
+            start_color = self.status.GetBackgroundColour()
+            self.status.SetBackgroundColour( params.status_blue )
+            self.status.SetStatusText( "writing diagnostics to file",
+                                       params.status_box )
+            wx.BeginBusyCursor()
+            wx.Yield()
+
+            annot.WriteDiagnostics( filename )
 
             self.status.SetBackgroundColour( start_color )
             self.status.SetStatusText( "", params.status_box )

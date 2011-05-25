@@ -3,7 +3,7 @@ import sys, traceback
 import wx
 import numpy
 import numpy as np
-import motmot.imops.imops as imops
+import imops as imops
 import warnings
 
 class DynamicImageCanvas(wx.Window):

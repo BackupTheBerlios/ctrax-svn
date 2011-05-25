@@ -23,13 +23,13 @@ python replacemotmotimports.py
 
 5) Compare the Ctrax/setup.py and py2exe/setup_py2exe.py scripts -- see if there are any changes to setup.py that need to manually be added to the old setup_py2exe.py script. Update version numbers in setup_py2exe.py and setup.nsi. 
 
-6) Only needs to be done if scipy has been reinstalled:
-Change scipy.interpolate.polyint to import factorial from scipy.misc.common:
-Edit C:/Python25/Lib/site-packages/scipy/interpolate/polyint.py
-change the line:
-from scipy import factorial
-to 
-from scipy.misc.common import factorial
+6) Only needs to be done if scipy has been reinstalled; a couple of import hacks:
+
+In C:\Python25\Lib\site-packages\scipy\ndimage\__init__.py
+change:
+from io import *
+to
+from scipy.io import *
 
 7) Try to build
 
@@ -56,6 +56,7 @@ These dlls are:
    MSVCP71.dll - /c/Python25/lib/site-packages/wx-2.8-msw-unicode/wx/MSVCP71.dll
    gdiplus.dll - /c/Python25/lib/site-packages/wx-2.8-msw-unicode/wx/gdiplus.dll
    specfun.pyd - /c/Python25/lib/site-packages/scipy/special/specfun.pyd
+   #streams.pyd - C:\Python25\Lib\site-packages\scipy\io\matlab\streams.pyd
 
 10) Try it out:
 $ cd dist

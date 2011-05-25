@@ -1,6 +1,6 @@
 import numpy as num
 
-from params import params
+from params import params, diagnostics
 import ellipsesk as ell
 import estconncomps as est
 import kcluster2d as kcluster
@@ -8,6 +8,7 @@ import matchidentities
 #import pylab as mpl
 from version import DEBUG_HINDSIGHT as DEBUG
 import sys
+
 
 class MyDictionary(dict):
     def __init__(self,emptyval=None):
@@ -142,6 +143,8 @@ class Hindsight:
 
     def fixerrors(self,T=None):
 
+        diagnostics['nframes_analyzed'] += 1
+
         if T is None:
             T = len(self.tracks)
 
@@ -175,6 +178,10 @@ class Hindsight:
         # for each death in frame T-2
         didfix = False
         deathscurr = list(self.milestones.getdeaths(T-2))
+        diagnostics['ndeaths_nohindsight'] += len(deathscurr)
+
+        ndeaths0 = len(deathscurr)
+
         if params.do_fix_split:
             for id1 in deathscurr:
                 didfix |= self.fix_splitdetection(id1,T-2)
@@ -182,6 +189,10 @@ class Hindsight:
         if params.do_fix_spurious:
             for id1 in deathscurr:
                 didfix |= self.fix_spuriousdetection(id1,T-2)
+
+        diagnostics['ndeaths_notfixed'] += \
+            len(list(self.milestones.getdeaths(T-2)))
+        
 
         # for each birth in frame T-2
         birthscurr = list(self.milestones.getbirths(T-2))
@@ -193,11 +204,18 @@ class Hindsight:
             for id2 in birthscurr:
                 didfix |= self.fix_lostdetection(id2,T-2)
 
+        diagnostics['nbirths_notfixed'] += \
+            len(list(self.milestones.getbirths(T-2)))
+
+
+        if didfix:
+            diagnostics['nhindsight_fixed'] += 1
+
         if DEBUG: 
             if didfix:
-                print "after fixing, tracks[T-2]: "
+                print "after fixing, tracks[T-2=%d] (%d): "%(T-2,len(self.tracks[T-2]))
             else:
-                print "after trying to fix but failing, tracks[T-2]: "
+                print "after trying to fix but failing, tracks[T-2=%d] (%d): "%(T-2,len(self.tracks[T-2]))
         if DEBUG: 
             for tmpid in self.tracks[T-2].iterkeys():
                 print str(self.tracks[T-2][tmpid])
@@ -244,6 +262,9 @@ class Hindsight:
         self.tracks.RecycleId(id)
         self.milestones.deleteid(id)
         if DEBUG: print '*** deleted track for id=%d with life span=%d'%(id,lifespan)
+
+        # update diagnostics
+        diagnostics['nspurious_fixed'] += 1
 
         return True
 
@@ -295,7 +316,9 @@ class Hindsight:
         id1 = ids[i]
     
         # if this is too far, then we can't fix
-        if mind > params.lostdetection_distance:
+        # 2011/02/06: Changed from lostdetection_distance to max jump,
+        # as lostdetection_distance was not getting set
+        if mind > params.max_jump*2.:
             if DEBUG: print 'id1=%d dies in frame %d, but distance between predicted positions = %.2f > %.2f'%(id1,self.milestones.getdeathframe(id1),mind,params.lostdetection_length)
             return False
 
@@ -335,6 +358,9 @@ class Hindsight:
         self.milestones.setdeath(id1,d2)
 
         if DEBUG: print '*** fixing lost detection: id1=%d lost in frame t1=%d, found again in frame t2=%d with id2=%d'%(id1,t1,t2,id2)
+
+        # update diagnostics
+        diagnostics['nlost_fixed'] += 1
 
         return True
 
@@ -446,15 +472,16 @@ class Hindsight:
 
         if DEBUG: print '*** fixing merged detection by splitting id2=%d into id1=%d and id2=%d from frames t1=%d to t2-1=%d, replacing id3=%d'%(id2,id1,id2,t1,t2-1,id3)
 
+        if clustering_t1 is None:
+            if DEBUG: print 'first clustering is None, not actually doing a fix'
+            return False
+
         # store old tracks in case we need them
         oldtracks = {}
         for t in range(t1,t2):
             oldtracks[t] = self.tracks[t].copy()
         
         # in frame t1, replace id2 with clustering[assignment[0]]
-        if clustering_t1 is None:
-            if DEBUG: print 'first clustering is None, not actually doing a fix'
-            return False
         tmp = clustering_t1[assignment_t1[0]]
         tmp.identity = id2
         self.tracks[t1].append(tmp)
@@ -475,7 +502,7 @@ class Hindsight:
             if clustering_t is None:
                 if DEBUG: print 'clustering is bad, reverting'
                 for tt in range(t1,t2):
-                    self.tracks[tt] = oldtracks[tt]
+                    self.tracks[tt] = oldtracks[tt].copy()
                 return False
 
             d1 = pred1.dist(clustering_t[0]) + pred2.dist(clustering_t[1]) 
@@ -571,6 +598,9 @@ class Hindsight:
             if DEBUG: print "Setting death of id1 = %d to %f"%(id1,d3)
             self.milestones.setdeath(id1,d3)
 
+        # update diagnostics
+        diagnostics['nmerged_fixed'] += 1
+
         return True
 
     def fix_splitdetection(self,id1,t2):
@@ -661,6 +691,9 @@ class Hindsight:
             lastborn = id1
 
         # perform the merge
+        if DEBUG: print "merging %d and %d from %d through %d"%(firstborn,lastborn,t1,t2-1)
+        if DEBUG: print "%d alive from %f to %f"%(firstborn,self.milestones.getbirthframe(firstborn),self.milestones.getdeathframe(firstborn))
+        if DEBUG: print "%d alive from %f to %f"%(lastborn,self.milestones.getbirthframe(lastborn),self.milestones.getdeathframe(lastborn))
         for t in range(t1,t2):
             
             # delete lastborn
@@ -673,6 +706,7 @@ class Hindsight:
 
             self.tracks[t].append(merged_target[t-t1])
 
+        if DEBUG: print "replacing from %d through %d"%(t2,len(self.tracks))
         # replace the lastborn after t2 with the firstborn
         for t in range(t2,len(self.tracks)):
             if not self.tracks[t].hasItem(lastborn):
@@ -687,8 +721,19 @@ class Hindsight:
                                                self.milestones.getdeathframe(lastborn)))
         # delete lastborn
         self.milestones.deleteid(lastborn)
+
         # recycle this id
         self.tracks.RecycleId(lastborn)
+
+        if DEBUG:
+            for tmpt in range(len(self.tracks)-1,len(self.tracks)-params.splitdetection_length+1):
+                if self.tracks[tmpt].hasItem(lastborn):
+                    raise Exception("Did not delete %d from everywhere"%lastborn)
+                if len(self.tracks[t2]) == 0:
+                    raise Exception("at tmpt = %d of check, tracks[%d] is empty"%(tmpt,t2))
+            
+        # update diagnostics
+        diagnostics['nsplits_fixed'] += 1
 
         return True
 
@@ -846,9 +891,11 @@ class Hindsight:
 
                 for id2 in possibleid2s:
 
-                    # check to see if id2 is reasonably close to id1
-                    d = num.sqrt((self.tracks[t2][id2].x-pred1.x)**2. + \
-                                 (self.tracks[t2][id2].y-pred1.y)**2.)
+                    # check to see if id2 is reasonably close to id1 in t1
+                    # fixed 20110317 -- this used to compare [t2][id2] to
+                    # [t1][id1]
+                    d = num.sqrt((self.tracks[t1][id2].x-pred1.x)**2. + \
+                                 (self.tracks[t1][id2].y-pred1.y)**2.)
                     maxdcenters = self.compute_maxdcenters(self.tracks[t2][id2],pred1)
 
                     if d <= maxdcenters:

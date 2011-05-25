@@ -127,6 +127,35 @@ class Parameters:
         self.SHOW_DEV = 4
         self.SHOW_CC = 5
         self.SHOW_ELLIPSES = 6
+        self.SHOW_EXPBGFGMODEL_LLR = 7
+        self.SHOW_EXPBGFGMODEL_ISBACK = 8
+        self.SHOW_EXPBGFGMODEL_BGMU = 9
+        self.SHOW_EXPBGFGMODEL_FGMU = 10
+        self.SHOW_EXPBGFGMODEL_BGSIGMA = 11
+        self.SHOW_EXPBGFGMODEL_FGSIGMA = 12
+        self.SHOW_EXPBGFGMODEL_FRACFRAMESISBACK = 13
+        self.SHOW_EXPBGFGMODEL_MISSINGDATA = 14
+        
+        self.BG_SHOW_STRINGS = ['Background Image',
+                                'Distance from Background',
+                                'Foreground/Background Classification',
+                                'Background-Only Areas',
+                                'Normalization Image',
+                                'Connected Components',
+                                'Ellipse Fits']
+        self.EXPBGFGMODEL_SHOW_STRINGS = ['Prior Log-Likelihood Ratio',
+                                          'Use in Background Model',
+                                          'Prior Background Mean Px Intensity',
+                                          'Prior Foreground Mean Px Intensity',
+                                          'Prior Background Std Px Intensity',
+                                          'Prior Foreground Std Px Intensity',
+                                          'Frac Frames in Bg Model',
+                                          'Bg Missing Data']
+        self.SHOW_EXPBGFGMODEL = [self.SHOW_EXPBGFGMODEL_LLR,self.SHOW_EXPBGFGMODEL_ISBACK,
+                                  self.SHOW_EXPBGFGMODEL_BGMU,self.SHOW_EXPBGFGMODEL_FGMU,
+                                  self.SHOW_EXPBGFGMODEL_BGSIGMA,self.SHOW_EXPBGFGMODEL_FGSIGMA,
+                                  self.SHOW_EXPBGFGMODEL_FRACFRAMESISBACK,self.SHOW_EXPBGFGMODEL_MISSINGDATA]
+        
         self.BG_TYPE_LIGHTONDARK = 0
         self.BG_TYPE_DARKONLIGHT = 1
         self.BG_TYPE_OTHER = 2
@@ -135,7 +164,7 @@ class Parameters:
         self.BG_NORM_HOMOMORPHIC = 2
         self.ALGORITHM_MEDIAN = 0
         self.ALGORITHM_MEAN = 1
-        self.print_crap = False # print debugging info
+        self.print_crap = True # print debugging info
         self.watch_threads = True # print processing info
         self.watch_locks = False # print lock acquisition/releasing
         self.count_time = True # determine how long each thread works
@@ -192,7 +221,9 @@ class Parameters:
         # interval to use for estimating background
         self.bg_firstframe = 0
         self.bg_lastframe = 99999
-
+        # maximum number of pixels (should = bytes?) to allocate for temporary storage while computing the bg median
+        # equivalent to 100 x (480x640) images
+        self.bg_median_maxbytesallocate = 30720000
         # Background Subtraction Parameters
 
         # do we assume dark on light, light on dark, or no assumption?
@@ -230,10 +261,21 @@ class Parameters:
         self.arena_radius = None
         self.arena_edgethresh = None
         self.do_set_circular_arena = True
+
+        # search space for arena circle
+        self.min_arena_center_x = .4
+        self.max_arena_center_x = .6
+        self.min_arena_center_y = .4
+        self.max_arena_center_y = .6
+        self.min_arena_radius = .25
+        self.max_arena_radius = .5
+
+
         # batch processing & auto-detecting arena
         self.batch_autodetect_arena = True
         self.batch_autodetect_shape = True
         self.batch_autodetect_bg_model = True
+        self.batch_executing = False
         # morphology
         self.do_use_morphology = False
         self.opening_radius = 0
@@ -268,6 +310,8 @@ class Parameters:
         self.ang_dist_wt = 100.
         # maximum distance a fly can move between frames
         self.max_jump = 100.
+        # minimum distance to be called a jump
+        self.min_jump = 50.
         # dampening constant
         self.dampen = 0. # weighting term used in cvpred()
         self.angle_dampen = 0.5 
@@ -321,12 +365,36 @@ class Parameters:
         self.max_median_frames = 100
         self.max_n_obj = 500 # 50 flies can each get lost 10 times before aborting
 
-        # Obsolete Parameters
-        #self.min_cluster_size = 10 # pixels
-        #self.default_thresh = 70
-        #self.n_hist_bins = 100
-        #self.uhistogram_cut = 5 # n-th percentile
-        #self.n_frames_trunc = 2
+        # computing prior background/foreground models
+
+        # number of frames to sample per video
+        self.prior_nframessample = 100
+
+        self.expbgfgmodel_filename = None
+        self.use_expbgfgmodel = False
+        
+        # threshold for log-likelihood ratio of foreground over background
+        # if llr is >= thresh_low and near a pixel > thresh then don't 
+        # include in the background model
+        self.expbgfgmodel_llr_thresh = 0
+        self.expbgfgmodel_llr_thresh_low = 0
+        
+        # fraction of sampled frames that we require to be classified as background according
+        # to the prior expbgfgmodel to trust our estimates. otherwise, we will fill missing sections
+        # either with the prior mean and standard deviation or by interpolation 
+        self.min_frac_frames_isback = .1
+        self.expbgfgmodel_fill = 'Interpolation'
+        self.EXPBGFGMODEL_FILL_STRINGS = ['Prior BG Model','Interpolation']
+
+        # number of foreground pixels to sample per location
+        self.prior_fg_nsamples_pool = 25
+        # number of background pixels to sample per location
+        self.prior_bg_nsamples_pool = 25
+
+        # how much to increase the sample radius per iteration
+        self.prior_fg_pool_radius_factor = 1.25
+        # how much to increase the sample radius per iteration
+        self.prior_bg_pool_radius_factor = 1.25
 
     def __print__(self):
         s = ""
@@ -367,22 +435,45 @@ class Parameters:
         
 params = Parameters()
 
+diagnostics = dict()
+diagnostics['nbirths_nohindsight'] = 0
+diagnostics['ndeaths_nohindsight'] = 0
+diagnostics['ndeaths_notfixed'] = 0
+diagnostics['nbirths_notfixed'] = 0
+diagnostics['nsplits_fixed'] = 0
+diagnostics['nspurious_fixed'] = 0
+diagnostics['nmerged_fixed'] = 0
+diagnostics['nlost_fixed'] = 0
+diagnostics['nhindsight_fixed'] = 0
+diagnostics['nlarge_notfixed'] = 0
+diagnostics['nsmall_notfixed'] = 0
+diagnostics['nlarge_split'] = 0
+diagnostics['nsmall_merged'] = 0
+diagnostics['nsmall_lowerthresh'] = 0
+diagnostics['nsmall_deleted'] = 0
+diagnostics['max_nsplit'] = 0
+diagnostics['sum_nsplit'] = 0
+diagnostics['nlarge_ignored'] = 0
+diagnostics['nframes_analyzed'] = 0
+
 class GUIConstants:
     def __init__( self ):
         self.info = AboutDialogInfo()
         self.info.SetName( "Ctrax" )
         self.info.SetVersion( __version__ )
-        self.info.SetCopyright( "2007-2010, Caltech ethomics project" )
+        self.info.SetCopyright( "2007-2011, Caltech ethomics project" )
         self.info.SetDescription( """The Caltech Multiple Fly Tracker.
+Kristin Branson et al.
 
-http://www.dickinson.caltech.edu/ctrax
+http://ctrax.berlios.de/
+http://dx.doi.org/10.1038/nmeth.1328
 
 Distributed under the GNU General Public License
 (http://www.gnu.org/licenses/gpl.html) with
 ABSOLUTELY NO WARRANTY.
 
-This project is supported by grant R01 DA022777-01 from
-the National Institute on Drug Abuse at the US NIH.""" )
+This project has been supported by the NIH and
+the HHMI.""" )
         
         self.TRACK_START = "Start Tracking"
         self.TRACK_STOP = "Stop Tracking"

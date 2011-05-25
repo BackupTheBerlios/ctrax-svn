@@ -5,6 +5,7 @@ import wxvideo as wxvideo
 import imagesk
 import numpy as num
 import scipy.ndimage.morphology as morph
+#import matplotlib.pyplot as plt
 
 import os
 import codedir
@@ -274,29 +275,11 @@ class FixBG:
 
     def fix_hole(self,im,out,polygon,isin=None):
 
-        s = num.ones((3,3),bool)        
-
         # get points on the inside of the polygon
         if isin is None:
             isin = point_inside_polygon(self.X,self.Y,polygon)
-        (y_isin,x_isin) = num.nonzero(isin)
-
-        # get points on the outside boundary of the polygon
-        isboundary = num.logical_and(morph.binary_dilation(isin,s),
-                                     ~isin)
-
-        (y_isboundary,x_isboundary) = num.nonzero(isboundary)
-
-        # for each point inside the polygon, get an average from
-        # all the boundary points
-        for i in range(len(y_isin)):
-            x = x_isin[i]
-            y = y_isin[i]
-            d = num.sqrt((y_isboundary-y)**2+(x_isboundary-x)**2)
-            w = num.exp(-d)
-            out[y,x] = num.sum(im[isboundary] * w) / num.sum(w)
-
-        return isin
+        
+        return fix_holes(im,out,isin)
 
     def undo_fix_hole(self,im0,im,polygon,isin=None):
         if isin is None:
@@ -318,6 +301,96 @@ class FixBG:
             self.ShowImage()
 
         except AttributeError: pass # during initialization
+        
+def fix_holes(im,out,isin):
+
+    if isin.all():
+        raise ValueError('Cannot fix holes. All pixels are labeled as holes.')
+
+    isout = isin == False
+
+    # strel for eroding
+    se = num.ones((3,3),bool)
+
+    # store dilated version here
+    isout1 = num.zeros(isout.shape,dtype=bool)
+
+    # loop, dilating known regions
+    while not isout.all():
+        
+        # get pixels just inside the border
+        morph.binary_dilation(isout,se,output=isout1)
+        border = isout1 & num.logical_not(isout)
+        (yb,xb) = num.nonzero(border)
+        yn = num.vstack([yb-1,
+                         yb-1,
+                         yb-1,
+                         yb,
+                         yb,
+                         yb+1,
+                         yb+1,
+                         yb+1])
+        xn = num.vstack([xb-1,
+                         xb,
+                         xb+1,
+                         xb-1,
+                         xb+1,
+                         xb-1,
+                         xb,
+                         xb+1])
+        badidx = num.logical_or(yn >= im.shape[0],
+                                num.logical_or(yn < 0,
+                                               num.logical_or(xn >= im.shape[1],
+                                                              xn < 0)))
+        yn = yn[badidx == False]
+        xn = xn[badidx == False]
+        #print "xn = " + str(xn)
+        #print "yn = " + str(yn)
+        #print "isout[yn,xn] = " + str(isout[yn,xn].astype(int))
+        out[yb,xb] = num.average(out[yn,xn],axis=0,weights=isout[yn,xn].astype(float))
+
+#        plt.subplot(121)
+#        plt.imshow(isout)
+#        plt.subplot(122)
+#        plt.imshow(out)
+#        plt.show()
+        
+        # swap isout, isout1x
+        isout2 = isout1
+        isout1 = isout
+        isout = isout2
+
+    return isin
+
+
+def fix_hole(im,out,polygon,isin=None,X=None,Y=None):
+
+    s = num.ones((3,3),bool)        
+
+    # get points on the inside of the polygon
+    if isin is None:
+        if X is None or Y is None:
+            (Y,X) = num.mgrid[0:im.shape[0],0:im.shape[1]]
+        isin = point_inside_polygon(X,Y,polygon)
+        
+    (y_isin,x_isin) = num.nonzero(isin)
+
+    # get points on the outside boundary of the polygon
+    isboundary = num.logical_and(morph.binary_dilation(isin,s),
+                                 ~isin)
+
+    (y_isboundary,x_isboundary) = num.nonzero(isboundary)
+
+    # for each point inside the polygon, get an average from
+    # all the boundary points
+    for i in range(len(y_isin)):
+        x = x_isin[i]
+        y = y_isin[i]
+        d = num.sqrt((y_isboundary-y)**2+(x_isboundary-x)**2)
+        w = num.exp(-d)
+        out[y,x] = num.sum(im[isboundary] * w) / num.sum(w)
+
+    return isin
 
 def point_inside_polygon(x,y,poly):
     # adapted from http://www.ariel.com.au/a/python-point-int-poly.html

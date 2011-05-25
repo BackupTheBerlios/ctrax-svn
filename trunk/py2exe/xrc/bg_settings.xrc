@@ -13,10 +13,10 @@
               <label>Algorithm:  </label>
               <font>
                 <size>10</size>
-                <family>swiss</family>
                 <style>normal</style>
                 <weight>bold</weight>
                 <underlined>0</underlined>
+                <family>swiss</family>
                 <face>Sans</face>
               </font>
             </object>
@@ -24,6 +24,7 @@
           </object>
           <object class="sizeritem">
             <object class="wxChoice" name="algorithm">
+              <size>280,25</size>
               <content>
                 <item>Median/Median Absolute Difference</item>
                 <item>Mean/Standard Deviation</item>
@@ -34,18 +35,17 @@
       </object>
       <object class="sizeritem">
         <object class="wxStaticText">
-          <label>Algorithm used to estimate the background image and background deviation. Median/Median Absolute Deviation estimates the center image as the median of the sampled frames and the standard deviation from the median absolute deviation. Mean/Standard Deviation estimates the center image as the mean of the sampled frames and the deviation as the standard deviation of the sampled frames. </label>
           <size>360,90</size>
+          <label>Algorithm used to estimate the background image and background deviation. Median/Median Absolute Deviation estimates the center image as the median of the sampled frames and the standard deviation from the median absolute deviation. Mean/Standard Deviation estimates the center image as the mean of the sampled frames and the deviation as the standard deviation of the sampled frames. </label>
           <font>
             <size>8</size>
-            <family>swiss</family>
             <style>normal</style>
             <weight>normal</weight>
             <underlined>0</underlined>
+            <family>swiss</family>
             <face>Sans</face>
           </font>
         </object>
-        <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
       </object>
       <object class="sizeritem">
         <object class="wxStaticLine" name="">
@@ -57,14 +57,14 @@
           <orient>wxHORIZONTAL</orient>
           <object class="sizeritem">
             <object class="wxStaticText">
+              <size>250,16</size>
               <label>Number of Frames:  </label>
-              <size>155,16</size>
               <font>
                 <size>10</size>
-                <family>swiss</family>
                 <style>normal</style>
                 <weight>bold</weight>
                 <underlined>0</underlined>
+                <family>swiss</family>
                 <face>Sans</face>
               </font>
             </object>
@@ -77,14 +77,14 @@
       </object>
       <object class="sizeritem">
         <object class="wxStaticText">
-          <label>Background is estimated from frames sampled evenly between the first frame and the last frame of the input video. Specify the number of frames to sample here. </label>
           <size>360,45</size>
+          <label>Background is estimated from frames sampled evenly between the first frame and the last frame of the input video. Specify the number of frames to sample here. </label>
           <font>
             <size>8</size>
-            <family>swiss</family>
             <style>normal</style>
             <weight>normal</weight>
             <underlined>0</underlined>
+            <family>swiss</family>
             <face>Sans</face>
           </font>
         </object>
@@ -99,15 +99,16 @@
           <orient>wxHORIZONTAL</orient>
           <object class="sizeritem">
             <object class="wxStaticText">
-              <label>First:  </label>
               <size>50,16</size>
+              <label>First:  </label>
               <font>
                 <size>10</size>
-                <family>swiss</family>
                 <style>normal</style>
                 <weight>bold</weight>
                 <underlined>0</underlined>
-                <face>Sans</face>
+                <family>swiss</family>
+                <face>MS Shell Dlg 2</face>
+                <encoding/>
               </font>
             </object>
             <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
@@ -115,18 +116,27 @@
           <object class="sizeritem">
             <object class="wxTextCtrl" name="bg_firstframe">
               <value>0</value>
+              <font>
+                <size>10</size>
+                <style>normal</style>
+                <weight>bold</weight>
+                <underlined>0</underlined>
+                <family>swiss</family>
+                <face>Sans</face>
+                <encoding>WINDOWS-1252</encoding>
+              </font>
             </object>
           </object>
           <object class="sizeritem">
             <object class="wxStaticText">
+              <size>100,16</size>
               <label>   Last Frame:  </label>
-              <size>120,16</size>
               <font>
                 <size>10</size>
-                <family>swiss</family>
                 <style>normal</style>
                 <weight>bold</weight>
                 <underlined>0</underlined>
+                <family>swiss</family>
                 <face>Sans</face>
               </font>
             </object>
@@ -141,14 +151,14 @@
       </object>
       <object class="sizeritem">
         <object class="wxStaticText">
-          <label>Specify the first and last frames to sample here. If last frame is &gt;= total number of frames in the movie, nframes - 1 will be used. </label>
           <size>360,45</size>
+          <label>Specify the first and last frames to sample here. If last frame is &gt;= total number of frames in the movie, nframes - 1 will be used. </label>
           <font>
             <size>8</size>
-            <family>swiss</family>
             <style>normal</style>
             <weight>normal</weight>
             <underlined>0</underlined>
+            <family>swiss</family>
             <face>Sans</face>
           </font>
         </object>
@@ -157,6 +167,142 @@
         <object class="wxStaticLine" name="">
           <size>360,10</size>
         </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxCheckBox" name="expbgfgmodel_checkbox">
+              <label>Use Prior Model:   </label>
+              <font>
+                <size>10</size>
+                <style>normal</style>
+                <weight>bold</weight>
+                <underlined>0</underlined>
+                <family>swiss</family>
+                <face>Sans</face>
+                <encoding>WINDOWS-1252</encoding>
+              </font>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="expbgfgmodel_text">
+              <size>125,20</size>
+              <value>None</value>
+              <style>wxTE_READONLY</style>
+            </object>
+          </object>
+          <object class="spacer">
+            <size>10,0</size>
+          </object>
+          <object class="sizeritem">
+            <object class="wxButton" name="expbgfgmodel_button">
+              <label>Browse</label>
+            </object>
+            <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+          </object>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticText">
+          <size>360,45</size>
+          <label>Name of file containing global, prior models of the foreground and background appearance, trained using ExpBGFGModel.</label>
+          <font>
+            <size>8</size>
+            <style>normal</style>
+            <weight>normal</weight>
+            <underlined>0</underlined>
+            <family>swiss</family>
+            <face>Sans</face>
+          </font>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticLine" name="">
+          <size>360,10</size>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticText">
+          <size>360,20</size>
+          <label>Prior Log-Likelihood Ratio Thresholds:  </label>
+          <font>
+            <size>10</size>
+            <style>normal</style>
+            <weight>bold</weight>
+            <underlined>0</underlined>
+            <family>swiss</family>
+            <face>Sans</face>
+          </font>
+          <style>wxALIGN_LEFT</style>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <size>40,25</size>
+              <label>High: </label>
+              <font>
+                <size>10</size>
+                <style>normal</style>
+                <weight>normal</weight>
+                <underlined>0</underlined>
+                <family>swiss</family>
+                <face>Sans</face>
+                <encoding>UTF-8</encoding>
+              </font>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="llr_thresh">
+              <value>0</value>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxStaticText">
+              <size>40,25</size>
+              <label>Low: </label>
+              <font>
+                <size>10</size>
+                <style>normal</style>
+                <weight>normal</weight>
+                <underlined>0</underlined>
+                <family>swiss</family>
+                <face>Sans</face>
+                <encoding>UTF-8</encoding>
+              </font>
+            </object>
+          </object>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="llr_thresh_low">
+              <value>0</value>
+            </object>
+          </object>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticText">
+          <size>360,45</size>
+          <label>Hysteresis thresholds for log-likelihood ratio of foreground over background. Pixels above the low threshold and touching pixels above the high threshold will not be used in the background modeling.</label>
+          <font>
+            <size>8</size>
+            <style>normal</style>
+            <weight>normal</weight>
+            <underlined>0</underlined>
+            <family>swiss</family>
+            <face>Sans</face>
+          </font>
+        </object>
+      </object>
+      <object class="sizeritem">
+        <object class="wxStaticLine" name="">
+          <size>360,10</size>
+        </object>
+      </object>
+      <object class="spacer">
+        <size>0,10</size>
       </object>
       <object class="sizeritem">
         <object class="wxBoxSizer">
@@ -178,6 +324,9 @@
           </object>
         </object>
         <flag>wxALIGN_CENTRE_HORIZONTAL</flag>
+      </object>
+      <object class="spacer">
+        <size>0,10</size>
       </object>
     </object>
   </object>

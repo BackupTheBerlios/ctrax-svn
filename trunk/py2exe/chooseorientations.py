@@ -4,7 +4,7 @@ import wxvalidatedtext as wxvt
 import numpy as num
 from params import params
 import annfiles as annot
-from version import DEBUG
+from version import DEBUG_CHOOSEORIENTATIONS as DEBUG
 
 import os
 import codedir
@@ -139,7 +139,17 @@ class ChooseOrientations:
             ells = self.targets[t]
             for (id,ell) in ells.iteritems():
                 if id in self.newtheta:
-                    ells[id].angle = self.newtheta[id][t-startframes[id]]
+                    try:
+                        ells[id].angle = self.newtheta[id][t-startframes[id]]
+                    except IndexError:
+                        print "IndexError for id = " + str(id) + ", t = " + str(t)
+                        print "startframe = %d, endframe = %d"%(startframes[id],endframes[id])
+                        print "keys in ells: " + str(ells.keys())
+                        print "keys in newtheta: " + str(self.newtheta.keys())
+                        if self.newtheta.has_key(id):
+                            print "length of newtheta[%d] = %d"%(id,len(self.newtheta[id]))
+                        else:
+                            print "newtheta has no key %d"%id
             self.out_ann_file.append(ells)
 
         if DEBUG: print "Calling finish_writing"
@@ -179,6 +189,7 @@ class ChooseOrientations:
         theta = num.zeros(N)
         # avoid rereading previous frame
         ellprev = self.targets[startframe][id]
+        theta[0] = ellprev.angle
         # compute iteratively
         for tloc in range(1,N):
 
@@ -197,10 +208,15 @@ class ChooseOrientations:
 	    yprev = ellprev.center.y
 	    vx = xcurr - xprev
 	    vy = ycurr - yprev
+            dcenter = num.sqrt(vx**2. +vy**2)
 	    # compute angle of velocity
 	    velocityangle = num.arctan2(vy,vx)
             # compute weight for velocity term
-	    w = num.minimum(float(params.max_velocity_angle_weight),params.velocity_angle_weight*num.sqrt(vx**2+vy**2))
+            if dcenter >= params.min_jump:
+                # if jumping, it can jump in an arbitrary direction
+                w = 0
+            else:
+                w = num.minimum(float(params.max_velocity_angle_weight),params.velocity_angle_weight*dcenter)
             # compute for both possible states
             for scurr in [0,1]:
                 
