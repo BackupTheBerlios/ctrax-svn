@@ -1,6 +1,5 @@
 function [data, stamp] = fmf_read_frame( fp, h, w, bytes_per_chunk, data_format )
-% [data, stamp] = fmf_read_frame( fp, f_height, f_width,
-% bytes_per_chunk, data_format )
+% [data, stamp] = fmf_read_frame( fp, f_height, f_width, bytes_per_chunk, data_format )
 %
 % reads image data for the next frame in the file pointer FP
 %
@@ -26,7 +25,7 @@ if feof( fp ),
   data = zeros( h, w, datatype );
 else
   buf = fread( fp, h*w, datatype);
-  if size( buf, 2 ) == 0 | size( buf, 1 ) ~= w*h
+  if size( buf, 2 ) == 0 || size( buf, 1 ) ~= w*h
     stamp = 9e9;
     data = zeros( h, w, datatype );
   else

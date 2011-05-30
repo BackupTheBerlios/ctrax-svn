@@ -21,6 +21,12 @@ for line in ver_file: # parse through file version.py
         this_version = version_str[1:-1] # strip quotes
 ver_file.close()
 
+# write version number to text file
+ver_filename = os.path.join( path, 'version.txt' )
+ver_file = open( ver_filename, "w" )
+ver_file.write( '%s\n'%this_version )
+ver_file.close()
+
 # add all of the .xrc and .bmp files
 Ctrax_package_data = [ f[6:] for f in glob.glob(os.path.join('Ctrax','xrc','*.xrc'))]+\
                      [ f[6:] for f in glob.glob(os.path.join('Ctrax','icons','*.ico'))]+\
