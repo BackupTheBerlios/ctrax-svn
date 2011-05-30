@@ -48,7 +48,7 @@ for pkg_name, pkg_files in zip( motmot_pkgs, motmot_pkg_files ):
 tocopy['pygarrayimage'] = [os.path.join(pygarrayimagepath,'arrayimage.py'),]
 
 # setup script
-tocopy['setup_py2exe'] = ['setup_py2exe.py','setup.nsi',]
+#tocopy['setup_py2exe'] = ['setup_py2exe.py','setup.nsi',]
 
 for (name,srcs) in tocopy.iteritems():
     print '\n%s : '%name

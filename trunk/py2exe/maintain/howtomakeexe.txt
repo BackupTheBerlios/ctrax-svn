@@ -58,7 +58,13 @@ These dlls are:
    specfun.pyd - /c/Python25/lib/site-packages/scipy/special/specfun.pyd
    #streams.pyd - C:\Python25\Lib\site-packages\scipy\io\matlab\streams.pyd
 
-10) Try it out:
+10) Copy XML resources (not automatically copied):
+
+***
+cp xrc/* dist/xrc/
+***
+
+11) Try it out:
 $ cd dist
 $ ./Ctrax-script.exe
 

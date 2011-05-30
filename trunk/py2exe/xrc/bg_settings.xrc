@@ -107,8 +107,7 @@
                 <weight>bold</weight>
                 <underlined>0</underlined>
                 <family>swiss</family>
-                <face>MS Shell Dlg 2</face>
-                <encoding/>
+                <face>Sans</face>
               </font>
             </object>
             <flag>wxALIGN_CENTRE|wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
@@ -123,7 +122,6 @@
                 <underlined>0</underlined>
                 <family>swiss</family>
                 <face>Sans</face>
-                <encoding>WINDOWS-1252</encoding>
               </font>
             </object>
           </object>
@@ -181,7 +179,6 @@
                 <underlined>0</underlined>
                 <family>swiss</family>
                 <face>Sans</face>
-                <encoding>WINDOWS-1252</encoding>
               </font>
             </object>
           </object>
@@ -251,7 +248,6 @@
                 <underlined>0</underlined>
                 <family>swiss</family>
                 <face>Sans</face>
-                <encoding>UTF-8</encoding>
               </font>
             </object>
           </object>
@@ -271,7 +267,6 @@
                 <underlined>0</underlined>
                 <family>swiss</family>
                 <face>Sans</face>
-                <encoding>UTF-8</encoding>
               </font>
             </object>
           </object>
