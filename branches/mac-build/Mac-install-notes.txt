@@ -1,0 +1,30 @@
+- Python http://www.python.org/download/releases/
+Can't use Apple's Python distribution. Use 32-bit DMG of version 2.6. Make
+sure that /usr/bin/python and pythonw point to the newly installed versions
+(probably in /usr/local/bin/python).
+
+- Setuptools http://pypi.python.org/pypi/setuptools
+Must reinstall from .egg for new Python.
+
+- WxPython http://www.wxpython.org/download.php#stable
+Must run in 32-bit mode. So:
+% defaults write com.apple.versioner.python Prefer-32-Bit -bool yes
+
+- Scipy, Numpy http://scipy.org
+From DMG.
+
+- PIL http://www.pythonware.com/products/pil/
+Build from source.
+
+- Pyglet http://www.pyglet.org
+DMG.
+
+- Matplotlib http://sourceforge.net/projects/matplotlib
+DMG.
+
+- Motmot http://code.astraw.com/projects/motmot
+Download via git, build from source: ufmf, imops, wxvalidatedtext, wxvideo,
+wxglvideo, pygarrayimage
+
+- Cython
+Build from source.
