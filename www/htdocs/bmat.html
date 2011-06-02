@@ -146,7 +146,7 @@ orientation is positive or negative (no units) [<tt>1 x (nframes - 1)</tt>].</li
   <li><tt>smoothdtheta</tt>: angular velocity, computed from the smoothed orientation (rad/s) [<tt>1 x (nframes - 1)</tt>].</li>
   <li><tt>abssmoothdtheta</tt>: angular speed, computed from the smoothed orientation (rad/s) [<tt>1 x (nframes - 1)</tt>].</li>
   <li><tt>smoothd2theta</tt>: angular acceleration, computed from the smoothed orientation (rad/s^2) [<tt>1 x (nframes - 1)</tt>]. Note that <tt>smoothd2theta(1)</tt> is always set to 0, and <tt>d2theta(t)</tt> is the acceleration computed from the angular velocities in frames <tt>t</tt> and <tt>t + 1</tt>.
-  <li><tt>abssmoothd2theta</tt>: absolute angular acceleration, computed from the smoothed orientation (<tt>|smoothd2theta|</tt>)(rad/s^2) [<tt>1 x (nframes - 1)</tt>].</li>
+  <li><tt>abssmoothd2theta</tt>: absolute angular acceleration, computed from the smoothed orientation (<tt>|smoothd2theta|</tt>) (rad/s^2) [<tt>1 x (nframes - 1)</tt>].</li>
   <li><tt>velmag_ctr</tt>: speed (mm/s) [<tt>1 x (nframes - 1)</tt>].</li>
   <li><tt>du_ctr</tt>: forward velocity of the fly's center (mm/s) [<tt>1 x (nframes - 1)</tt>]. This is the projection of the fly's velocity on its orientation direction.</li>
   <li><tt>dv_ctr</tt>: sideways velocity of the fly's center (mm/s) [<tt>1 x (nframes - 1)</tt>]. This is the projection of the fly's velocity on the direction orthogonal to the orientation. Right is positive, left is negative.</li>

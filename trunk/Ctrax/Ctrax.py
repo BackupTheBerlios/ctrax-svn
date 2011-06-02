@@ -1250,7 +1250,7 @@ If DiagnosticsFile is not set, then
 
     def OnHelp( self, evt ):
         """Help requested. Popup box with website."""
-        wx.MessageBox( "Documentation available at\nhttp://www.dickinson.caltech.edu/ctrax", "Help" )
+        wx.MessageBox( "Documentation available at\nhttp://ctrax.berlios.de", "Help" )
 
     def OnAbout( self, evt ):
         """About box requested."""

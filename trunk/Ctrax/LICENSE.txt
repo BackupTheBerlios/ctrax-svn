@@ -1,6 +1,6 @@
 Ctrax -- The Caltech Multiple Fly Tracker
-Copyright 2007-2008, Caltech ethomics project
-http://www.dickinson.caltech.edu/ctrax
+Copyright 2007-2011, Caltech ethomics project
+http://ctrax.berlios.de
 
 Ctrax is a joint effort of the Dickinson and Perona labs
 at the California Institute of Technology, Pasadena, CA,

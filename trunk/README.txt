@@ -1,8 +1,8 @@
 Ctrax: The Caltech Multiple Fly Tracker
 
-(c) 2007-2009 The Caltech Ethomics Project
-http://www.dickinson.caltech.edu/ctrax
-branson@caltech.edu
+(c) 2007-2011 The Caltech Ethomics Project
+http://ctrax.berlios.de
+bransonk@janelia.hhmi.org
 
 Ctrax is an open-source, freely available, machine vision program for
 estimating the positions and orientations of many walking flies,
@@ -21,7 +21,7 @@ automatically.
 Documentation and up-to-date versions of the software are available on
 our project homepage:
 
-          http://www.dickinson.caltech.edu/ctrax
+          http://ctrax.berlios.de
 
 ***********************************************************************
 

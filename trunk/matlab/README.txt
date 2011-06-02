@@ -1,8 +1,9 @@
 Ctrax Matlab Helper Functions
 
-(c) 2009 The Caltech Ethomics Project
-http://www.dickinson.caltech.edu/ctrax
-branson@caltech.edu
+(c) 2009-2011 The Caltech Ethomics Project
+http://ctrax.berlios.de
+bransonk@janelia.hhmi.org
+
 April 28, 2009
 
 Ctrax is an open-source, freely available, machine vision program for
@@ -20,7 +21,7 @@ Toolbox.
 Documentation and up-to-date versions of the software are available on
 our project homepage:
 
-          http://www.dickinson.caltech.edu/ctrax
+          http://ctrax.berlios.de
 
 ***********************************************************************
 
