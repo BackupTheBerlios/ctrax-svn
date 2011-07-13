@@ -193,7 +193,8 @@ class Hindsight:
         diagnostics['ndeaths_notfixed'] += \
             len(list(self.milestones.getdeaths(T-2)))
         
-
+        
+        diagnostics['nbirths_nohindsight'] += 1
         # for each birth in frame T-2
         birthscurr = list(self.milestones.getbirths(T-2))
         if params.do_fix_merged:
